@@ -1,0 +1,96 @@
+<div class="contenedor">
+
+    <h1>Gestión de Categorías</h1>
+
+    <div class="formulario">
+
+        <h2>
+
+            {{ editando ? 'Editar Categoría' : 'Nueva Categoría' }}
+
+        </h2>
+
+        <input
+            type="text"
+            placeholder="Nombre de la categoría"
+            [(ngModel)]="categoria.nombre">
+
+            <p
+  class="mensaje-error"
+  *ngIf="mensajeError">
+
+  {{ mensajeError }}
+
+</p>
+
+        <div class="botones">
+
+            <button
+                class="guardar"
+                (click)="guardar()">
+
+                Guardar
+
+            </button>
+
+            <button
+                class="cancelar"
+                (click)="limpiar()">
+
+                Cancelar
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <table>
+
+        <thead>
+
+            <tr>
+
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Acciones</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            <tr *ngFor="let c of categorias">
+
+                <td>{{c.id}}</td>
+
+                <td>{{c.nombre}}</td>
+
+                <td>
+
+                    <button
+                        class="editar"
+                        (click)="editar(c)">
+
+                        Editar
+
+                    </button>
+
+                    <button
+                        class="eliminar"
+                        (click)="eliminar(c.id!)">
+
+                        Eliminar
+
+                    </button>
+
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>

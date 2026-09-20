@@ -1,0 +1,162 @@
+
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <img
+                src="images/logoempresa.png"
+                alt="Logo Empresa"
+                class="logo-img">
+
+            <h2>INVENTARIO</h2>
+
+            <p>Sistema de Gestión</p>
+
+        </div>
+
+        <nav>
+
+            <a routerLink="/dashboard" routerLinkActive="active">
+                <i class="fas fa-tachometer-alt"></i>
+                Dashboard
+            </a>
+
+            <a routerLink="/productos" routerLinkActive="active">
+                <i class="fas fa-box"></i>
+                Productos
+            </a>
+
+            <a
+                *ngIf="esAdministrador()"
+                routerLink="/categorias"
+                routerLinkActive="active">
+
+                <i class="fas fa-tags"></i>
+                Categorías
+
+            </a>
+
+            <a
+                *ngIf="esAdministrador() || esGerente()"
+                routerLink="/proveedores"
+                routerLinkActive="active">
+
+                <i class="fas fa-truck"></i>
+                Proveedores
+
+            </a>
+
+            <a
+                *ngIf="esAdministrador()"
+                routerLink="/usuarios"
+                routerLinkActive="active">
+
+                <i class="fas fa-users"></i>
+                Usuarios
+
+            </a>
+
+            <a
+                routerLink="/movimientos"
+                routerLinkActive="active">
+
+                <i class="fas fa-exchange-alt"></i>
+                Movimientos
+
+            </a>
+
+            <a
+                *ngIf="esAdministrador() || esGerente()"
+                routerLink="/auditoria"
+                routerLinkActive="active">
+
+                <i class="fas fa-clipboard-check"></i>
+                Auditoría
+
+            </a>
+            <a routerLink="/reportes">
+
+    <i class="fas fa-file-pdf"></i>
+
+    Reportes
+
+</a>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- CONTENIDO -->
+    <div class="main-container">
+
+        <!-- BARRA SUPERIOR -->
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                Sistema de Inventario
+
+            </div>
+
+            <div
+                class="user-menu"
+                (click)="menuAbierto = !menuAbierto">
+
+                <i class="fas fa-user-circle user-icon"></i>
+
+                <div class="user-info">
+
+                    <span class="user-name">
+                        {{ usuarioNombre }}
+                    </span>
+
+                    <span class="user-role">
+                        {{ usuarioRol }}
+                    </span>
+
+                </div>
+
+                <i class="fas fa-chevron-down"></i>
+
+                <div
+                    class="dropdown-menu"
+                    *ngIf="menuAbierto">
+
+                    <a
+                        routerLink="/perfil"
+                        (click)="menuAbierto = false">
+
+                        <i class="fas fa-user"></i>
+                        Mi Perfil
+
+                    </a>
+
+                    <button
+                        (click)="logout()">
+
+                        <i class="fas fa-sign-out-alt"></i>
+                        Cerrar sesión
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- CONTENIDO DE LAS PÁGINAS -->
+        <main class="content">
+
+            <router-outlet></router-outlet>
+
+        </main>
+
+    </div>
+
+</div>

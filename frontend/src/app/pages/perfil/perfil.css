@@ -1,0 +1,130 @@
+.perfil-container{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:40px;
+}
+
+.perfil-card{
+    width:500px;
+    background:white;
+    border-radius:20px;
+    padding:40px;
+    box-shadow:0 10px 30px rgba(0,0,0,.15);
+}
+
+.avatar{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.avatar i{
+    font-size:100px;
+    color:#06215b;
+}
+
+.perfil-card h2{
+    text-align:center;
+    margin-bottom:30px;
+    color:#1e293b;
+}
+
+.campo{
+    display:flex;
+    flex-direction:column;
+    margin-bottom:20px;
+}
+
+.campo label{
+    margin-bottom:8px;
+    font-weight:600;
+    color:#334155;
+}
+
+.campo input{
+    padding:12px;
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    font-size:15px;
+    transition:.3s;
+}
+
+.campo input:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 5px rgba(37,99,235,.3);
+}
+
+.btn-guardar{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.btn-guardar:hover{
+    background:#1d4ed8;
+}
+
+.mensaje{
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:20px;
+    text-align:center;
+    font-weight:600;
+}
+
+.error{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.exito{
+    background:#dcfce7;
+    color:#16a34a;
+}
+
+.input-password{
+    position: relative;
+    width: 100%;
+}
+
+.input-password input{
+    width: 100%;
+    padding: 14px 50px 14px 20px;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    font-size: 16px;
+    outline: none;
+    transition: 0.3s;
+    box-sizing: border-box;
+}
+
+.input-password input:focus{
+    border-color: #2563eb;
+    box-shadow: 0 0 8px rgba(37,99,235,.2);
+}
+
+.toggle-password{
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    color: #555;
+    font-size: 18px;
+}
+
+.toggle-password:hover{
+    color: #2563eb;
+}

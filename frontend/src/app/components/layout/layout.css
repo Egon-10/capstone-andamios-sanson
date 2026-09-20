@@ -1,0 +1,319 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    /* NO pongas font-family aquí */
+}
+
+body {
+    font-family: Arial, sans-serif;
+}
+/* ===========================
+   LAYOUT
+=========================== */
+
+.layout{
+    display:flex;
+    min-height:100vh;
+    background:#f5f7fa;
+}
+
+/* ===========================
+   SIDEBAR
+=========================== */
+
+.sidebar{
+
+    position:fixed;
+
+    top:0;
+
+    left:0;
+
+    width:250px;
+
+    height:100vh;
+
+    background:linear-gradient(
+        135deg,
+        #0f172a,
+        #1e3a8a,
+        #2563eb
+    );
+
+    color:white;
+
+    display:flex;
+
+    flex-direction:column;
+
+    overflow-y:auto;
+
+    z-index:1000;
+}
+
+/* LOGO */
+
+.logo{
+
+    text-align:center;
+
+    padding:30px 20px;
+}
+
+.logo-img{
+
+    width:90px;
+
+    height:90px;
+
+    object-fit:contain;
+
+    margin-bottom:15px;
+}
+
+.logo h2{
+
+    font-size:22px;
+
+    margin-bottom:6px;
+}
+
+.logo p{
+
+    opacity:.8;
+
+    font-size:14px;
+}
+
+/* ===========================
+   MENÚ
+=========================== */
+
+nav{
+
+    display:flex;
+
+    flex-direction:column;
+
+    margin-top:20px;
+
+    flex:1;
+}
+
+nav a{
+
+    color:white;
+
+    text-decoration:none;
+
+    padding:18px 30px;
+
+    transition:.25s;
+
+    font-size:16px;
+
+    display:flex;
+
+    align-items:center;
+}
+
+nav a i{
+
+    width:25px;
+
+    margin-right:12px;
+
+    text-align:center;
+}
+
+nav a:hover{
+
+    background:#2a5298;
+}
+
+nav a.active{
+
+    background:#2a5298;
+
+    border-left:5px solid white;
+
+    font-weight:bold;
+}
+
+/* ===========================
+   CONTENEDOR PRINCIPAL
+=========================== */
+
+.main-container{
+
+    margin-left:250px;
+
+    width:calc(100% - 250px);
+
+    min-height:100vh;
+}
+
+/* ===========================
+   TOPBAR
+=========================== */
+
+.topbar{
+
+    position:fixed;
+
+    top:0;
+
+    left:250px;
+
+    right:0;
+
+    height:70px;
+
+    background:linear-gradient(
+        135deg,
+        #0f172a,
+        #1e3a8a,
+        #2563eb
+    );
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:0 35px;
+
+    color:white;
+
+    box-shadow:0 4px 15px rgba(0,0,0,.20);
+
+    z-index:999;
+}
+
+.topbar-left{
+
+    font-size:20px;
+
+    font-weight:bold;
+
+    letter-spacing:.5px;
+}
+
+/* ===========================
+   USUARIO
+=========================== */
+
+.user-menu{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    cursor:pointer;
+
+    position:relative;
+}
+
+.user-icon{
+
+    font-size:48px;
+}
+
+.user-info{
+
+    display:flex;
+
+    flex-direction:column;
+
+    text-align:right;
+}
+
+.user-name{
+
+    font-size:15px;
+
+    font-weight:bold;
+}
+
+.user-role{
+
+    font-size:12px;
+
+    opacity:.8;
+
+    text-transform:uppercase;
+}
+
+/* ===========================
+   DROPDOWN
+=========================== */
+
+.dropdown-menu{
+
+    position:absolute;
+
+    top:72px;
+
+    right:0;
+
+    width:220px;
+
+    background:white;
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.18);
+}
+
+.dropdown-menu a,
+.dropdown-menu button{
+
+    width:100%;
+
+    border:none;
+
+    background:white;
+
+    color:#333;
+
+    padding:16px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    text-decoration:none;
+
+    cursor:pointer;
+
+    font-size:15px;
+}
+
+.dropdown-menu a:hover,
+.dropdown-menu button:hover{
+
+    background:#eef2ff;
+}
+
+/* ===========================
+   CONTENIDO
+=========================== */
+
+.content{
+
+    margin-top:70px;
+
+    padding:35px;
+
+    min-height:calc(100vh - 70px);
+
+    background:#f5f7fa;
+}

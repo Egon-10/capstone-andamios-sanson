@@ -1,0 +1,212 @@
+<div class="contenedor">
+
+    <h1>Movimientos de Inventario</h1>
+
+    <div class="formulario">
+
+        <h2>Registrar Movimiento</h2>
+
+        <select
+  [(ngModel)]="productoSeleccionado"
+  (change)="mensajeError=''; mensajeExito=''">
+            <option
+                [ngValue]="undefined">
+
+                Seleccione un producto
+
+            </option>
+
+            <option
+                *ngFor="let producto of productos"
+                [ngValue]="producto">
+
+                {{producto.nombre}}
+                (Stock: {{producto.stock}})
+
+            </option>
+
+        </select>
+
+        <input
+            type="number"
+            min="1"
+            placeholder="Cantidad"
+            [(ngModel)]="cantidad"
+            (input)="mensajeError=''; mensajeExito=''">
+
+            <p
+  class="mensaje-error"
+  *ngIf="mensajeError">
+
+  {{ mensajeError }}
+
+</p>
+
+<p
+  class="mensaje-exito"
+  *ngIf="mensajeExito">
+
+  {{ mensajeExito }}
+
+</p>
+        <div class="botones">
+
+            <button
+    *ngIf="!movimientoEditando"
+    class="entrada"
+    (click)="registrarEntrada()">
+
+    Registrar Entrada
+
+</button>
+
+<button
+    *ngIf="!movimientoEditando"
+    class="salida"
+    (click)="registrarSalida()">
+
+    Registrar Salida
+
+</button>
+
+<button
+    *ngIf="movimientoEditando"
+    class="editar"
+    (click)="guardarEdicion()">
+
+    Guardar cambios
+
+</button>
+
+<button
+    *ngIf="movimientoEditando"
+    class="cancelar"
+    (click)="cancelarEdicion()">
+
+    Cancelar edición
+
+</button>
+
+        </div>
+
+    </div>
+
+    <h2>Historial de Movimientos</h2>
+
+    <div class="filtros">
+
+    <div class="grupo-filtro">
+
+        <label>Desde</label>
+
+        <input
+            type="date"
+            [(ngModel)]="fechaInicio"
+            (change)="aplicarFiltros()">
+
+    </div>
+
+    <div class="grupo-filtro">
+
+        <label>Hasta</label>
+
+        <input
+            type="date"
+            [(ngModel)]="fechaFin"
+            (change)="aplicarFiltros()">
+
+    </div>
+
+    <div class="grupo-filtro">
+
+        <label>Tipo</label>
+
+        <select
+            [(ngModel)]="tipoFiltro"
+            (change)="aplicarFiltros()">
+
+            <option value="">
+                Todos
+            </option>
+
+            <option value="ENTRADA">
+                Entradas
+            </option>
+
+            <option value="SALIDA">
+                Salidas
+            </option>
+
+        </select>
+
+    </div>
+
+</div>
+
+    <table>
+
+        <thead>
+
+            <tr>
+
+                <th>ID</th>
+
+                <th>Producto</th>
+
+                <th>Tipo</th>
+
+                <th>Cantidad</th>
+
+                <th>Usuario</th>
+
+                <th>Fecha</th>
+                <th>Acciones</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            <tr *ngFor="let movimiento of movimientosFiltrados">
+
+                <td>{{movimiento.id}}</td>
+
+                <td>{{movimiento.producto}}</td>
+
+                <td>{{movimiento.tipo}}</td>
+
+                <td>{{movimiento.cantidad}}</td>
+
+                <td>{{movimiento.usuario}}</td>
+
+                <td>{{movimiento.fecha}}</td>
+                <td>
+<button
+*ngIf="puedeEditarMovimiento()"
+    class="editar"
+    (click)="editar(movimiento)">
+
+    Editar
+</button>
+
+  <button
+  *ngIf="puedeEliminarMovimiento()"
+    class="eliminar"
+    (click)="eliminar(movimiento.id!)">
+
+    Eliminar
+
+  </button>
+  
+  
+
+</td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>

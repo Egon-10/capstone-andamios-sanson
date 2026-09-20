@@ -1,0 +1,188 @@
+<div class="contenedor">
+  <h1>Gestión de Productos</h1>
+
+  <div class="formulario">
+    <h2>{{ editando ? 'Editar Producto' : 'Nuevo Producto' }}</h2>
+
+    <!-- Contenedor en grilla -->
+    <div class="campos-grid">
+      <!-- Fila 1: Nombre, Descripción, Precio -->
+      <div class="campo">
+        <h5>Nombre producto</h5>
+        <input type="text" placeholder="Nombre" [(ngModel)]="producto.nombre">
+      </div>
+      <div class="campo">
+        <h5>Descripción</h5>
+        <input type="text" placeholder="Descripción" [(ngModel)]="producto.descripcion">
+      </div>
+      <div class="campo">
+        <h5>Precio</h5>
+        <input type="number" placeholder="Precio" [(ngModel)]="producto.precio">
+      </div>
+
+      <!-- Fila 2: Stock, Stock mínimo, Categoría -->
+      <div class="campo">
+        <h5>Stock</h5>
+        <input type="number" placeholder="Stock" min="0" [(ngModel)]="producto.stock" (input)="mensajeError = ''">
+      </div>
+      <div class="campo">
+        <h5>Stock mínimo</h5>
+        <input type="number" placeholder="Stock Mínimo" min="0" [(ngModel)]="producto.stockMinimo" (input)="mensajeError = ''">
+      </div>
+      <div class="campo">
+        <h5>Categoría</h5>
+        <select [(ngModel)]="producto.categoria">
+          <option *ngFor="let categoria of categorias" [ngValue]="categoria">{{categoria.nombre}}</option>
+        </select>
+      </div>
+
+      <!-- Fila 3: Proveedor (ocupa toda la fila) -->
+      <div class="campo ancho-completo">
+        <h5>Proveedor</h5>
+        <select [(ngModel)]="producto.proveedor">
+          <option *ngFor="let proveedor of proveedores" [ngValue]="proveedor">{{proveedor.nombre}}</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+
+    <div class="botones">
+      <button class="guardar" (click)="guardar()">Guardar</button>
+      <button class="cancelar" (click)="limpiar()">Cancelar</button>
+    </div>
+  </div>
+<div class="filtros-container">
+
+    <div class="busqueda">
+        <i class="fa-solid fa-magnifying-glass"></i>
+
+        <input
+            type="text"
+            placeholder="Buscar por nombre o descripción..."
+            [(ngModel)]="textoBusqueda"
+            (ngModelChange)="aplicarFiltros()">
+    </div>
+
+    <div class="filtro">
+        <i class="fa-solid fa-layer-group"></i>
+
+        <select [(ngModel)]="categoriaFiltro"
+        (ngModelChange)="aplicarFiltros()">
+            <option value="">Todas las categorías</option>
+
+            <option
+                *ngFor="let categoria of categorias"
+                [value]="categoria.nombre">
+
+                {{ categoria.nombre }}
+
+            </option>
+        </select>
+    </div>
+
+    <div class="filtro">
+        <i class="fa-solid fa-truck"></i>
+
+        <select [(ngModel)]="proveedorFiltro"
+        (ngModelChange)="aplicarFiltros()">
+            <option value="">Todos los proveedores</option>
+
+            <option
+                *ngFor="let proveedor of proveedores"
+                [value]="proveedor.nombre">
+
+                {{ proveedor.nombre }}
+
+            </option>
+        </select>
+    </div>
+
+</div>
+  <table>
+
+    <thead>
+
+      <tr>
+
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Precio</th>
+        <th>Stock</th>
+        <th>Categoría</th>
+        <th>Proveedor</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+
+      </tr>
+
+    </thead>
+
+    <tbody>
+
+      <tr
+        *ngFor="let p of productosFiltrados">
+
+        <td>{{p.id}}</td>
+
+        <td>{{p.nombre}}</td>
+
+        <td>{{p.descripcion}}</td>
+
+        <td>{{p.precio}}</td>
+
+        <td>{{p.stock}}</td>
+
+        <td>{{p.categoria?.nombre}}</td>
+
+        <td>{{p.proveedor?.nombre}}</td>
+        <td>
+
+  <span
+    *ngIf="p.stock > p.stockMinimo"
+    class="estado-normal">
+
+    Disponible
+
+  </span>
+
+  <span
+    *ngIf="p.stock <= p.stockMinimo"
+    class="estado-bajo">
+
+    Stock Bajo
+
+  </span>
+
+</td>
+
+        <td>
+
+          <button
+          *ngIf="esAdministrador()"
+            class="editar"
+            (click)="editar(p)">
+
+            Editar
+
+          </button>
+
+          <button
+          *ngIf="esAdministrador()"
+            class="eliminar"
+            (click)="eliminar(p.id!)">
+
+            Eliminar
+
+          </button>
+
+        </td>
+
+      </tr>
+
+    </tbody>
+
+  </table>
+
+</div>

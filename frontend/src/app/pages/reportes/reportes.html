@@ -1,0 +1,177 @@
+<div class="contenedor">
+
+    <h1>Generar Reporte PDF</h1>
+
+    <div class="card">
+
+    <label>Fecha inicio</label>
+
+    <input
+        type="date"
+        [(ngModel)]="fechaInicio">
+
+    <label>Fecha fin</label>
+
+    <input
+        type="date"
+        [(ngModel)]="fechaFin">
+
+        <label>
+    Tipo de reporte
+</label>
+
+<select
+    [(ngModel)]="tipoReporte">
+
+    <option value="MOVIMIENTOS">
+        Movimientos
+    </option>
+
+    <option value="PRODUCTOS">
+        Productos
+    </option>
+
+    <option value="STOCK">
+        Stock crítico
+    </option>
+
+    <option value="AUDITORIA">
+        Auditoría
+    </option>
+
+    <option value="USUARIOS">
+        Usuarios
+    </option>
+
+</select>
+
+<div *ngIf="tipoReporte === 'PRODUCTOS'">
+
+    <label>Categoría</label>
+
+    <select [(ngModel)]="categoria">
+
+        <option value="">
+            Todas las categorías
+        </option>
+
+        <option
+            *ngFor="let c of categorias"
+            [value]="c.nombre">
+
+            {{ c.nombre }}
+
+        </option>
+
+    </select>
+
+</div>
+<div *ngIf="tipoReporte === 'USUARIOS'">
+
+    <label>Rol</label>
+
+    <select [(ngModel)]="rol">
+
+        <option value="">
+            Todos los roles
+        </option>
+
+        <option value="ADMINISTRADOR">
+            Administrador
+        </option>
+
+        <option value="GERENTE">
+            Gerente
+        </option>
+
+        <option value="EMPLEADO">
+            Empleado
+        </option>
+
+    </select>
+
+</div>
+
+<div *ngIf="tipoReporte === 'AUDITORIA'">
+
+    <label>Tipo de acción</label>
+
+    <select
+        [(ngModel)]="accion">
+
+        <option value="">
+            Todas
+        </option>
+
+        <option value="CREÓ">
+            Crear
+        </option>
+
+        <option value="EDITÓ">
+            Editar
+        </option>
+
+        <option value="ELIMINÓ">
+            Eliminar
+        </option>
+
+    </select>
+
+</div>
+
+<div *ngIf="tipoReporte === 'STOCK_CRITICO'">
+
+    <label>Categoría</label>
+
+    <select [(ngModel)]="categoria">
+
+        <option value="">
+            Todas
+        </option>
+
+        <option
+            *ngFor="let c of categorias"
+            [value]="c.nombre">
+
+            {{c.nombre}}
+
+        </option>
+
+    </select>
+
+</div>
+    <div *ngIf="tipoReporte === 'MOVIMIENTOS'">
+
+    <label>
+        Tipo de movimiento
+    </label>
+
+    <select [(ngModel)]="tipo">
+
+        <option value="TODOS">
+            Todos
+        </option>
+
+        <option value="ENTRADA">
+            Entradas
+        </option>
+
+        <option value="SALIDA">
+            Salidas
+        </option>
+
+    </select>
+
+</div>
+
+    <button
+        class="btn-pdf"
+        (click)="descargarReporte()">
+
+        Descargar PDF
+
+    </button>
+
+</div>
+
+</div>

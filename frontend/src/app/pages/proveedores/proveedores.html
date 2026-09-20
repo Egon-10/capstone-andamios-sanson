@@ -1,0 +1,118 @@
+<div class="contenedor">
+  <h1>Gestión de Proveedores</h1>
+
+  <div class="formulario">
+    <h2>{{ editando ? 'Editar Proveedor' : 'Nuevo Proveedor' }}</h2>
+
+    <!-- Contenedor en grilla -->
+    <div class="campos-grid">
+      <!-- Fila 1: Nombre, RUC, Dirección -->
+      <div class="campo">
+        <h5>Nombre del proveedor</h5>
+        <input
+          type="text"
+          placeholder="Nombre"
+          [(ngModel)]="proveedor.nombre"
+          (input)="mensajeError = ''">
+      </div>
+      <div class="campo">
+        <h5>RUC</h5>
+        <input
+          type="text"
+          placeholder="RUC"
+          [(ngModel)]="proveedor.ruc"
+          (input)="mensajeError = ''">
+      </div>
+      <div class="campo">
+        <h5>Dirección</h5>
+        <input
+          type="text"
+          placeholder="Dirección"
+          [(ngModel)]="proveedor.direccion"
+          (input)="mensajeError = ''">
+      </div>
+
+      <!-- Fila 2: Teléfono (1 columna) y Correo (ocupa 2 columnas) -->
+      <div class="campo">
+        <h5>Teléfono</h5>
+        <input
+          type="text"
+          placeholder="Teléfono"
+          [(ngModel)]="proveedor.telefono"
+          (input)="mensajeError = ''">
+      </div>
+      <div class="campo ancho-doble">
+        <h5>Correo</h5>
+        <input
+          type="email"
+          placeholder="Correo"
+          [(ngModel)]="proveedor.correo"
+          (input)="mensajeError = ''">
+      </div>
+    </div>
+
+    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+
+    <div class="botones">
+      <button class="guardar" (click)="guardar()">Guardar</button>
+      <button class="cancelar" (click)="limpiar()">Cancelar</button>
+    </div>
+  </div>
+
+
+    <table>
+
+        <thead>
+
+            <tr>
+
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>RUC</th>
+                <th>Dirección</th>
+                <th>Teléfono</th>
+                <th>Correo</th>
+                <th>Acciones</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            <tr *ngFor="let p of proveedores">
+
+                <td>{{p.id}}</td>
+                <td>{{p.nombre}}</td>
+                <td>{{p.ruc}}</td>
+                <td>{{p.direccion}}</td>
+                <td>{{p.telefono}}</td>
+                <td>{{p.correo}}</td>
+
+                <td>
+
+                    <button
+                        class="editar"
+                        (click)="editar(p)">
+
+                        Editar
+
+                    </button>
+
+                    <button
+                        class="eliminar"
+                        (click)="eliminar(p.id!)">
+
+                        Eliminar
+
+                    </button>
+
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>

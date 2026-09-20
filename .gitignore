@@ -1,0 +1,2 @@
+# Credenciales locales - cada integrante configura las suyas a partir de application.properties.example
+microservicio/src/main/resources/application.properties

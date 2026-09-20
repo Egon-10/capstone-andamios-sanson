@@ -1,0 +1,211 @@
+.contenedor {
+
+    padding: 30px;
+
+    font-family: Arial;
+}
+
+h1 {
+
+    color: #1e3c72;
+
+    margin-bottom: 20px;
+}
+
+.formulario {
+
+    background: white;
+
+    padding: 20px;
+
+    border-radius: 10px;
+
+    box-shadow: 0 2px 10px rgba(0,0,0,.1);
+
+    margin-bottom: 30px;
+}
+
+.formulario h2 {
+
+    margin-bottom: 20px;
+}
+
+.formulario select,
+.formulario input {
+
+    width: 90%;
+
+    padding: 12px;
+
+    margin-bottom: 15px;
+
+    border: 1px solid #ccc;
+
+    border-radius: 6px;
+}
+
+.botones {
+
+    display: flex;
+
+    gap: 15px;
+}
+
+.entrada {
+
+    background: #28a745;
+
+    color: white;
+
+    border: none;
+
+    padding: 12px 20px;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+}
+
+.salida {
+
+    background: #dc3545;
+
+    color: white;
+
+    border: none;
+
+    padding: 12px 20px;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+}
+
+table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+    background: white;
+
+    box-shadow: 0 2px 10px rgba(0,0,0,.1);
+}
+
+th {
+
+    background: #1e3c72;
+
+    color: white;
+
+    padding: 12px;
+}
+
+td {
+
+    padding: 10px;
+
+    border-bottom: 1px solid #ddd;
+}
+.mensaje-error {
+
+    background: #ffe5e5;
+
+    color: #c62828;
+
+    border: 1px solid #ef9a9a;
+
+    padding: 12px;
+
+    border-radius: 8px;
+
+    margin: 15px 0;
+
+    font-weight: 600;
+}
+
+.mensaje-exito {
+
+    background: #e8f5e9;
+
+    color: #2e7d32;
+
+    border: 1px solid #81c784;
+
+    padding: 12px;
+
+    border-radius: 8px;
+
+    margin: 15px 0;
+
+    font-weight: 600;
+}
+.eliminar{
+
+  background:red;
+
+  color:white;
+
+  border:none;
+
+  padding:8px 12px;
+
+  border-radius:5px;
+
+  cursor:pointer;
+}
+
+.editar {
+
+    background: #1976d2;
+
+    color: white;
+
+    border: none;
+
+    padding: 8px 15px;
+
+    border-radius: 5px;
+
+    cursor: pointer;
+
+    margin-right: 10px;
+}
+
+.editar:hover {
+
+    background: #0d47a1;
+}
+
+.cancelar{
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.filtros{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+
+.grupo-filtro{
+    display:flex;
+    flex-direction:column;
+}
+
+.grupo-filtro label{
+    font-weight:600;
+    margin-bottom:5px;
+}
+
+.grupo-filtro input,
+.grupo-filtro select{
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    min-width:180px;
+}

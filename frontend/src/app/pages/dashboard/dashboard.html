@@ -1,0 +1,317 @@
+<div class="dashboard-container">
+
+    <div class="dashboard-header">
+
+        <div>
+            <h1>
+                Bienvenido {{ usuario?.nombre || 'Usuario' }}
+            </h1>
+
+            <p>
+                Sistema de Gestión de Inventario de Andamios
+            </p>
+        </div>
+
+        <div class="fecha">
+            {{ today | date:'dd/MM/yyyy' }}
+        </div>
+
+    </div>
+
+    <div *ngIf="error" class="error">
+
+        {{ error }}
+
+    </div>
+
+    <div *ngIf="cargando" class="loading">
+
+        Cargando información...
+
+    </div>
+
+    <ng-container *ngIf="!cargando">
+
+        <!-- TARJETAS -->
+
+        <div class="cards">
+
+            <div class="card productos">
+
+                <span class="titulo">
+                    Productos
+                </span>
+
+                <span class="valor">
+                    {{ resumen?.totalProductos }}
+                </span>
+
+            </div>
+
+            <div class="card categorias">
+
+                <span class="titulo">
+                    Categorías
+                </span>
+
+                <span class="valor">
+                    {{ resumen?.totalCategorias }}
+                </span>
+
+            </div>
+
+            <div class="card proveedores">
+
+                <span class="titulo">
+                    Proveedores
+                </span>
+
+                <span class="valor">
+                    {{ resumen?.totalProveedores }}
+                </span>
+
+            </div>
+
+            <div class="card usuarios">
+
+                <span class="titulo">
+                    Usuarios
+                </span>
+
+                <span class="valor">
+                    {{ resumen?.totalUsuarios }}
+                </span>
+
+            </div>
+
+            <div class="card stock">
+
+                <span class="titulo">
+                    Stock Total
+                </span>
+
+                <span class="valor">
+                    {{ resumen?.stockTotal }}
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="graficas-container">
+
+    <div class="grafica-card">
+        <canvas id="graficaCategorias"></canvas>
+    </div>
+
+    <div class="grafica-card">
+        <canvas id="graficaMovimientos"></canvas>
+    </div>
+
+    <div class="grafica-card">
+        <canvas id="graficaStock"></canvas>
+    </div>
+
+    <div class="grafica-card">
+        <canvas id="graficaStockCritico"></canvas>
+    </div>
+
+    <!-- CARD DE MOVIMIENTOS SEMANALES -->
+    <div class="grafica-card full-width">
+
+        <div class="header-semana">
+
+    <button
+        class="btn-semana"
+        (click)="semanaAnterior()">
+
+        <i class="fas fa-chevron-left"></i>
+        Anterior
+
+    </button>
+
+    <div class="titulo-semana">
+
+        <h3>
+            Movimientos Semanales
+        </h3>
+
+        <span>
+            Semana del
+            {{ fechaInicioSemana }}
+            al
+            {{ fechaFinSemana }}
+        </span>
+
+    </div>
+
+    <button
+        class="btn-semana actual"
+        (click)="irSemanaActual()">
+
+        <i class="fas fa-calendar-day"></i>
+        Semana actual
+
+    </button>
+
+    <button
+        class="btn-semana"
+        (click)="semanaSiguiente()">
+
+        Siguiente
+        <i class="fas fa-chevron-right"></i>
+
+    </button>
+
+</div>
+
+        <canvas id="graficaSemana"></canvas>
+
+    </div>
+
+</div>
+
+
+        <!-- MOVIMIENTOS -->
+
+        <div class="movimientos-container">
+
+            <div class="titulo-tabla">
+
+                Últimos movimientos
+
+            </div>
+
+            <div class="filtros-dashboard">
+
+    <div class="grupo-filtro">
+
+        <label>Desde</label>
+
+        <input
+            type="date"
+            [(ngModel)]="fechaInicioDashboard"
+            (change)="aplicarFiltrosDashboard()">
+
+    </div>
+
+    <div class="grupo-filtro">
+
+        <label>Hasta</label>
+
+        <input
+            type="date"
+            [(ngModel)]="fechaFinDashboard"
+            (change)="aplicarFiltrosDashboard()">
+
+    </div>
+
+    <div class="grupo-filtro">
+
+        <label>Tipo</label>
+
+        <select
+            [(ngModel)]="tipoMovimientoDashboard"
+            (change)="aplicarFiltrosDashboard()">
+
+            <option value="">
+                Todos
+            </option>
+
+            <option value="ENTRADA">
+                Entradas
+            </option>
+
+            <option value="SALIDA">
+                Salidas
+            </option>
+
+        </select>
+
+    </div>
+
+</div>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>ID</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Usuario</th>
+                        <th>Fecha</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr *ngFor="let movimiento of movimientos">
+
+                        <td>
+                            {{ movimiento.id }}
+                        </td>
+
+                        <td>
+                            {{ movimiento.producto }}
+                        </td>
+
+                        <td>
+
+                            <span
+                                class="badge"
+                                [ngClass]="{
+                                    'entrada': movimiento.tipo === 'ENTRADA',
+                                    'salida': movimiento.tipo === 'SALIDA'
+                                }">
+
+                                {{ movimiento.tipo }}
+
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            {{ movimiento.cantidad }}
+
+                        </td>
+
+                        <td>
+
+                            {{ movimiento.usuario }}
+
+                        </td>
+
+                        <td>
+
+                            {{ movimiento.fecha | date:'dd/MM/yyyy HH:mm' }}
+
+                        </td>
+
+                    </tr>
+
+                    <tr *ngIf="movimientos.length === 0">
+
+                        <td colspan="6" class="sin-datos">
+
+                            No existen movimientos registrados.
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </ng-container>
+
+</div>

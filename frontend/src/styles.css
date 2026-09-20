@@ -1,0 +1,17 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Aplica a todo el cuerpo y al contenedor principal */
+html, body, app-root {
+    font-family: Arial, sans-serif !important;
+}
+
+/* Esto es un seguro: si algún framework interno le pone Times New Roman a los textos, 
+   le decimos que herede la fuente del body */
+div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, textarea, button {
+    font-family: inherit !important;
+}

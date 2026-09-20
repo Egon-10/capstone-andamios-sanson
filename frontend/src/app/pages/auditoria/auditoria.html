@@ -1,0 +1,127 @@
+<div class="contenedor">
+
+  <h1>Auditoría del Sistema</h1>
+  <div class="filtros">
+
+    <div class="grupo-filtro">
+
+        <label>Desde</label>
+
+        <input
+            type="date"
+            [(ngModel)]="fechaInicio"
+            (change)="aplicarFiltros()">
+
+    </div>
+
+    <div class="grupo-filtro">
+
+        <label>Hasta</label>
+
+        <input
+            type="date"
+            [(ngModel)]="fechaFin"
+            (change)="aplicarFiltros()">
+
+    </div>
+
+    <div class="grupo-filtro">
+
+        <label>Buscar acción</label>
+
+        <input
+            type="text"
+            placeholder="Buscar..."
+            [(ngModel)]="textoBusqueda"
+            (input)="aplicarFiltros()">
+
+    </div>
+    <div class="grupo-filtro">
+
+    <label>Tipo de acción</label>
+
+    <select
+        [(ngModel)]="tipoAccionFiltro"
+        (change)="aplicarFiltros()">
+
+        <option value="">
+            Todas
+        </option>
+
+        <option value="CREÓ">
+            Crear
+        </option>
+
+        <option value="EDITÓ">
+            Editar
+        </option>
+
+        <option value="ELIMINÓ">
+            Eliminar
+        </option>
+
+    </select>
+
+</div>
+
+<div class="grupo-filtro">
+
+    <label>Orden</label>
+
+    <select
+        [(ngModel)]="ordenFecha"
+        (change)="aplicarFiltros()">
+
+        <option value="ASC">
+            Más antiguo primero
+        </option>
+
+        <option value="DESC">
+            Más reciente primero
+        </option>
+
+    </select>
+
+</div>
+
+</div>
+
+  <table>
+
+    <thead>
+
+      <tr>
+
+        <th>ID</th>
+        <th>Acción</th>
+        <th>Fecha</th>
+        <th>Usuario</th>
+        <th>Rol</th>
+
+      </tr>
+
+    </thead>
+
+    <tbody>
+
+      <tr
+        *ngFor="let a of auditoriasFiltradas">
+
+        <td>{{a.id}}</td>
+
+        <td>{{a.accion}}</td>
+
+        <td>{{a.fecha}}</td>
+
+        <td>{{ a.usuario?.nombre }}</td>
+        <td>
+  {{ a.usuario?.rol?.nombre }}
+</td>
+
+      </tr>
+
+    </tbody>
+
+  </table>
+
+</div>

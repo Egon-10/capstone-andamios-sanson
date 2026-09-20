@@ -1,0 +1,126 @@
+<div class="perfil-container">
+
+    <div class="perfil-card">
+
+        <div class="avatar">
+
+            <i class="fas fa-user-circle"></i>
+
+        </div>
+
+        <h2>Mi Perfil</h2>
+
+        <div
+            class="mensaje error"
+            *ngIf="mensajeError">
+
+            {{mensajeError}}
+
+        </div>
+
+        <div
+            class="mensaje exito"
+            *ngIf="mensajeExito">
+
+            {{mensajeExito}}
+
+        </div>
+
+        <div class="campo">
+
+            <label>Nombre</label>
+
+            <input
+                type="text"
+                [(ngModel)]="usuario.nombre">
+
+        </div>
+
+        <div class="campo">
+
+            <label>Correo</label>
+
+            <input
+                type="email"
+                [(ngModel)]="usuario.correo">
+
+        </div>
+
+        <div class="campo">
+
+            <label>Rol</label>
+
+            <input
+                type="text"
+                [value]="usuario.rol?.nombre"
+                readonly>
+
+        </div>
+
+        <div class="campo">
+
+    <label>Nueva contraseña</label>
+
+    <div class="input-password">
+
+        <input
+            [type]="mostrarPassword ? 'text' : 'password'"
+            [(ngModel)]="usuario.password"
+            placeholder="Ingrese la nueva contraseña">
+
+        <button
+            type="button"
+            class="toggle-password"
+            (click)="mostrarPassword = !mostrarPassword">
+
+            <i
+                class="fas"
+                [class.fa-eye]="!mostrarPassword"
+                [class.fa-eye-slash]="mostrarPassword">
+            </i>
+
+        </button>
+
+    </div>
+
+</div>
+
+       <div class="campo">
+
+    <label>Confirmar contraseña</label>
+
+    <div class="input-password">
+
+        <input
+            [type]="mostrarConfirmarPassword ? 'text' : 'password'"
+            [(ngModel)]="confirmarPassword"
+            placeholder="Confirme la contraseña">
+
+        <button
+            type="button"
+            class="toggle-password"
+            (click)="mostrarConfirmarPassword = !mostrarConfirmarPassword">
+
+            <i
+                class="fas"
+                [class.fa-eye]="!mostrarConfirmarPassword"
+                [class.fa-eye-slash]="mostrarConfirmarPassword">
+            </i>
+
+        </button>
+
+    </div>
+
+</div>
+
+        <button
+            class="btn-guardar"
+            (click)="guardar()">
+
+            Guardar Cambios
+
+        </button>
+
+    </div>
+
+</div>

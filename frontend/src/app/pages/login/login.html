@@ -1,0 +1,63 @@
+<div class="login-page">
+
+    <div class="login-left">
+
+        <img src="images/logoempresa.png"
+             class="logo"
+             alt="Logo">
+
+        <h1>Sistema de Inventario</h1>
+
+        <p>
+            Gestión eficiente de productos,
+            movimientos y usuarios.
+        </p>
+
+    </div>
+
+    <div class="login-right">
+
+        <div class="login-card">
+
+            <img src="images/userimage.png"
+                 class="avatar"
+                 alt="Usuario">
+
+            <h2>Iniciar Sesión</h2>
+
+            <p class="subtitulo">
+                Bienvenido nuevamente
+            </p>
+
+            <form (ngSubmit)="iniciarSesion()">
+
+    <input
+        type="email"
+        name="correo"
+        placeholder="Correo"
+        [(ngModel)]="loginData.correo">
+
+    <input
+        type="password"
+        name="password"
+        placeholder="Contraseña"
+        [(ngModel)]="loginData.password">
+
+    <button type="submit">
+        Ingresar
+    </button>
+
+</form>
+
+            <p class="error"
+               *ngIf="mensajeError">
+
+                {{ mensajeError }}
+
+            </p>
+
+        </div>
+
+    </div>
+
+</div>

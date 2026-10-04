@@ -37,7 +37,16 @@ Proyecto del curso **Capstone Project** (Ingeniería de Sistemas Computacionales
 2. Copia `src/main/resources/application.properties.example` a `src/main/resources/application.properties`.
 3. Completa tu usuario y contraseña de MySQL local en ese archivo (este archivo está en `.gitignore`, así que tus credenciales no se suben al repo).
 4. Crea la base de datos `inventario_andamios` en tu MySQL local (o ajusta el nombre en `application.properties`).
-5. Ejecuta:
+5. **Seguridad (Sprint 1).** Agrega a tu `application.properties` las propiedades `app.*` del archivo de ejemplo:
+   - `app.jwt.secret`: un secreto de al menos 32 caracteres para firmar los tokens. Si no lo defines, el servidor genera uno temporal y las sesiones se cierran al reiniciar.
+   - `app.admin.correo` y `app.admin.password`: solo se usan para crear el administrador inicial cuando la tabla de usuarios está vacía.
+   - Al primer arranque, las contraseñas que estaban en texto plano se cifran con BCrypt automáticamente; cada usuario sigue ingresando con su misma contraseña.
+6. Ejecuta las pruebas unitarias:
+   ```bash
+   ./mvnw test -Dtest='*ServiceTest,*ValidatorTest,*HandlerTest,*InitializerTest'
+   ```
+   (La prueba `MicroservicioApplicationTests` levanta el contexto completo y necesita MySQL en ejecución.)
+7. Ejecuta:
    ```bash
    ./mvnw spring-boot:run
    ```
@@ -55,6 +64,22 @@ Proyecto del curso **Capstone Project** (Ingeniería de Sistemas Computacionales
    npm start
    ```
 4. Abre `http://localhost:4200` en el navegador.
+5. Pruebas unitarias del cliente:
+   ```bash
+   npm test -- --watch=false
+   ```
+
+## Seguridad y roles (Sprint 1)
+
+| Rol | Puede |
+|---|---|
+| ADMINISTRADOR | Todo, incluida la gestión de usuarios, roles y categorías |
+| GERENTE | Consultar, registrar y editar productos, proveedores y movimientos; ver auditoría |
+| ENCARGADO | Consultar y registrar movimientos |
+
+- El inicio de sesión acepta correo o nombre de usuario y devuelve un token de acceso (15 min) y uno de renovación.
+- La sesión se cierra tras 30 minutos sin actividad; el cliente avisa un minuto antes.
+- Las reglas de acceso se aplican en el servidor (`SecurityConfig`); el cliente solo oculta lo que el usuario no puede usar.
 
 ## Notas
 

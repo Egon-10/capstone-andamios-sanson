@@ -10,6 +10,10 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Código único del producto (HU-10, RF-10). */
+    @Column(length = 20, unique = true)
+    private String sku;
+
     private String nombre;
 
     private String descripcion;
@@ -53,6 +57,14 @@ public class Producto {
 
     public Long getId() {
         return id;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
     }
 
     public String getNombre() {

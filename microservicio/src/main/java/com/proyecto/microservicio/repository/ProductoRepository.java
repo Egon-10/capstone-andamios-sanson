@@ -13,9 +13,14 @@ import java.util.List;
 public interface ProductoRepository
         extends JpaRepository<Producto, Long> {
 
+    boolean existsBySkuIgnoreCase(String sku);
+
+    boolean existsBySkuIgnoreCaseAndIdNot(String sku, Long id);
+
     @Query(value = """
     SELECT
         p.id AS id,
+        p.sku AS sku,
         p.nombre AS nombre,
         p.descripcion AS descripcion,
         p.precio AS precio,

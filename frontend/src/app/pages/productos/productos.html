@@ -6,7 +6,11 @@
 
     <!-- Contenedor en grilla -->
     <div class="campos-grid">
-      <!-- Fila 1: Nombre, Descripción, Precio -->
+      <!-- Fila 1: SKU, Nombre, Descripción, Precio -->
+      <div class="campo">
+        <h5>Código SKU</h5>
+        <input type="text" placeholder="Ej. PLA-200" maxlength="20" [(ngModel)]="producto.sku" (input)="mensajeError = ''">
+      </div>
       <div class="campo">
         <h5>Nombre producto</h5>
         <input type="text" placeholder="Nombre" [(ngModel)]="producto.nombre">
@@ -23,7 +27,8 @@
       <!-- Fila 2: Stock, Stock mínimo, Categoría -->
       <div class="campo">
         <h5>Stock</h5>
-        <input type="number" placeholder="Stock" min="0" [(ngModel)]="producto.stock" (input)="mensajeError = ''">
+        <input type="number" placeholder="Stock" min="0" [(ngModel)]="producto.stock" [disabled]="editando"
+               title="En la edición, el stock solo cambia mediante movimientos" (input)="mensajeError = ''">
       </div>
       <div class="campo">
         <h5>Stock mínimo</h5>
@@ -59,7 +64,7 @@
 
         <input
             type="text"
-            placeholder="Buscar por nombre o descripción..."
+            placeholder="Buscar por SKU, nombre o descripción..."
             [(ngModel)]="textoBusqueda"
             (ngModelChange)="aplicarFiltros()">
     </div>
@@ -105,7 +110,7 @@
 
       <tr>
 
-        <th>ID</th>
+        <th>SKU</th>
         <th>Nombre</th>
         <th>Descripción</th>
         <th>Precio</th>
@@ -124,7 +129,7 @@
       <tr
         *ngFor="let p of productosFiltrados">
 
-        <td>{{p.id}}</td>
+        <td>{{p.sku || '—'}}</td>
 
         <td>{{p.nombre}}</td>
 

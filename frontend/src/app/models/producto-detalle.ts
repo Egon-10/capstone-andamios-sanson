@@ -2,6 +2,8 @@ export interface ProductoDetalle {
 
   id: number;
 
+  sku: string;
+
   nombre: string;
 
   descripcion: string;

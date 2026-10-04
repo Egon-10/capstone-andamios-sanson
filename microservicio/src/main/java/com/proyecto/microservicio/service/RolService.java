@@ -2,6 +2,7 @@ package com.proyecto.microservicio.service;
 
 import com.proyecto.microservicio.model.Rol;
 import com.proyecto.microservicio.repository.RolRepository;
+import com.proyecto.microservicio.exception.RecursoNoEncontradoException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class RolService {
     public Rol obtener(Long id) {
         return repository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Rol no encontrado"));
+                        new RecursoNoEncontradoException("Rol no encontrado"));
     }
 
     public Rol guardar(Rol rol) {

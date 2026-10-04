@@ -1,14 +1,32 @@
 spring.application.name=microservicio
 
-server.port=8081
+server.port=${SERVER_PORT:8081}
 
-spring.datasource.url=jdbc:mysql://localhost:3306/inventario_andamios
-spring.datasource.username=TU_USUARIO_MYSQL
-spring.datasource.password=TU_PASSWORD_MYSQL
+# --- Base de datos (cada integrante usa sus propias credenciales) ---
+spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/inventario_andamios}
+spring.datasource.username=${DB_USERNAME:TU_USUARIO_MYSQL}
+spring.datasource.password=${DB_PASSWORD:TU_PASSWORD_MYSQL}
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 
 spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
+spring.jpa.show-sql=${SHOW_SQL:false}
 spring.jpa.properties.hibernate.format_sql=true
-
 spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+
+# --- Seguridad (Sprint 1: HU-03, HU-08, HU-09) ---
+# Secreto para firmar los tokens: minimo 32 caracteres. En el servidor se define con la variable JWT_SECRET.
+app.jwt.secret=${JWT_SECRET:}
+# Vigencia del token de acceso y tiempo maximo de inactividad, en minutos
+app.jwt.access-ttl-minutos=15
+app.jwt.inactividad-minutos=30
+
+# Origenes del cliente web autorizados (separados por comas)
+app.cors.origenes=${CORS_ORIGENES:http://localhost:4200}
+
+# Administrador inicial: solo se crea si la tabla de usuarios esta vacia
+app.admin.correo=${ADMIN_CORREO:}
+app.admin.password=${ADMIN_PASSWORD:}
+
+# No exponer detalles tecnicos en las respuestas de error
+server.error.include-stacktrace=never
+server.error.include-message=never

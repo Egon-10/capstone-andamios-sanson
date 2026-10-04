@@ -2,6 +2,7 @@ package com.proyecto.microservicio.service;
 
 import com.proyecto.microservicio.model.Categoria;
 import com.proyecto.microservicio.repository.CategoriaRepository;
+import com.proyecto.microservicio.exception.RecursoNoEncontradoException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class CategoriaService {
     public Categoria obtener(Long id) {
         return repository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Categoría no encontrada"));
+                        new RecursoNoEncontradoException("Categoría no encontrada"));
     }
 
     public Categoria guardar(Categoria categoria) {

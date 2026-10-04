@@ -13,7 +13,6 @@ import java.io.ByteArrayInputStream;
 
 @RestController
 @RequestMapping("/api/reportes")
-@CrossOrigin(origins = "*")
 public class ReporteController {
 
     private final ReporteService service;

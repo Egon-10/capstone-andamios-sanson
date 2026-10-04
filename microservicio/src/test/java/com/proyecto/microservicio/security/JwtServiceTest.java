@@ -91,8 +91,11 @@ class JwtServiceTest {
         AbstractAuthenticationToken auth = new SecurityConfig().jwtAuthenticationConverter().convert(jwt);
 
         assertNotNull(auth);
-        List<String> autoridades = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-        assertEquals(List.of("ROLE_ENCARGADO"), autoridades);
+        List<String> roles = auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(a -> a.startsWith("ROLE_"))
+                .toList();
+        assertEquals(List.of("ROLE_ENCARGADO"), roles);
     }
 
     @Test

@@ -126,3 +126,12 @@ html, body {
     margin-top: 15px;
     font-size: 14px;
 }
+.aviso {
+    margin-top: 12px;
+    color: #8a6d00;
+    background: #fff7d6;
+    border: 1px solid #f0d77a;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+}

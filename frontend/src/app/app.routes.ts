@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authChildGuard, authGuard, loginGuard } from './core/auth.guard';
 import { PerfilComponent } from './pages/perfil/perfil';
 import { LoginComponent } from './pages/login/login';
 import { LayoutComponent } from './components/layout/layout';
@@ -24,12 +25,15 @@ export const routes: Routes = [
 
   {
     path: 'login',
-    component: LoginComponent
+    component: LoginComponent,
+    canActivate: [loginGuard]
   },
 
   {
     path: '',
     component: LayoutComponent,
+    canActivate: [authGuard],
+    canActivateChild: [authChildGuard],
 
     children: [
 
@@ -45,17 +49,20 @@ export const routes: Routes = [
 
       {
         path: 'categorias',
-        component: CategoriasComponent
+        component: CategoriasComponent,
+        data: { roles: ['ADMINISTRADOR'] }
       },
 
       {
         path: 'proveedores',
-        component: ProveedoresComponent
+        component: ProveedoresComponent,
+        data: { roles: ['ADMINISTRADOR', 'GERENTE'] }
       },
 
       {
         path: 'usuarios',
-        component: UsuariosComponent
+        component: UsuariosComponent,
+        data: { roles: ['ADMINISTRADOR'] }
       },
 
       {
@@ -65,7 +72,8 @@ export const routes: Routes = [
 
       {
   path: 'auditoria',
-  component: AuditoriaComponent
+  component: AuditoriaComponent,
+  data: { roles: ['ADMINISTRADOR', 'GERENTE'] }
 },
 {
     path: 'perfil',

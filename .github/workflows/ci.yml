@@ -82,6 +82,9 @@ jobs:
       - name: Aplicar la migracion del Sprint 1
         run: $MYSQL < database/02-sprint1-seguridad.sql
 
+      - name: Repetir la migracion (debe ser idempotente)
+        run: $MYSQL < database/02-sprint1-seguridad.sql
+
       - name: Verificar el esquema y los datos resultantes
         run: |
           set -euo pipefail

@@ -2,8 +2,7 @@
 -- Migracion del Sprint 1 - seguridad y catalogo
 -- Sistema web para el control de inventario - Andamios Sanson, 2026
 --
--- Lleva la base entregada por la empresa (01-inventario_andamios.sql) al
--- esquema que exige el incremento del Sprint 1:
+-- Lleva la base al esquema que exige el incremento del Sprint 1:
 --   HU-02  Modelo de datos con integridad referencial y auditoria base
 --   HU-03  Tokens de renovacion de sesion con rotacion
 --   HU-04  Contrasenas cifradas (columna ampliada para el hash BCrypt)
@@ -11,13 +10,69 @@
 --   HU-10  Codigo unico de producto (SKU)
 --   HU-43  Campos del formulario de registro de usuario y turno (CAM-02)
 --
--- Ejecutar UNA sola vez, despues de 01-inventario_andamios.sql.
--- Respalde la base antes de ejecutarlo.
+-- SE PUEDE EJECUTAR VARIAS VECES: cada cambio se aplica solo si falta, de
+-- modo que tambien sirve para completar una ejecucion que quedo a medias.
+--
+-- MySQL confirma cada DDL automaticamente, asi que esto NO se deshace con
+-- ROLLBACK. Respalde la base antes de ejecutarlo.
 -- =====================================================================
 
-USE `inventario_andamios`;
+-- MySQL Workbench bloquea por defecto los UPDATE sin clave en el WHERE.
+SET @safe_updates_previo = @@SQL_SAFE_UPDATES;
+SET SQL_SAFE_UPDATES = 0;
 
-START TRANSACTION;
+-- ---------------------------------------------------------------------
+-- Ayudantes: agregan una columna o un indice solo si todavia no existen
+-- ---------------------------------------------------------------------
+
+DROP PROCEDURE IF EXISTS sp_agregar_columna;
+DROP PROCEDURE IF EXISTS sp_agregar_indice_unico;
+
+DELIMITER $$
+
+CREATE PROCEDURE sp_agregar_columna(
+    IN p_tabla VARCHAR(64),
+    IN p_columna VARCHAR(64),
+    IN p_definicion TEXT)
+BEGIN
+    DECLARE v_existe INT;
+
+    SELECT COUNT(*) INTO v_existe
+      FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = p_tabla
+       AND COLUMN_NAME = p_columna;
+
+    IF v_existe = 0 THEN
+        SET @sentencia = CONCAT('ALTER TABLE `', p_tabla, '` ADD COLUMN `', p_columna, '` ', p_definicion);
+        PREPARE st FROM @sentencia;
+        EXECUTE st;
+        DEALLOCATE PREPARE st;
+    END IF;
+END$$
+
+CREATE PROCEDURE sp_agregar_indice_unico(
+    IN p_tabla VARCHAR(64),
+    IN p_indice VARCHAR(64),
+    IN p_columnas VARCHAR(255))
+BEGIN
+    DECLARE v_existe INT;
+
+    SELECT COUNT(*) INTO v_existe
+      FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = p_tabla
+       AND INDEX_NAME = p_indice;
+
+    IF v_existe = 0 THEN
+        SET @sentencia = CONCAT('ALTER TABLE `', p_tabla, '` ADD UNIQUE KEY `', p_indice, '` (', p_columnas, ')');
+        PREPARE st FROM @sentencia;
+        EXECUTE st;
+        DEALLOCATE PREPARE st;
+    END IF;
+END$$
+
+DELIMITER ;
 
 -- ---------------------------------------------------------------------
 -- 1. Usuarios: campos de la HU-43 y turno de trabajo (CAM-02)
@@ -29,32 +84,44 @@ ALTER TABLE `usuarios`
   MODIFY `correo`   varchar(100) DEFAULT NULL,
   MODIFY `password` varchar(100) DEFAULT NULL;
 
-ALTER TABLE `usuarios`
-  ADD COLUMN `apellidos`         varchar(60) DEFAULT NULL AFTER `nombre`,
-  ADD COLUMN `tipo_documento`    varchar(20) DEFAULT NULL AFTER `apellidos`,
-  ADD COLUMN `numero_documento`  varchar(20) DEFAULT NULL AFTER `tipo_documento`,
-  ADD COLUMN `telefono`          varchar(15) DEFAULT NULL AFTER `correo`,
-  ADD COLUMN `nombre_usuario`    varchar(30) DEFAULT NULL AFTER `telefono`,
-  ADD COLUMN `area`              varchar(20) DEFAULT NULL AFTER `password`,
-  ADD COLUMN `turno`             varchar(10) DEFAULT NULL AFTER `area`,
-  ADD COLUMN `estado`            varchar(10) DEFAULT NULL AFTER `turno`,
-  ADD COLUMN `fecha_creacion`    datetime    DEFAULT NULL AFTER `estado`;
+CALL sp_agregar_columna('usuarios', 'apellidos',        'varchar(60) DEFAULT NULL AFTER `nombre`');
+CALL sp_agregar_columna('usuarios', 'tipo_documento',   'varchar(20) DEFAULT NULL AFTER `apellidos`');
+CALL sp_agregar_columna('usuarios', 'numero_documento', 'varchar(20) DEFAULT NULL AFTER `tipo_documento`');
+CALL sp_agregar_columna('usuarios', 'telefono',         'varchar(15) DEFAULT NULL AFTER `correo`');
+CALL sp_agregar_columna('usuarios', 'nombre_usuario',   'varchar(30) DEFAULT NULL AFTER `telefono`');
+CALL sp_agregar_columna('usuarios', 'area',             'varchar(20) DEFAULT NULL AFTER `password`');
+CALL sp_agregar_columna('usuarios', 'turno',            'varchar(10) DEFAULT NULL AFTER `area`');
+CALL sp_agregar_columna('usuarios', 'estado',           'varchar(10) DEFAULT NULL AFTER `turno`');
+CALL sp_agregar_columna('usuarios', 'fecha_creacion',   'datetime DEFAULT NULL AFTER `estado`');
 
 -- Un correo, un documento y un nombre de usuario no pueden repetirse.
--- En MySQL y MariaDB un indice UNIQUE admite varios NULL, de modo que las
--- filas aun sin completar no bloquean la restriccion.
-ALTER TABLE `usuarios`
-  ADD UNIQUE KEY `uk_usuarios_correo` (`correo`),
-  ADD UNIQUE KEY `uk_usuarios_numero_documento` (`numero_documento`),
-  ADD UNIQUE KEY `uk_usuarios_nombre_usuario` (`nombre_usuario`);
+-- En MySQL un indice UNIQUE admite varios NULL, de modo que las filas aun
+-- sin completar no bloquean la restriccion.
+CALL sp_agregar_indice_unico('usuarios', 'uk_usuarios_correo',           '`correo`');
+CALL sp_agregar_indice_unico('usuarios', 'uk_usuarios_numero_documento', '`numero_documento`');
+CALL sp_agregar_indice_unico('usuarios', 'uk_usuarios_nombre_usuario',   '`nombre_usuario`');
 
--- Las tres cuentas existentes quedan activas y reciben un nombre de usuario
--- derivado de su correo. Los demas campos (apellidos, documento, telefono,
--- area, turno) los completa el equipo con los datos reales de la empresa.
-UPDATE `usuarios` SET `estado` = 'ACTIVO' WHERE `estado` IS NULL;
-UPDATE `usuarios` SET `nombre_usuario` = 'admin'     WHERE `id` = 1 AND `nombre_usuario` IS NULL;
-UPDATE `usuarios` SET `nombre_usuario` = 'encargado' WHERE `id` = 2 AND `nombre_usuario` IS NULL;
-UPDATE `usuarios` SET `nombre_usuario` = 'gerente'   WHERE `id` = 3 AND `nombre_usuario` IS NULL;
+-- Toda cuenta existente queda activa. El nombre de usuario se deriva de la
+-- parte local del correo; si eso genera un duplicado, la cuenta se deja sin
+-- nombre de usuario y el equipo lo asigna a mano desde el sistema.
+UPDATE `usuarios`
+   SET `estado` = 'ACTIVO'
+ WHERE `id` > 0
+   AND `estado` IS NULL;
+
+UPDATE `usuarios` u
+  JOIN (
+        SELECT `id`, SUBSTRING_INDEX(`correo`, '@', 1) AS candidato
+          FROM `usuarios`
+         WHERE `nombre_usuario` IS NULL
+           AND `correo` IS NOT NULL
+       ) d ON d.`id` = u.`id`
+   SET u.`nombre_usuario` = d.candidato
+ WHERE NOT EXISTS (
+        SELECT 1 FROM (SELECT `id`, `nombre_usuario` FROM `usuarios`) x
+         WHERE x.`nombre_usuario` = d.candidato
+           AND x.`id` <> u.`id`
+       );
 
 -- ---------------------------------------------------------------------
 -- 2. Productos: codigo unico SKU (HU-10, RF-10)
@@ -62,27 +129,27 @@ UPDATE `usuarios` SET `nombre_usuario` = 'gerente'   WHERE `id` = 3 AND `nombre_
 
 ALTER TABLE `productos`
   MODIFY `nombre`      varchar(100) DEFAULT NULL,
-  MODIFY `descripcion` varchar(250) DEFAULT NULL,
-  ADD COLUMN `sku` varchar(20) DEFAULT NULL AFTER `id`,
-  ADD UNIQUE KEY `uk_productos_sku` (`sku`);
+  MODIFY `descripcion` varchar(250) DEFAULT NULL;
 
--- ATENCION: los codigos siguientes son PROVISIONALES. El analisis causal
--- (Tabla 4, causa "Maquinaria / Tecnologia") identifico la falta de un
--- catalogo con codigo unico como una de las causas del problema, por lo que
--- estos valores deben reemplazarse por la codificacion que acuerde la
--- empresa antes de la medicion posterior.
-UPDATE `productos` SET `sku` = 'PROV-001' WHERE `id` = 1 AND `sku` IS NULL;
-UPDATE `productos` SET `sku` = 'PROV-002' WHERE `id` = 2 AND `sku` IS NULL;
-UPDATE `productos` SET `sku` = 'PROV-003' WHERE `id` = 3 AND `sku` IS NULL;
-UPDATE `productos` SET `sku` = 'PROV-004' WHERE `id` = 4 AND `sku` IS NULL;
-UPDATE `productos` SET `sku` = 'PROV-005' WHERE `id` = 5 AND `sku` IS NULL;
+CALL sp_agregar_columna('productos', 'sku', 'varchar(20) DEFAULT NULL AFTER `id`');
+CALL sp_agregar_indice_unico('productos', 'uk_productos_sku', '`sku`');
+
+-- ATENCION: estos codigos son PROVISIONALES. El analisis causal (Tabla 4,
+-- causa "Maquinaria / Tecnologia") identifico la falta de un catalogo con
+-- codigo unico como una de las causas del problema, por lo que deben
+-- reemplazarse por la codificacion que acuerde la empresa antes de la
+-- medicion posterior.
+UPDATE `productos`
+   SET `sku` = CONCAT('PROV-', LPAD(`id`, 3, '0'))
+ WHERE `id` > 0
+   AND `sku` IS NULL;
 
 -- ---------------------------------------------------------------------
 -- 3. Tokens de renovacion de sesion (HU-03, HU-09)
 -- ---------------------------------------------------------------------
 
 -- Solo se almacena el hash SHA-256 del token, nunca su valor en claro.
-CREATE TABLE `refresh_tokens` (
+CREATE TABLE IF NOT EXISTS `refresh_tokens` (
   `id`             bigint(20)   NOT NULL AUTO_INCREMENT,
   `token_hash`     varchar(64)  NOT NULL,
   `usuario_id`     bigint(20)   NOT NULL,
@@ -100,19 +167,26 @@ CREATE TABLE `refresh_tokens` (
 -- 4. Tokens de acceso invalidados al cerrar sesion (HU-08)
 -- ---------------------------------------------------------------------
 
-CREATE TABLE `tokens_revocados` (
+CREATE TABLE IF NOT EXISTS `tokens_revocados` (
   `jti`        varchar(64) NOT NULL,
   `expiracion` datetime(6) NOT NULL,
   PRIMARY KEY (`jti`),
   KEY `idx_tokens_revocados_expiracion` (`expiracion`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-COMMIT;
+-- ---------------------------------------------------------------------
+-- Limpieza
+-- ---------------------------------------------------------------------
+
+DROP PROCEDURE IF EXISTS sp_agregar_columna;
+DROP PROCEDURE IF EXISTS sp_agregar_indice_unico;
+
+SET SQL_SAFE_UPDATES = @safe_updates_previo;
 
 -- ---------------------------------------------------------------------
 -- Verificacion
 -- ---------------------------------------------------------------------
--- SELECT id, nombre_usuario, correo, estado, LENGTH(password) AS largo_hash
---   FROM usuarios;            -- largo_hash debe ser 60 (BCrypt)
--- SELECT id, sku, nombre, stock, stock_minimo FROM productos;
--- SHOW TABLES;                -- deben aparecer refresh_tokens y tokens_revocados
+-- SELECT id, nombre_usuario, correo, estado, CHAR_LENGTH(password) AS largo
+--   FROM usuarios;           -- largo = 60 cuando la clave ya esta cifrada
+-- SELECT id, sku, nombre, stock FROM productos;
+-- SHOW TABLES;               -- deben estar refresh_tokens y tokens_revocados

@@ -19,16 +19,27 @@ public interface MovimientoRepository
     SELECT
         m.id AS id,
         m.tipo AS tipo,
+        m.motivo AS motivo,
+        mo.nombre AS motivoNombre,
+        m.observacion AS observacion,
         m.cantidad AS cantidad,
         m.fecha AS fecha,
+        m.estado AS estado,
+        m.costo_unitario AS costoUnitario,
+        m.saldo_resultante AS saldoResultante,
+        p.id AS productoId,
         p.nombre AS producto,
-        u.nombre AS usuario
+        p.sku AS sku,
+        TRIM(CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario,
+        m.movimiento_origen_id AS movimientoOrigenId
     FROM movimientos m
     INNER JOIN productos p
         ON m.producto_id = p.id
-    INNER JOIN usuarios u
+    LEFT JOIN usuarios u
         ON m.usuario_id = u.id
-    ORDER BY m.fecha DESC
+    LEFT JOIN motivos_movimiento mo
+        ON m.motivo = mo.codigo
+    ORDER BY m.fecha DESC, m.id DESC
     """, nativeQuery = true)
     List<MovimientoDTO> obtenerMovimientosConDetalle();
 
@@ -66,51 +77,69 @@ ORDER BY DAYOFWEEK(m.fecha)
 List<Object[]> movimientosPorSemana(
         Integer offset);
 
-        @Query(value = """
-SELECT
-    m.id AS id,
-    m.tipo AS tipo,
-    m.cantidad AS cantidad,
-    m.fecha AS fecha,
-    p.nombre AS producto,
-    u.nombre AS usuario
-FROM movimientos m
-INNER JOIN productos p
-    ON m.producto_id = p.id
-INNER JOIN usuarios u
-    ON m.usuario_id = u.id
-WHERE
-    (:fechaInicio IS NULL OR m.fecha >= :fechaInicio)
-AND
-    (:fechaFin IS NULL OR m.fecha <= :fechaFin)
-AND
-    (:tipo IS NULL OR m.tipo = :tipo)
-ORDER BY m.fecha DESC
-""", nativeQuery = true)
-List<MovimientoDTO> buscarConFiltros(
-        @Param("fechaInicio") LocalDateTime fechaInicio,
-        @Param("fechaFin") LocalDateTime fechaFin,
-        @Param("tipo") String tipo
-);
+    @Query(value = """
+    SELECT
+        m.id AS id,
+        m.tipo AS tipo,
+        m.motivo AS motivo,
+        mo.nombre AS motivoNombre,
+        m.observacion AS observacion,
+        m.cantidad AS cantidad,
+        m.fecha AS fecha,
+        m.estado AS estado,
+        m.costo_unitario AS costoUnitario,
+        m.saldo_resultante AS saldoResultante,
+        p.id AS productoId,
+        p.nombre AS producto,
+        p.sku AS sku,
+        TRIM(CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario,
+        m.movimiento_origen_id AS movimientoOrigenId
+    FROM movimientos m
+    INNER JOIN productos p
+        ON m.producto_id = p.id
+    LEFT JOIN usuarios u
+        ON m.usuario_id = u.id
+    LEFT JOIN motivos_movimiento mo
+        ON m.motivo = mo.codigo
+    WHERE
+        (:fechaInicio IS NULL OR m.fecha >= :fechaInicio)
+    AND
+        (:fechaFin IS NULL OR m.fecha <= :fechaFin)
+    AND
+        (:tipo IS NULL OR m.tipo = :tipo)
+    ORDER BY m.fecha DESC, m.id DESC
+    """, nativeQuery = true)
+    List<MovimientoDTO> buscarConFiltros(
+            @Param("fechaInicio") LocalDateTime fechaInicio,
+            @Param("fechaFin") LocalDateTime fechaFin,
+            @Param("tipo") String tipo);
 
-@Query(value = """
-SELECT
-    m.id AS id,
-    m.tipo AS tipo,
-    m.cantidad AS cantidad,
-    m.fecha AS fecha,
-    p.nombre AS producto,
-    u.nombre AS usuario
-FROM movimientos m
-INNER JOIN productos p
-    ON m.producto_id = p.id
-INNER JOIN usuarios u
-    ON m.usuario_id = u.id
-WHERE m.tipo = :tipo
-ORDER BY m.fecha DESC
-""", nativeQuery = true)
-List<MovimientoDTO> obtenerMovimientosPorTipo(
-        @Param("tipo")
-        String tipo
-);
+    @Query(value = """
+    SELECT
+        m.id AS id,
+        m.tipo AS tipo,
+        m.motivo AS motivo,
+        mo.nombre AS motivoNombre,
+        m.observacion AS observacion,
+        m.cantidad AS cantidad,
+        m.fecha AS fecha,
+        m.estado AS estado,
+        m.costo_unitario AS costoUnitario,
+        m.saldo_resultante AS saldoResultante,
+        p.id AS productoId,
+        p.nombre AS producto,
+        p.sku AS sku,
+        TRIM(CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario,
+        m.movimiento_origen_id AS movimientoOrigenId
+    FROM movimientos m
+    INNER JOIN productos p
+        ON m.producto_id = p.id
+    LEFT JOIN usuarios u
+        ON m.usuario_id = u.id
+    LEFT JOIN motivos_movimiento mo
+        ON m.motivo = mo.codigo
+    WHERE m.tipo = :tipo
+    ORDER BY m.fecha DESC, m.id DESC
+    """, nativeQuery = true)
+    List<MovimientoDTO> obtenerMovimientosPorTipo(@Param("tipo") String tipo);
 }

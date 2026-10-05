@@ -43,6 +43,7 @@ public class SecurityConfig {
 
     private static final String ADMIN = Roles.ADMINISTRADOR;
     private static final String GERENTE = Roles.GERENTE;
+    private static final String ENCARGADO = Roles.ENCARGADO;
 
     @Bean
     public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, JwtAuthenticationConverter convertidor) throws Exception {
@@ -73,8 +74,23 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/productos/**", "/api/proveedores/**").hasAnyRole(ADMIN, GERENTE)
 
                 // Movimientos: registrar (todos los roles), editar (admin y gerente), eliminar (admin)
-                .requestMatchers(HttpMethod.PUT, "/api/movimientos/**").hasAnyRole(ADMIN, GERENTE)
-                .requestMatchers(HttpMethod.DELETE, "/api/movimientos/**").hasRole(ADMIN)
+                // Un movimiento no se edita ni se borra (HU-15): se anula, y la
+                // anulacion corrige el inventario, por lo que queda reservada al
+                // administrador y al gerente. Los verbos PUT y DELETE sobre
+                // movimientos ya no existen en el controlador y se deniegan aqui
+                // para que una ruta reintroducida por error no quede abierta.
+                .requestMatchers(HttpMethod.PUT, "/api/movimientos/**").denyAll()
+                .requestMatchers(HttpMethod.DELETE, "/api/movimientos/**").denyAll()
+                .requestMatchers(HttpMethod.POST, "/api/movimientos/*/anulacion").hasAnyRole(ADMIN, GERENTE)
+                .requestMatchers(HttpMethod.POST, "/api/movimientos/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
+
+                // HU-16: el encargado registra el conteo fisico, pero solo el
+                // administrador o el gerente aprueban o rechazan el ajuste. La
+                // separacion de quien cuenta y quien autoriza es el control de
+                // la historia.
+                .requestMatchers(HttpMethod.POST, "/api/ajustes/*/aprobacion",
+                        "/api/ajustes/*/rechazo").hasAnyRole(ADMIN, GERENTE)
+                .requestMatchers(HttpMethod.POST, "/api/ajustes/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
 
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(convertidor)));

@@ -31,7 +31,7 @@ public interface ProductoRepository
     FROM productos p
     INNER JOIN categorias c
         ON p.categoria_id = c.id
-    INNER JOIN proveedores pr
+    LEFT JOIN proveedores pr
         ON p.proveedor_id = pr.id
     """, nativeQuery = true)
     List<ProductoDTO> obtenerProductosConDetalle();
@@ -83,7 +83,7 @@ SELECT
 FROM productos p
 INNER JOIN categorias c
     ON p.categoria_id = c.id
-INNER JOIN proveedores pr
+LEFT JOIN proveedores pr
     ON p.proveedor_id = pr.id
 ORDER BY p.nombre
 """, nativeQuery = true)
@@ -125,7 +125,7 @@ SELECT
 FROM productos p
 INNER JOIN categorias c
     ON p.categoria_id = c.id
-INNER JOIN proveedores pr
+LEFT JOIN proveedores pr
     ON p.proveedor_id = pr.id
 WHERE
 (

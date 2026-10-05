@@ -10,66 +10,16 @@ on:
 
 
 # Una sola ejecucion por rama: si llegan varios push seguidos, se cancela la
-# anterior. Evita que decenas de jobs compitan por los runners disponibles.
+# anterior en lugar de encolarse detras de ella.
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  backend:
-    name: Backend (Spring Boot)
+  verificacion:
+    name: Compilacion, pruebas y base de datos
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: microservicio
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
-      - name: Compilar y ejecutar pruebas unitarias
-        run: |
-          set -o pipefail
-          mvn -B test -Dtest='*ServiceTest,*ValidatorTest,*HandlerTest,*InitializerTest' -Dsurefire.failIfNoSpecifiedTests=false | tee mvn.log
-      - name: Resumen de errores
-        if: failure()
-        run: |
-          resumen=$(grep -E "\[ERROR\]|Tests run:|FAIL|expected" mvn.log | grep -v "^\[ERROR\] *$" | head -80 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
-          echo "::error title=Resumen de Maven::${resumen}"
-      - name: Publicar reporte de pruebas
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: reporte-pruebas-backend
-          path: microservicio/target/surefire-reports/
-
-  frontend:
-    name: Frontend (Angular)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - name: Compilar
-        run: npx ng build --configuration development
-      - name: Pruebas unitarias
-        run: npx ng test --watch=false --browsers=ChromeHeadless
-
-  database:
-    name: Base de datos (MySQL)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     services:
       mysql:
         image: mysql:8.0
@@ -87,7 +37,63 @@ jobs:
       MYSQL: mysql -h 127.0.0.1 -P 3306 -uroot -proot inventario_andamios
     steps:
       - uses: actions/checkout@v5
+        with:
+          # SonarCloud necesita el historico completo para atribuir los cambios.
+          fetch-depth: 0
 
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # ---------------------------------------------------------------
+      # Backend
+      # ---------------------------------------------------------------
+      - name: Backend - compilar y ejecutar pruebas unitarias
+        working-directory: microservicio
+        run: |
+          set -o pipefail
+          mvn -B test -Dtest='*ServiceTest,*ValidatorTest,*HandlerTest,*InitializerTest' -Dsurefire.failIfNoSpecifiedTests=false | tee mvn.log
+
+      - name: Backend - resumen de errores
+        if: failure()
+        working-directory: microservicio
+        run: |
+          resumen=$(grep -E "\[ERROR\]|Tests run:|FAIL|expected" mvn.log | grep -v "^\[ERROR\] *$" | head -80 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+          echo "::error title=Resumen de Maven::${resumen}"
+
+      - name: Backend - publicar reporte de pruebas
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: reporte-pruebas-backend
+          path: microservicio/target/surefire-reports/
+
+      # ---------------------------------------------------------------
+      # Frontend
+      # ---------------------------------------------------------------
+      - name: Frontend - instalar dependencias
+        working-directory: frontend
+        run: npm ci
+
+      - name: Frontend - compilar
+        working-directory: frontend
+        run: npx ng build --configuration development
+
+      - name: Frontend - pruebas unitarias
+        working-directory: frontend
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+
+      # ---------------------------------------------------------------
+      # Base de datos
+      # ---------------------------------------------------------------
       - name: Cargar el volcado entregado por la empresa
         run: $MYSQL < database/01-inventario_andamios.sql
 
@@ -212,3 +218,39 @@ jobs:
             exit 1
           fi
           echo "Sin contrasenas en texto plano en database/."
+
+      # ---------------------------------------------------------------
+      # Analisis estatico con SonarCloud
+      # ---------------------------------------------------------------
+      # Va en este mismo job y no en un workflow aparte porque en esta cuenta
+      # los runners se asignan de a uno: un job adicional se queda en cola
+      # hasta que GitHub lo cancela. Requiere el secreto SONAR_TOKEN; mientras
+      # no exista, los pasos se omiten con un aviso y la ejecucion no falla
+      # (ver docs/sonarcloud.md).
+      - name: Comprobar si SonarCloud esta configurado
+        id: sonar
+        run: |
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "configurado=si" >> "$GITHUB_OUTPUT"
+          else
+            echo "configurado=no" >> "$GITHUB_OUTPUT"
+            echo "::notice title=SonarCloud omitido::Falta el secreto SONAR_TOKEN. Ver docs/sonarcloud.md."
+          fi
+
+      - name: Medir cobertura del backend
+        if: steps.sonar.outputs.configurado == 'si'
+        working-directory: microservicio
+        run: |
+          mvn -B verify -Dtest='*ServiceTest,*ValidatorTest,*HandlerTest,*InitializerTest' -Dsurefire.failIfNoSpecifiedTests=false
+          mvn -B dependency:copy-dependencies -DoutputDirectory=target/dependency
+
+      - name: Medir cobertura del frontend
+        if: steps.sonar.outputs.configurado == 'si'
+        working-directory: frontend
+        run: npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
+
+      - name: Analizar con SonarCloud
+        if: steps.sonar.outputs.configurado == 'si'
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

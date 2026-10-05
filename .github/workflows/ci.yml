@@ -3,8 +3,10 @@ name: CI
 on:
   push:
     branches: [main, develop]
+  # Sin filtro de rama: asi tambien se verifica un pull request apilado sobre
+  # otra rama de trabajo, que es como se encadenan los sprints mientras el
+  # anterior espera revision.
   pull_request:
-    branches: [main, develop]
 
 
 # Una sola ejecucion por rama: si llegan varios push seguidos, se cancela la

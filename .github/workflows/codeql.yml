@@ -7,8 +7,10 @@ name: Analisis estatico (CodeQL)
 on:
   push:
     branches: [main, develop]
+  # Sin filtro de rama: asi tambien se verifica un pull request apilado sobre
+  # otra rama de trabajo, que es como se encadenan los sprints mientras el
+  # anterior espera revision.
   pull_request:
-    branches: [main, develop]
   schedule:
     # Revision semanal, los lunes a las 09:00 UTC (04:00 en Lima)
     - cron: '0 9 * * 1'

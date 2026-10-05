@@ -17,6 +17,10 @@
 -- ROLLBACK. Respalde la base antes de ejecutarlo.
 -- =====================================================================
 
+-- Se fija la base explicitamente para no depender del esquema que este
+-- seleccionado en MySQL Workbench.
+USE `inventario_andamios`;
+
 -- MySQL Workbench bloquea por defecto los UPDATE sin clave en el WHERE.
 SET @safe_updates_previo = @@SQL_SAFE_UPDATES;
 SET SQL_SAFE_UPDATES = 0;

@@ -32,7 +32,10 @@ cd capstone-andamios-sanson
 ### 2. Crear y cargar la base de datos
 
 Los scripts están en `database/` y se ejecutan **en orden**: el `01` trae los datos
-de la empresa y el `02` aplica el esquema del Sprint 1.
+de la empresa, el `02` aplica el esquema del Sprint 1 y el `03` el del Sprint 2.
+
+Las migraciones son idempotentes: se pueden volver a ejecutar sin romper nada, lo
+que también sirve para completar una ejecución que quedó a medias.
 
 ```bash
 # Crear la base vacía
@@ -41,6 +44,7 @@ mysql -u root -p -e "CREATE DATABASE inventario_andamios CHARACTER SET utf8mb4 C
 # Cargar los datos y aplicar la migración
 mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/01-inventario_andamios.sql
 mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/02-sprint1-seguridad.sql
+mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/03-sprint2-movimientos.sql
 ```
 
 En **Windows con PowerShell**, el redirector `<` no existe, así que hay que usar `cmd /c`
@@ -52,6 +56,7 @@ $mysql = "C:\Program Files\MySQL\MySQL Server 9.7\bin\mysql.exe"
 & $mysql -u root -p -e "CREATE DATABASE inventario_andamios CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
 cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\01-inventario_andamios.sql"
 cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\02-sprint1-seguridad.sql"
+cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\03-sprint2-movimientos.sql"
 ```
 
 También puede importarlos desde MySQL Workbench o phpMyAdmin, siempre en ese orden.
@@ -109,12 +114,27 @@ para desarrollo**: antes de usar el sistema en la empresa hay que cambiarlas.
 
 ```
 .
-├── database/        # Volcado de la empresa y migración del esquema
+├── database/        # Volcado de la empresa y migraciones del esquema
+├── docs/            # Configuración de herramientas (SonarCloud)
 ├── frontend/        # Aplicación web (Angular 20)
 ├── microservicio/   # API REST (Spring Boot 4.1 / Java 17)
 └── .github/
-    └── workflows/   # Integración continua
+    └── workflows/   # Integración continua y análisis estático
 ```
+
+## Pantallas
+
+| Pantalla | Para qué sirve | Quién entra |
+|---|---|---|
+| Dashboard | Indicadores de stock y movimientos | Todos |
+| Productos | Catálogo con búsqueda paginada y ficha de detalle | Todos |
+| Movimientos | Registro de entradas y salidas, y anulación | Todos |
+| Kardex | Historial por producto con saldo acumulado | Todos |
+| Ajustes | Conteo físico y su aprobación | Todos |
+| Valorización | Valor del inventario al costo promedio y reposición | Administrador, gerente |
+| Carga masiva | Alta de productos desde un archivo CSV | Administrador, gerente |
+| Categorías, Proveedores, Usuarios | Catálogos maestros | Según el rol |
+| Auditoría | Registro de acciones | Administrador, gerente |
 
 ## Stack tecnológico
 
@@ -128,8 +148,18 @@ para desarrollo**: antes de usar el sistema en la empresa hay que cambiarlas.
 | Rol | Puede |
 |---|---|
 | ADMINISTRADOR | Todo, incluida la gestión de usuarios, roles y categorías |
-| GERENTE | Consultar, registrar y editar productos, proveedores y movimientos; ver auditoría |
-| ENCARGADO | Consultar y registrar movimientos |
+| GERENTE | Productos, proveedores y movimientos; anular movimientos; aprobar ajustes; ver valorización, auditoría y carga masiva |
+| ENCARGADO | Registrar movimientos y conteos físicos; consultar el kardex |
+
+Dos separaciones de responsabilidad que conviene conocer:
+
+- **Un movimiento no se edita ni se borra.** Para corregirlo se anula, lo que marca el
+  asiento original como anulado y genera uno compensatorio de tipo contrario. El kardex
+  conserva las dos filas y su efecto sobre el stock se cancela. Anular queda reservado
+  al administrador y al gerente.
+- **Quien cuenta no aprueba su propio conteo.** El encargado registra el conteo físico y
+  el ajuste queda pendiente sin tocar el inventario; solo el administrador o el gerente
+  lo aprueban, y es la aprobación la que genera el movimiento que corrige el stock.
 
 - Las contraseñas se almacenan con BCrypt; nunca en texto plano.
 - El inicio de sesión devuelve un token de acceso (15 minutos) y uno de renovación
@@ -143,11 +173,11 @@ para desarrollo**: antes de usar el sistema en la empresa hay que cambiarlas.
 ## Pruebas
 
 ```bash
-# Backend: 38 pruebas unitarias
+# Backend: 95 pruebas unitarias
 cd microservicio
 ./mvnw test -Dtest='*ServiceTest,*ValidatorTest,*HandlerTest,*InitializerTest'
 
-# Frontend: 9 pruebas
+# Frontend: 27 pruebas
 cd frontend
 npm test -- --watch=false
 ```
@@ -155,8 +185,15 @@ npm test -- --watch=false
 `MicroservicioApplicationTests` queda fuera de ese filtro porque levanta el contexto
 completo de Spring y necesita MySQL en ejecución.
 
-Cada push ejecuta en GitHub Actions las pruebas del backend, las del frontend y la
-carga de la base contra un MySQL 8 real.
+Cada pull request ejecuta en GitHub Actions, en un solo trabajo, las pruebas del
+backend, las del cliente y la carga de las tres migraciones contra un MySQL 8 real,
+cada una aplicada dos veces para comprobar que son idempotentes.
+
+El análisis estático corre con **CodeQL** sobre Java y TypeScript al integrar a
+`develop` o `main`, y los hallazgos aparecen en la pestaña **Security → Code scanning**.
+**SonarCloud** añade calidad, deuda técnica y cobertura, pero necesita configurarse una
+vez: los pasos están en [`docs/sonarcloud.md`](docs/sonarcloud.md). Mientras falte el
+secreto `SONAR_TOKEN`, ese análisis se omite con un aviso y no hace fallar la ejecución.
 
 ## Equipo
 

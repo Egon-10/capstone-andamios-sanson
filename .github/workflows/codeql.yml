@@ -6,12 +6,19 @@ name: Analisis estatico (CodeQL)
 
 on:
   push:
-    branches: [main, develop, 'feature/**', 'fix/**']
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
   schedule:
     # Revision semanal, los lunes a las 09:00 UTC (04:00 en Lima)
     - cron: '0 9 * * 1'
+
+
+# Una sola ejecucion por rama: si llegan varios push seguidos, se cancela la
+# anterior. Evita que decenas de jobs compitan por los runners disponibles.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analizar:

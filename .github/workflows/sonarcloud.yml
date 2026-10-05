@@ -8,9 +8,16 @@ name: Analisis estatico (SonarCloud)
 
 on:
   push:
-    branches: [main, develop, 'feature/**']
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
+
+
+# Una sola ejecucion por rama: si llegan varios push seguidos, se cancela la
+# anterior. Evita que decenas de jobs compitan por los runners disponibles.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   sonarcloud:

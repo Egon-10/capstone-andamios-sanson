@@ -39,11 +39,11 @@ jobs:
           - lenguaje: javascript-typescript
             construir: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Preparar Java 17
         if: matrix.construir
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'

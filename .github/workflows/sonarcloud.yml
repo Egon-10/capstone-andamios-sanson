@@ -36,7 +36,7 @@ jobs:
             echo "::notice title=SonarCloud omitido::Falta el secreto SONAR_TOKEN. Ver docs/sonarcloud.md para configurarlo."
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: steps.token.outputs.configurado == 'si'
         with:
           # Sonar necesita el historico completo para atribuir los cambios
@@ -44,7 +44,7 @@ jobs:
 
       - name: Preparar Java 17
         if: steps.token.outputs.configurado == 'si'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -52,7 +52,7 @@ jobs:
 
       - name: Preparar Node 22
         if: steps.token.outputs.configurado == 'si'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm

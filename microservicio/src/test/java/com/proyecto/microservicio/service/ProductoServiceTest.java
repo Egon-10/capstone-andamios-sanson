@@ -7,6 +7,8 @@ import com.proyecto.microservicio.model.Categoria;
 import com.proyecto.microservicio.model.Producto;
 import com.proyecto.microservicio.repository.CategoriaRepository;
 import com.proyecto.microservicio.repository.ProductoRepository;
+import com.proyecto.microservicio.repository.AjusteInventarioRepository;
+import com.proyecto.microservicio.repository.MovimientoRepository;
 import com.proyecto.microservicio.repository.ProveedorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,7 +31,9 @@ class ProductoServiceTest {
     void preparar() {
         productos = mock(ProductoRepository.class);
         categorias = mock(CategoriaRepository.class);
-        servicio = new ProductoService(productos, categorias, mock(ProveedorRepository.class));
+        servicio = new ProductoService(productos, categorias, mock(ProveedorRepository.class),
+                mock(MovimientoRepository.class), mock(AjusteInventarioRepository.class),
+                mock(KardexService.class));
         when(productos.save(any(Producto.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 

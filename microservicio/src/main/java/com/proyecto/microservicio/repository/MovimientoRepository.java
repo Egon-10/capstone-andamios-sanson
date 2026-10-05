@@ -2,6 +2,7 @@ package com.proyecto.microservicio.repository;
 
 import com.proyecto.microservicio.model.Movimiento;
 import com.proyecto.microservicio.model.KardexLineaDTO;
+import com.proyecto.microservicio.model.ResumenProductoDTO;
 import com.proyecto.microservicio.model.MovimientoDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -203,4 +204,18 @@ List<Object[]> movimientosPorSemana(
     """, nativeQuery = true)
     Integer obtenerNetoAntesDe(@Param("productoId") Long productoId,
                                @Param("desde") LocalDateTime desde);
+
+    /** HU-22: totales del historico de un producto, para su ficha de detalle. */
+    @Query(value = """
+    SELECT
+        COUNT(*) AS movimientos,
+        SUM(CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE 0 END) AS entradas,
+        SUM(CASE WHEN m.tipo = 'SALIDA'  THEN 1 ELSE 0 END) AS salidas,
+        COALESCE(SUM(CASE WHEN m.tipo = 'ENTRADA' THEN m.cantidad ELSE 0 END), 0) AS unidadesIngresadas,
+        COALESCE(SUM(CASE WHEN m.tipo = 'SALIDA'  THEN m.cantidad ELSE 0 END), 0) AS unidadesRetiradas,
+        MAX(m.fecha) AS ultimoMovimiento
+    FROM movimientos m
+    WHERE m.producto_id = :productoId
+    """, nativeQuery = true)
+    ResumenProductoDTO obtenerResumen(@Param("productoId") Long productoId);
 }

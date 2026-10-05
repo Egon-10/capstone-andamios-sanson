@@ -70,6 +70,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/productos/**", "/api/proveedores/**", "/api/categorias/**").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.POST, "/api/categorias/**").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.PUT, "/api/categorias/**").hasRole(ADMIN)
+                // HU-19: la carga masiva da de alta decenas de productos de una vez,
+                // asi que queda al mismo nivel que el alta individual.
+                .requestMatchers(HttpMethod.POST, "/api/productos/carga-masiva").hasAnyRole(ADMIN, GERENTE)
+                // HU-20: los umbrales los define quien planifica las compras.
+                .requestMatchers(HttpMethod.PUT, "/api/productos/*/umbrales").hasAnyRole(ADMIN, GERENTE)
                 .requestMatchers(HttpMethod.POST, "/api/productos/**", "/api/proveedores/**").hasAnyRole(ADMIN, GERENTE)
                 .requestMatchers(HttpMethod.PUT, "/api/productos/**", "/api/proveedores/**").hasAnyRole(ADMIN, GERENTE)
 

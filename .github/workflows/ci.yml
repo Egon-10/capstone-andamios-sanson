@@ -23,8 +23,8 @@ jobs:
       run:
         working-directory: microservicio
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -40,7 +40,7 @@ jobs:
           echo "::error title=Resumen de Maven::${resumen}"
       - name: Publicar reporte de pruebas
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: reporte-pruebas-backend
           path: microservicio/target/surefire-reports/
@@ -52,8 +52,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
@@ -83,7 +83,7 @@ jobs:
     env:
       MYSQL: mysql -h 127.0.0.1 -P 3306 -uroot -proot inventario_andamios
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Cargar el volcado entregado por la empresa
         run: $MYSQL < database/01-inventario_andamios.sql

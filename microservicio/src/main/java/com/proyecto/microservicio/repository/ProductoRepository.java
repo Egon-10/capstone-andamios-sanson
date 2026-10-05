@@ -3,6 +3,8 @@ package com.proyecto.microservicio.repository;
 import com.proyecto.microservicio.model.Producto;
 import com.proyecto.microservicio.model.ProductoDTO;
 import com.proyecto.microservicio.model.ValorizacionProductoDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -189,4 +191,37 @@ List<Object[]> obtenerReporteProductos(
     ORDER BY COALESCE(p.stock, 0) ASC
     """, nativeQuery = true)
     List<ValorizacionProductoDTO> obtenerPorReponer();
+
+    /**
+     * HU-21: busqueda paginada en el servidor.
+     *
+     * La paginacion se hace en la base y no en el cliente: con el catalogo
+     * completo en memoria, el filtrado funcionaba solo mientras el catalogo era
+     * pequeno. El texto se compara contra el nombre y contra el SKU, en
+     * minusculas, de modo que buscar "pla-200" o "Plataforma" encuentre lo
+     * mismo.
+     *
+     * Cada filtro se anula a si mismo cuando su parametro viene vacio, lo que
+     * permite una sola consulta en lugar de una combinacion por cada caso.
+     */
+    @Query("""
+            SELECT p FROM Producto p
+            LEFT JOIN p.categoria c
+            LEFT JOIN p.proveedor pr
+            WHERE (:texto IS NULL
+                   OR LOWER(p.nombre) LIKE :texto
+                   OR LOWER(p.sku) LIKE :texto)
+              AND (:categoriaId IS NULL OR c.id = :categoriaId)
+              AND (:proveedorId IS NULL OR pr.id = :proveedorId)
+              AND (:soloActivos = FALSE OR p.activo = TRUE)
+              AND (:porReponer = FALSE
+                   OR (COALESCE(p.puntoReposicion, p.stockMinimo) IS NOT NULL
+                       AND p.stock <= COALESCE(p.puntoReposicion, p.stockMinimo)))
+            """)
+    Page<Producto> buscar(@Param("texto") String texto,
+                          @Param("categoriaId") Long categoriaId,
+                          @Param("proveedorId") Long proveedorId,
+                          @Param("soloActivos") boolean soloActivos,
+                          @Param("porReponer") boolean porReponer,
+                          Pageable paginacion);
 }

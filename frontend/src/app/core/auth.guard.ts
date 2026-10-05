@@ -19,12 +19,18 @@ function verificar(ruta: ActivatedRouteSnapshot) {
 }
 
 /**
- * HU-06: protege las rutas del cliente. La protección real está en el servidor
- * (HU-05); el guard evita mostrar pantallas que el usuario no puede usar.
+ * HU-06: protege las rutas del cliente.
+ *
+ * La protección real está en el servidor (HU-05); el guard solo evita mostrar
+ * pantallas que el usuario no puede usar.
+ *
+ * Se declaran los dos parámetros que exige el tipo CanActivateFn de Angular,
+ * aunque la decisión depende únicamente de la ruta: el estado del enrutador no
+ * interviene.
  */
-export const authGuard: CanActivateFn = ruta => verificar(ruta);
+export const authGuard: CanActivateFn = (ruta, _estado) => verificar(ruta);
 
-export const authChildGuard: CanActivateChildFn = ruta => verificar(ruta);
+export const authChildGuard: CanActivateChildFn = (ruta, _estado) => verificar(ruta);
 
 /** Si ya hay sesión, la pantalla de inicio de sesión redirige al panel. */
 export const loginGuard: CanActivateFn = () => {

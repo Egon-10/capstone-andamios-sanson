@@ -1,92 +1,74 @@
-import { environment } from '../../environments/environment';
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+import { environment } from '../../environments/environment';
 import { MovimientoDetalle } from '../models/movimiento-detalle';
-import { Movimiento } from '../models/movimiento';
 
-@Injectable({
-  providedIn: 'root'
-})
+/** Datos que el formulario envía para registrar una entrada o una salida. */
+export interface MovimientoSolicitud {
+  productoId: number;
+  cantidad: number;
+  motivo: string;
+  observacion?: string;
+  costoUnitario?: number;
+}
+
+/**
+ * Movimientos de inventario.
+ *
+ * Ya no se envía el identificador del usuario: el servidor lo toma del token
+ * de la sesión (CR-04). Tampoco hay métodos de edición ni de borrado, porque
+ * un movimiento es inmutable: para corregirlo se anula, y la anulación genera
+ * un asiento compensatorio que conserva la traza en el kardex (HU-15).
+ */
+@Injectable({ providedIn: 'root' })
 export class MovimientoService {
 
-  private apiUrl =
-    `${environment.apiUrl}/movimientos`;
+  private apiUrl = `${environment.apiUrl}/movimientos`;
 
   constructor(private http: HttpClient) {}
 
   listar(): Observable<MovimientoDetalle[]> {
-    return this.http.get<MovimientoDetalle[]>(
-      this.apiUrl
+    return this.http.get<MovimientoDetalle[]>(this.apiUrl);
+  }
+
+  obtener(id: number): Observable<MovimientoDetalle> {
+    return this.http.get<MovimientoDetalle>(`${this.apiUrl}/${id}`);
+  }
+
+  /** HU-12: ingreso de mercadería. */
+  registrarEntrada(solicitud: MovimientoSolicitud): Observable<MovimientoDetalle> {
+    return this.http.post<MovimientoDetalle>(`${this.apiUrl}/entrada`, solicitud);
+  }
+
+  /** HU-13: salida de mercadería. */
+  registrarSalida(solicitud: MovimientoSolicitud): Observable<MovimientoDetalle> {
+    return this.http.post<MovimientoDetalle>(`${this.apiUrl}/salida`, solicitud);
+  }
+
+  /**
+   * HU-15: anula un movimiento. Devuelve el asiento compensatorio que se creó,
+   * no el original, porque es el nuevo asiento el que corrige el inventario.
+   */
+  anular(id: number, justificacion: string): Observable<MovimientoDetalle> {
+    return this.http.post<MovimientoDetalle>(
+      `${this.apiUrl}/${id}/anulacion`,
+      { justificacion }
     );
   }
 
-  registrarEntrada(
-    productoId: number,
-    cantidad: number,
-    usuarioId: number
-  ): Observable<Movimiento> {
-
-    return this.http.post<Movimiento>(
-      `${this.apiUrl}/entrada?productoId=${productoId}&cantidad=${cantidad}&usuarioId=${usuarioId}`,
-      {}
-    );
-  }
-
-  registrarSalida(
-    productoId: number,
-    cantidad: number,
-    usuarioId: number
-  ): Observable<Movimiento> {
-
-    return this.http.post<Movimiento>(
-      `${this.apiUrl}/salida?productoId=${productoId}&cantidad=${cantidad}&usuarioId=${usuarioId}`,
-      {}
-    );
-  }
-
-  eliminar(id: number) {
-
-  return this.http.delete(
-    `${this.apiUrl}/${id}`
-  );
-}
-
-actualizar(
-  id: number,
-  cantidad: number
-) {
-
-  return this.http.put(
-    `${this.apiUrl}/${id}`,
-    {
-      cantidad: cantidad
+  filtrar(fechaInicio?: string, fechaFin?: string, tipo?: string): Observable<MovimientoDetalle[]> {
+    let params = new HttpParams();
+    if (fechaInicio) {
+      params = params.set('fechaInicio', fechaInicio);
     }
-  );
-}
-
-filtrar(
-  fechaInicio?: string,
-  fechaFin?: string,
-  tipo?: string
-): Observable<MovimientoDetalle[]> {
-
-  let url =
-    `${this.apiUrl}/filtrar?`;
-
-  if(fechaInicio){
-    url += `fechaInicio=${fechaInicio}&`;
+    if (fechaFin) {
+      params = params.set('fechaFin', fechaFin);
+    }
+    if (tipo) {
+      params = params.set('tipo', tipo);
+    }
+    return this.http.get<MovimientoDetalle[]>(`${this.apiUrl}/filtrar`, { params });
   }
-
-  if(fechaFin){
-    url += `fechaFin=${fechaFin}&`;
-  }
-
-  if(tipo){
-    url += `tipo=${tipo}&`;
-  }
-
-  return this.http.get<MovimientoDetalle[]>(url);
-}
 }

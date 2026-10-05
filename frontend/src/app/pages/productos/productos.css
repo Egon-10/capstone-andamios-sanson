@@ -350,3 +350,329 @@ td{
     font-size: 12px;
     font-weight: bold;
 }
+/* ------------------------------------------------------------------
+   Sprint 2: paginacion en servidor (HU-21) y ficha de detalle (HU-22)
+   ------------------------------------------------------------------ */
+
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #334155;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filtros-container .buscar {
+  background: #1e3c72;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.filtros-container .cancelar {
+  background: #64748b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.resumen-lista {
+  color: #475569;
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.resumen-lista .cargando {
+  color: #94a3b8;
+  font-style: italic;
+  margin-left: 8px;
+}
+
+/* Encabezados ordenables: el orden lo resuelve el servidor */
+th.ordenable {
+  cursor: pointer;
+  user-select: none;
+}
+
+th.ordenable:hover {
+  background: #2a4d8f;
+}
+
+th.ordenable i {
+  margin-left: 4px;
+}
+
+.fila-reposicion td {
+  background: #fffbeb;
+}
+
+.vacio {
+  text-align: center;
+  color: #64748b;
+  padding: 24px;
+}
+
+button.ficha {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 11px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* Paginacion */
+.paginacion {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.paginacion button {
+  padding: 7px 13px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #475569;
+}
+
+.paginacion button.actual {
+  background: #1e3c72;
+  border-color: #1e3c72;
+  color: #fff;
+  font-weight: 700;
+}
+
+.paginacion button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+/* Ficha de detalle */
+.fondo-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  z-index: 60;
+  overflow-y: auto;
+}
+
+.modal-ficha {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px;
+  max-width: 760px;
+  width: 100%;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, .3);
+}
+
+.cabecera-ficha {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.cabecera-ficha h2 {
+  margin: 0;
+  color: #1e3c72;
+  font-size: 20px;
+}
+
+.sku-ficha {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .5px;
+}
+
+.cerrar {
+  background: none;
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.descripcion-ficha {
+  color: #475569;
+  font-size: 14px;
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+
+.modal-ficha h3 {
+  color: #334155;
+  font-size: 14px;
+  margin: 22px 0 10px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.rejilla-ficha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.dato {
+  background: #f8fafc;
+  padding: 12px 14px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dato span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.dato strong {
+  font-size: 16px;
+  color: #1e3c72;
+}
+
+.dato small {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.alerta-ficha {
+  background: #fffbeb;
+  border-left: 4px solid #f59e0b;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #78350f;
+  border-radius: 6px;
+  margin-top: 14px;
+}
+
+.alerta-ficha.pendiente {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1e3a8a;
+}
+
+/* Umbrales editables (HU-20) */
+.umbrales {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.campo-umbral {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campo-umbral label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.campo-umbral input {
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 130px;
+}
+
+.umbrales .guardar {
+  background: #15803d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 18px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.umbrales .guardar:disabled {
+  opacity: .6;
+  cursor: progress;
+}
+
+.ayuda-umbral {
+  color: #64748b;
+  font-size: 12px;
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.tabla-ficha {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tabla-ficha th {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 9px 10px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+.tabla-ficha td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tabla-ficha th.numero,
+.tabla-ficha td.numero {
+  text-align: right;
+}
+
+.tabla-ficha tr.anulada td {
+  text-decoration: line-through;
+  text-decoration-color: #fca5a5;
+  color: #94a3b8;
+}
+
+.mensaje-exito {
+  color: #166534;
+  background: #dcfce7;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 10px;
+}

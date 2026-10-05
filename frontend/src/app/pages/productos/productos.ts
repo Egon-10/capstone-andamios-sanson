@@ -10,6 +10,8 @@ import { Categoria } from '../../models/categoria';
 import { Proveedor } from '../../models/proveedor';
 
 import { ProductoService } from '../../services/producto.service';
+import { Pagina, ProductoResumen } from '../../models/pagina';
+import { FichaProducto } from '../../models/ficha-producto';
 import { CategoriaService } from '../../services/categoria.service';
 import { ProveedorService } from '../../services/proveedor.service';
 
@@ -27,13 +29,36 @@ export class ProductosComponent implements OnInit {
 
   rol: string = '';
 
-  productos: Producto[] = [];
-  productosFiltrados: Producto[] = [];
+  /**
+   * HU-21: la lista la pagina el servidor.
+   *
+   * Antes se traia el catalogo completo y se filtraba en memoria, lo que
+   * funcionaba mientras el catalogo era pequeno y dejaba de funcionar justo
+   * cuando la busqueda empieza a hacer falta.
+   */
+  pagina?: Pagina<ProductoResumen>;
+  cargandoLista = false;
 
-textoBusqueda: string = '';
-categoriaFiltro: string = '';
+  textoBusqueda = '';
+  categoriaFiltro?: number;
+  proveedorFiltro?: number;
+  soloPorReponer = false;
 
-proveedorFiltro: string = '';
+  tamanoPagina = 20;
+  orden = 'nombre';
+  direccion: 'asc' | 'desc' = 'asc';
+
+  /** HU-22: ficha abierta en el cuadro de detalle. */
+  ficha?: FichaProducto;
+  cargandoFicha = false;
+
+  /** HU-20: umbrales que se estan editando dentro de la ficha. */
+  umbrales = { stockMinimo: undefined as number | undefined,
+               puntoReposicion: undefined as number | undefined,
+               stockMaximo: undefined as number | undefined };
+  guardandoUmbrales = false;
+  mensajeFicha = '';
+  errorFicha = '';
 
   categorias: Categoria[] = [];
 
@@ -74,51 +99,145 @@ proveedorFiltro: string = '';
   }
 
   listarProductos(): void {
+    this.aplicarFiltros();
+  }
 
-  this.productoService
-    .listar()
-    .subscribe(data => {
+  /**
+   * Pide al servidor la pagina que corresponde a los filtros actuales.
+   * Cualquier cambio de filtro vuelve a la primera pagina: quedarse en la
+   * pagina cinco de un resultado que ahora tiene dos mostraria una tabla
+   * vacia sin explicacion.
+   */
+  aplicarFiltros(reiniciarPagina = true): void {
+    if (reiniciarPagina && this.pagina) {
+      this.pagina = { ...this.pagina, pagina: 0 };
+    }
 
-      this.productos = data;
+    this.cargandoLista = true;
+    this.productoService
+      .buscar({
+        q: this.textoBusqueda.trim() || undefined,
+        categoriaId: this.categoriaFiltro,
+        proveedorId: this.proveedorFiltro,
+        soloActivos: true,
+        porReponer: this.soloPorReponer,
+        pagina: reiniciarPagina ? 0 : (this.pagina?.pagina ?? 0),
+        tamano: this.tamanoPagina,
+        orden: this.orden,
+        direccion: this.direccion
+      })
+      .subscribe({
+        next: p => {
+          this.cargandoLista = false;
+          this.pagina = p;
+        },
+        error: (e: HttpErrorResponse) => {
+          this.cargandoLista = false;
+          this.mensajeError = e.error?.mensaje || 'No se pudo cargar el catalogo';
+        }
+      });
+  }
 
-this.aplicarFiltros();
+  irAPagina(numero: number): void {
+    if (!this.pagina || numero < 0 || numero >= this.pagina.totalPaginas) {
+      return;
+    }
+    this.pagina = { ...this.pagina, pagina: numero };
+    this.aplicarFiltros(false);
+  }
+
+  /** Ordena por una columna, y alterna el sentido si ya estaba ordenada por ella. */
+  ordenarPor(campo: string): void {
+    if (this.orden === campo) {
+      this.direccion = this.direccion === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.orden = campo;
+      this.direccion = 'asc';
+    }
+    this.aplicarFiltros();
+  }
+
+  limpiarFiltros(): void {
+    this.textoBusqueda = '';
+    this.categoriaFiltro = undefined;
+    this.proveedorFiltro = undefined;
+    this.soloPorReponer = false;
+    this.aplicarFiltros();
+  }
+
+  /** Numeros de pagina a mostrar: una ventana alrededor de la actual. */
+  get paginasVisibles(): number[] {
+    if (!this.pagina) {
+      return [];
+    }
+    const total = this.pagina.totalPaginas;
+    const actual = this.pagina.pagina;
+    const desde = Math.max(0, Math.min(actual - 2, total - 5));
+    const hasta = Math.min(total, desde + 5);
+    const numeros: number[] = [];
+    for (let i = desde; i < hasta; i++) {
+      numeros.push(i);
+    }
+    return numeros;
+  }
+
+  // ---------------- HU-22: ficha de detalle ----------------
+
+  verFicha(id: number): void {
+    this.cargandoFicha = true;
+    this.mensajeFicha = '';
+    this.errorFicha = '';
+
+    this.productoService.ficha(id).subscribe({
+      next: f => {
+        this.cargandoFicha = false;
+        this.ficha = f;
+        this.umbrales = {
+          stockMinimo: f.existencias?.stockMinimo,
+          puntoReposicion: f.existencias?.puntoReposicion,
+          stockMaximo: f.existencias?.stockMaximo
+        };
+      },
+      error: (e: HttpErrorResponse) => {
+        this.cargandoFicha = false;
+        this.mensajeError = e.error?.mensaje || 'No se pudo cargar la ficha';
+      }
     });
-}
-aplicarFiltros(): void {
+  }
 
-  const texto = this.textoBusqueda
-    .toLowerCase()
-    .trim();
+  cerrarFicha(): void {
+    this.ficha = undefined;
+    this.mensajeFicha = '';
+    this.errorFicha = '';
+  }
 
-  this.productosFiltrados = this.productos.filter(p => {
+  /** HU-20: guarda los umbrales sin reenviar el resto de la ficha. */
+  guardarUmbrales(): void {
+    if (!this.ficha?.id) {
+      return;
+    }
 
-    const coincideTexto =
+    this.guardandoUmbrales = true;
+    this.mensajeFicha = '';
+    this.errorFicha = '';
 
-      !texto ||
-
-      p.sku?.toLowerCase().includes(texto) ||
-
-      p.nombre?.toLowerCase().includes(texto) ||
-
-      p.descripcion?.toLowerCase().includes(texto);
-
-    const coincideCategoria =
-
-      !this.categoriaFiltro ||
-
-      p.categoria?.nombre === this.categoriaFiltro;
-
-    const coincideProveedor =
-
-      !this.proveedorFiltro ||
-
-      p.proveedor?.nombre === this.proveedorFiltro;
-
-    return coincideTexto &&
-           coincideCategoria &&
-           coincideProveedor;
-  });
-}
+    this.productoService.actualizarUmbrales(this.ficha.id, this.umbrales).subscribe({
+      next: () => {
+        this.guardandoUmbrales = false;
+        this.mensajeFicha = 'Umbrales actualizados';
+        // Se recarga la ficha para que la alerta de reposicion refleje el
+        // umbral nuevo, que es el dato que se acaba de cambiar.
+        this.verFicha(this.ficha!.id!);
+        this.aplicarFiltros(false);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.guardandoUmbrales = false;
+        const cuerpo = e.error as ErrorApi | null;
+        const detalle = cuerpo?.errores ? Object.values(cuerpo.errores)[0] : undefined;
+        this.errorFicha = detalle ?? cuerpo?.mensaje ?? 'No se pudieron guardar los umbrales';
+      }
+    });
+  }
 
   cargarCategorias(): void {
 
@@ -288,7 +407,13 @@ this.productoService
   }
 }
 
-  editar(producto: Producto): void {
+  /**
+   * La fila de la tabla es un resumen y no el producto completo, de modo que
+   * se pide la entidad por su identificador antes de llenar el formulario. Si
+   * se copiara el resumen, los campos que no incluye se enviarian vacios al
+   * guardar y se perderian sin aviso.
+   */
+  editar(resumen: ProductoResumen): void {
 
     if (!this.puedeEditar()) {
 
@@ -297,11 +422,15 @@ this.productoService
       return;
     }
 
-    this.producto = {
-      ...producto
-    };
-
-    this.editando = true;
+    this.productoService.buscarPorId(resumen.id!).subscribe({
+      next: producto => {
+        this.producto = { ...producto };
+        this.editando = true;
+        this.mensajeError = '';
+      },
+      error: (e: HttpErrorResponse) =>
+        (this.mensajeError = e.error?.mensaje || 'No se pudo cargar el producto')
+    });
   }
 
   eliminar(id: number): void {
@@ -316,7 +445,7 @@ this.productoService
   }
 
   const productoEliminar =
-    this.productos.find(
+    this.pagina?.contenido.find(
       p => p.id === id
     );
 

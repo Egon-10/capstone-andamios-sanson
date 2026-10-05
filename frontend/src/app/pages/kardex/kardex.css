@@ -1,0 +1,218 @@
+.contenedor {
+  padding: 30px;
+  font-family: Arial, sans-serif;
+}
+
+h1 {
+  color: #1e3c72;
+  margin-bottom: 8px;
+}
+
+.explicacion {
+  color: #475569;
+  font-size: 14px;
+  max-width: 820px;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.filtros {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.grupo-filtro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grupo-filtro.ancho {
+  min-width: 280px;
+}
+
+.grupo-filtro label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.grupo-filtro select,
+.grupo-filtro input {
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+}
+
+.cancelar {
+  background: #64748b;
+}
+
+/* Resumen del producto */
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.tarjeta {
+  background: #fff;
+  padding: 16px 18px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tarjeta .etiqueta {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.tarjeta strong {
+  font-size: 20px;
+  color: #1e3c72;
+}
+
+.tarjeta small {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.aviso {
+  background: #fffbeb;
+  border-left: 4px solid #f59e0b;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #78350f;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  max-width: 820px;
+  line-height: 1.5;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+}
+
+th {
+  background: #1e3c72;
+  color: #fff;
+  padding: 11px;
+  text-align: left;
+  font-size: 12px;
+}
+
+th.numero,
+td.numero {
+  text-align: right;
+}
+
+td {
+  padding: 10px 11px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  vertical-align: top;
+}
+
+td.entrada {
+  color: #15803d;
+  font-weight: 600;
+}
+
+td.salida {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.fila-inicial td {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.observacion {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.vacio {
+  text-align: center;
+  color: #64748b;
+  padding: 24px;
+}
+
+.ayuda {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.estado {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.estado-REGISTRADO {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.estado-ANULADO {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.estado-COMPENSACION {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+/* Un asiento anulado permanece visible: la anulacion no borra el historial. */
+.fila-anulada td {
+  background: #fef2f2;
+  text-decoration: line-through;
+  text-decoration-color: #fca5a5;
+}
+
+.fila-compensacion td {
+  background: #eef2ff;
+}
+
+.mensaje-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}

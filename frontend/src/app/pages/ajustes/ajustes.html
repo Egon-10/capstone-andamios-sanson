@@ -1,0 +1,234 @@
+<div class="contenedor">
+
+  <h1>Ajustes de inventario</h1>
+
+  <p class="explicacion">
+    El conteo fisico no modifica el inventario por si solo. Queda pendiente, y
+    es la aprobacion la que genera el movimiento que corrige el stock, de modo
+    que toda diferencia queda con la constancia de quien la autorizo.
+  </p>
+
+  <!-- Registro del conteo (HU-16) -->
+  <div class="formulario">
+
+    <h2>Registrar conteo fisico</h2>
+
+    <div class="campo">
+      <label for="producto">Producto contado</label>
+      <select
+        id="producto"
+        [(ngModel)]="productoSeleccionado"
+        (change)="limpiarMensajes()">
+        <option [ngValue]="undefined">Seleccione un producto</option>
+        <option *ngFor="let p of productos" [ngValue]="p">
+          {{ p.nombre }} (sistema: {{ p.stock }})
+        </option>
+      </select>
+      <small class="error" *ngIf="errorCampo['productoId']">
+        {{ errorCampo['productoId'] }}
+      </small>
+    </div>
+
+    <div class="campo" *ngIf="productoSeleccionado">
+      <label>Stock que el sistema tiene registrado</label>
+      <p class="dato-sistema">{{ productoSeleccionado.stock }} unidades</p>
+      <small class="ayuda">
+        Lo lee el servidor al guardar, no se envia desde esta pantalla.
+      </small>
+    </div>
+
+    <div class="campo">
+      <label for="contado">Unidades contadas en el almacen</label>
+      <input
+        id="contado"
+        type="number"
+        min="0"
+        [(ngModel)]="stockFisico"
+        (input)="limpiarMensajes()">
+      <small class="error" *ngIf="errorCampo['stockFisico']">
+        {{ errorCampo['stockFisico'] }}
+      </small>
+    </div>
+
+    <!-- La diferencia se muestra en vivo: un cero de mas en el conteo se nota
+         al ver la diferencia, no al ver el numero. -->
+    <div
+      class="diferencia"
+      *ngIf="diferencia !== undefined"
+      [ngClass]="{
+        'sobra': diferencia! > 0,
+        'falta': diferencia! < 0,
+        'igual': diferencia === 0
+      }">
+      <strong>Diferencia: {{ diferencia! > 0 ? '+' : '' }}{{ diferencia }}</strong>
+      <span>{{ textoDiferencia }}</span>
+    </div>
+
+    <div class="campo">
+      <label for="observacion">Observacion</label>
+      <textarea
+        id="observacion"
+        rows="2"
+        maxlength="200"
+        [(ngModel)]="observacion"
+        (input)="limpiarMensajes()"
+        placeholder="Donde se conto, quien acompano, que explica la diferencia"></textarea>
+      <small class="error" *ngIf="errorCampo['observacion']">
+        {{ errorCampo['observacion'] }}
+      </small>
+    </div>
+
+    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+    <p class="mensaje-exito" *ngIf="mensajeExito">{{ mensajeExito }}</p>
+
+    <div class="botones">
+      <button type="button" class="principal" [disabled]="guardando" (click)="registrar()">
+        {{ guardando ? 'Registrando...' : 'Registrar conteo' }}
+      </button>
+    </div>
+
+  </div>
+
+  <h2>Conteos registrados</h2>
+
+  <div class="filtros">
+    <div class="grupo-filtro">
+      <label for="estado">Estado</label>
+      <select id="estado" [(ngModel)]="filtroEstado" (change)="listar()">
+        <option value="">Todos</option>
+        <option value="PENDIENTE">Solo pendientes</option>
+      </select>
+    </div>
+  </div>
+
+  <table>
+
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Producto</th>
+        <th>Sistema</th>
+        <th>Contado</th>
+        <th>Diferencia</th>
+        <th>Solicito</th>
+        <th>Fecha</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let a of ajustes" [ngClass]="'fila-' + (a.estado || '')">
+
+        <td>{{ a.id }}</td>
+
+        <td>
+          {{ a.producto }}
+          <small class="sku" *ngIf="a.sku">{{ a.sku }}</small>
+          <small class="observacion" *ngIf="a.observacion">{{ a.observacion }}</small>
+        </td>
+
+        <td>{{ a.stockSistema }}</td>
+        <td>{{ a.stockFisico }}</td>
+
+        <td [ngClass]="{ 'sobra': a.diferencia! > 0, 'falta': a.diferencia! < 0 }">
+          <strong>{{ a.diferencia! > 0 ? '+' : '' }}{{ a.diferencia }}</strong>
+        </td>
+
+        <td>{{ a.usuarioSolicita }}</td>
+        <td>{{ a.fechaSolicitud | date:'dd/MM/yyyy HH:mm' }}</td>
+
+        <td>
+          <span class="estado" [ngClass]="'estado-' + (a.estado || '')">
+            {{ a.estado }}
+          </span>
+          <small class="resuelto" *ngIf="a.usuarioAprueba">
+            por {{ a.usuarioAprueba }}
+          </small>
+          <small class="rechazo" *ngIf="a.motivoRechazo">
+            {{ a.motivoRechazo }}
+          </small>
+          <small class="resuelto" *ngIf="a.movimientoId">
+            movimiento {{ a.movimientoId }}
+          </small>
+        </td>
+
+        <td>
+          <ng-container *ngIf="a.estado === 'PENDIENTE' && puedeResolver()">
+            <button
+              type="button"
+              class="aprobar"
+              [disabled]="guardando"
+              (click)="aprobar(a)">
+              Aprobar
+            </button>
+            <button
+              type="button"
+              class="rechazar"
+              [disabled]="guardando"
+              (click)="abrirRechazo(a)">
+              Rechazar
+            </button>
+          </ng-container>
+
+          <small
+            class="ayuda"
+            *ngIf="a.estado === 'PENDIENTE' && !puedeResolver()">
+            Espera aprobacion
+          </small>
+        </td>
+
+      </tr>
+
+      <tr *ngIf="ajustes.length === 0">
+        <td colspan="9" class="vacio">No hay conteos registrados.</td>
+      </tr>
+    </tbody>
+
+  </table>
+
+  <!-- Cuadro de rechazo -->
+  <div class="fondo-modal" *ngIf="ajusteRechazando">
+    <div class="modal">
+
+      <h3>Rechazar el conteo {{ ajusteRechazando.id }}</h3>
+
+      <p>
+        <strong>{{ ajusteRechazando.producto }}</strong>: el sistema tiene
+        {{ ajusteRechazando.stockSistema }} y se contaron
+        {{ ajusteRechazando.stockFisico }}.
+      </p>
+
+      <p class="advertencia">
+        El inventario no se modifica. El conteo queda rechazado con el motivo
+        que escriba aqui, y el encargado puede registrar un recuento.
+      </p>
+
+      <div class="campo">
+        <label for="motivo">Motivo del rechazo</label>
+        <textarea
+          id="motivo"
+          rows="3"
+          maxlength="200"
+          [(ngModel)]="motivoRechazo"
+          placeholder="Por que no se acepta esta diferencia"></textarea>
+        <small class="error" *ngIf="errorCampo['motivo']">
+          {{ errorCampo['motivo'] }}
+        </small>
+      </div>
+
+      <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+
+      <div class="botones">
+        <button type="button" class="rechazar" [disabled]="guardando" (click)="confirmarRechazo()">
+          {{ guardando ? 'Rechazando...' : 'Confirmar rechazo' }}
+        </button>
+        <button type="button" class="cancelar" [disabled]="guardando" (click)="cerrarRechazo()">
+          Cancelar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

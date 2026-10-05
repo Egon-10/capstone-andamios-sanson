@@ -19,6 +19,7 @@ jobs:
   backend:
     name: Backend (Spring Boot)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: microservicio
@@ -48,6 +49,7 @@ jobs:
   frontend:
     name: Frontend (Angular)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: frontend
@@ -67,6 +69,7 @@ jobs:
   database:
     name: Base de datos (MySQL)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       mysql:
         image: mysql:8.0

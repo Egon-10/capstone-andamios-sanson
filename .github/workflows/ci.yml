@@ -86,12 +86,14 @@ jobs:
         run: |
           set -euo pipefail
           fallo=0
+          fallos=""
           comprobar() {
             local descripcion="$1" esperado="$2" obtenido="$3"
             if [ "$esperado" = "$obtenido" ]; then
               echo "  OK   $descripcion (= $obtenido)"
             else
               echo "  FALLA $descripcion: se esperaba '$esperado' y se obtuvo '$obtenido'"
+              fallos="${fallos}${descripcion}: se esperaba '${esperado}', se obtuvo '${obtenido}'%0A"
               fallo=1
             fi
           }
@@ -130,12 +132,12 @@ jobs:
           done
 
           echo "Integridad referencial"
-          comprobar "claves foraneas declaradas" 6 \
+          comprobar "claves foraneas declaradas" 7 \
             "$(consulta "SELECT COUNT(*) FROM information_schema.table_constraints WHERE table_schema = 'inventario_andamios' AND constraint_type = 'FOREIGN KEY';")"
 
           echo
           if [ "$fallo" -ne 0 ]; then
-            echo "La verificacion de la base de datos fallo."
+            echo "::error title=Verificacion de la base de datos::${fallos}"
             exit 1
           fi
           echo "La base de datos quedo en el estado esperado."

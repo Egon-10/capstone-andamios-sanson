@@ -2,6 +2,7 @@ package com.proyecto.microservicio.repository;
 
 import com.proyecto.microservicio.model.Producto;
 import com.proyecto.microservicio.model.ProductoDTO;
+import com.proyecto.microservicio.model.ValorizacionProductoDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -139,5 +140,53 @@ List<Object[]> obtenerReporteProductos(
         @Param("categoria")
         String categoria
 );
-}
 
+    /**
+     * HU-17: productos con su valorizacion al costo promedio ponderado.
+     *
+     * Se valoriza al costo y no al precio de venta: usar el precio
+     * sobreestimaria el inventario en el margen comercial. Los productos dados
+     * de baja quedan fuera, pero los de stock cero se incluyen para que el
+     * conteo de productos del informe coincida con el catalogo activo.
+     */
+    @Query(value = """
+    SELECT
+        p.id AS productoId,
+        p.sku AS sku,
+        p.nombre AS producto,
+        c.nombre AS categoria,
+        p.stock AS stock,
+        p.stock_minimo AS stockMinimo,
+        p.punto_reposicion AS puntoReposicion,
+        p.costo_promedio AS costoPromedio,
+        ROUND(COALESCE(p.stock, 0) * COALESCE(p.costo_promedio, 0), 2) AS valor
+    FROM productos p
+    LEFT JOIN categorias c
+        ON p.categoria_id = c.id
+    WHERE p.activo = 1
+    ORDER BY c.nombre, p.nombre
+    """, nativeQuery = true)
+    List<ValorizacionProductoDTO> obtenerValorizacion();
+
+    /** HU-20: productos que alcanzaron su umbral de reposicion. */
+    @Query(value = """
+    SELECT
+        p.id AS productoId,
+        p.sku AS sku,
+        p.nombre AS producto,
+        c.nombre AS categoria,
+        p.stock AS stock,
+        p.stock_minimo AS stockMinimo,
+        p.punto_reposicion AS puntoReposicion,
+        p.costo_promedio AS costoPromedio,
+        ROUND(COALESCE(p.stock, 0) * COALESCE(p.costo_promedio, 0), 2) AS valor
+    FROM productos p
+    LEFT JOIN categorias c
+        ON p.categoria_id = c.id
+    WHERE p.activo = 1
+      AND COALESCE(p.punto_reposicion, p.stock_minimo) IS NOT NULL
+      AND COALESCE(p.stock, 0) <= COALESCE(p.punto_reposicion, p.stock_minimo)
+    ORDER BY COALESCE(p.stock, 0) ASC
+    """, nativeQuery = true)
+    List<ValorizacionProductoDTO> obtenerPorReponer();
+}

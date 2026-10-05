@@ -92,6 +92,12 @@ jobs:
       - name: Repetir la migracion (debe ser idempotente)
         run: $MYSQL < database/02-sprint1-seguridad.sql
 
+      - name: Aplicar la migracion del Sprint 2
+        run: $MYSQL < database/03-sprint2-movimientos.sql
+
+      - name: Repetir la migracion del Sprint 2 (debe ser idempotente)
+        run: $MYSQL < database/03-sprint2-movimientos.sql
+
       - name: Verificar el esquema y los datos resultantes
         run: |
           set -euo pipefail
@@ -141,8 +147,50 @@ jobs:
               "$(consulta "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'inventario_andamios' AND table_name = '$tabla';")"
           done
 
+          echo "Sprint 2: catalogo de motivos (HU-14)"
+          comprobar "existe la tabla motivos_movimiento" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'inventario_andamios' AND table_name = 'motivos_movimiento';")"
+          comprobar "motivos cargados" 11 \
+            "$(consulta 'SELECT COUNT(*) FROM motivos_movimiento;')"
+          comprobar "motivos de entrada" 5 \
+            "$(consulta "SELECT COUNT(*) FROM motivos_movimiento WHERE aplica_a = 'ENTRADA';")"
+          comprobar "motivos de salida" 6 \
+            "$(consulta "SELECT COUNT(*) FROM motivos_movimiento WHERE aplica_a = 'SALIDA';")"
+          comprobar "los dos motivos de anulacion estan cargados" 2 \
+            "$(consulta "SELECT COUNT(*) FROM motivos_movimiento WHERE codigo LIKE 'ANULACION%';")"
+
+          echo "Sprint 2: movimientos"
+          comprobar "ningun movimiento quedo sin motivo" 0 \
+            "$(consulta 'SELECT COUNT(*) FROM movimientos WHERE motivo IS NULL;')"
+          comprobar "todos los movimientos estan en estado REGISTRADO" 5 \
+            "$(consulta "SELECT COUNT(*) FROM movimientos WHERE estado = 'REGISTRADO';")"
+          comprobar "el costo unitario se derivo del precio del producto" 0 \
+            "$(consulta 'SELECT COUNT(*) FROM movimientos WHERE costo_unitario = 0;')"
+
+          echo "Sprint 2: productos (HU-13, HU-17, HU-20)"
+          for columna in version costo_promedio punto_reposicion stock_maximo activo; do
+            comprobar "existe productos.$columna" 1 \
+              "$(consulta "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'inventario_andamios' AND table_name = 'productos' AND column_name = '$columna';")"
+          done
+          comprobar "el costo promedio arranco del precio registrado" 0 \
+            "$(consulta 'SELECT COUNT(*) FROM productos WHERE costo_promedio = 0;')"
+          comprobar "el punto de reposicion se derivo del stock minimo" 0 \
+            "$(consulta 'SELECT COUNT(*) FROM productos WHERE punto_reposicion IS NULL AND stock_minimo IS NOT NULL;')"
+
+          echo "Sprint 2: ajustes de inventario (HU-16)"
+          comprobar "existe la tabla ajustes_inventario" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'inventario_andamios' AND table_name = 'ajustes_inventario';")"
+          comprobar "existe auditoria.detalle" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'inventario_andamios' AND table_name = 'auditoria' AND column_name = 'detalle';")"
+
+          echo "Sprint 2: el kardex cuadra con el stock (HU-18)"
+          # El saldo reconstruido desde el primer asiento debe terminar en el
+          # stock actual de cada producto. Si no cuadra, el kardex mentiria.
+          comprobar "productos cuyo kardex no cuadra" 0 \
+            "$(consulta "SELECT COUNT(*) FROM ( SELECT p.id, p.stock - COALESCE(SUM(m.cantidad * CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE -1 END), 0) AS saldo_inicial FROM productos p LEFT JOIN movimientos m ON m.producto_id = p.id GROUP BY p.id, p.stock ) t WHERE t.saldo_inicial < 0;")"
+
           echo "Integridad referencial"
-          comprobar "claves foraneas declaradas" 7 \
+          comprobar "claves foraneas declaradas" 14 \
             "$(consulta "SELECT COUNT(*) FROM information_schema.table_constraints WHERE table_schema = 'inventario_andamios' AND constraint_type = 'FOREIGN KEY';")"
 
           echo

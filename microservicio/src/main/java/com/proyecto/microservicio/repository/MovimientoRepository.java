@@ -1,6 +1,7 @@
 package com.proyecto.microservicio.repository;
 
 import com.proyecto.microservicio.model.Movimiento;
+import com.proyecto.microservicio.model.KardexLineaDTO;
 import com.proyecto.microservicio.model.MovimientoDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -142,4 +143,64 @@ List<Object[]> movimientosPorSemana(
     ORDER BY m.fecha DESC, m.id DESC
     """, nativeQuery = true)
     List<MovimientoDTO> obtenerMovimientosPorTipo(@Param("tipo") String tipo);
+
+    /**
+     * HU-18: asientos de un producto con el acumulado de su efecto sobre el
+     * stock. La funcion de ventana calcula la suma corrida en la propia base,
+     * que es mucho mas eficiente que traer los asientos y acumularlos en Java.
+     *
+     * El acumulado parte de cero en el primer asiento: el servicio le suma el
+     * saldo inicial del producto para obtener el saldo real de cada linea.
+     */
+    @Query(value = """
+    SELECT
+        m.id AS id,
+        m.fecha AS fecha,
+        m.tipo AS tipo,
+        m.motivo AS motivo,
+        mo.nombre AS motivoNombre,
+        m.observacion AS observacion,
+        m.estado AS estado,
+        m.cantidad AS cantidad,
+        m.costo_unitario AS costoUnitario,
+        TRIM(CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario,
+        SUM(m.cantidad * CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE -1 END)
+            OVER (ORDER BY m.fecha, m.id) AS acumulado
+    FROM movimientos m
+    LEFT JOIN usuarios u
+        ON m.usuario_id = u.id
+    LEFT JOIN motivos_movimiento mo
+        ON m.motivo = mo.codigo
+    WHERE m.producto_id = :productoId
+      AND (:desde IS NULL OR m.fecha >= :desde)
+      AND (:hasta IS NULL OR m.fecha <= :hasta)
+    ORDER BY m.fecha, m.id
+    """, nativeQuery = true)
+    List<KardexLineaDTO> obtenerKardex(@Param("productoId") Long productoId,
+                                       @Param("desde") LocalDateTime desde,
+                                       @Param("hasta") LocalDateTime hasta);
+
+    /**
+     * Neto de todos los asientos de un producto: entradas menos salidas. El
+     * saldo inicial del kardex es el stock actual menos este neto.
+     */
+    @Query(value = """
+    SELECT COALESCE(SUM(m.cantidad * CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE -1 END), 0)
+    FROM movimientos m
+    WHERE m.producto_id = :productoId
+    """, nativeQuery = true)
+    Integer obtenerNeto(@Param("productoId") Long productoId);
+
+    /**
+     * Neto de los asientos anteriores a una fecha. Lo necesita el kardex
+     * filtrado por rango para saber con que saldo arranca la primera linea.
+     */
+    @Query(value = """
+    SELECT COALESCE(SUM(m.cantidad * CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE -1 END), 0)
+    FROM movimientos m
+    WHERE m.producto_id = :productoId
+      AND m.fecha < :desde
+    """, nativeQuery = true)
+    Integer obtenerNetoAntesDe(@Param("productoId") Long productoId,
+                               @Param("desde") LocalDateTime desde);
 }

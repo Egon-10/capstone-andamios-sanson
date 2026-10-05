@@ -84,6 +84,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/movimientos/*/anulacion").hasAnyRole(ADMIN, GERENTE)
                 .requestMatchers(HttpMethod.POST, "/api/movimientos/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
 
+                // HU-17: la valorizacion es informacion economica del negocio y
+                // queda para el administrador y el gerente. El kardex y la lista
+                // de reposicion los necesita tambien el encargado para operar.
+                .requestMatchers(HttpMethod.GET, "/api/inventario/valorizacion").hasAnyRole(ADMIN, GERENTE)
+                .requestMatchers(HttpMethod.GET, "/api/inventario/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
+
                 // HU-16: el encargado registra el conteo fisico, pero solo el
                 // administrador o el gerente aprueban o rechazan el ajuste. La
                 // separacion de quien cuenta y quien autoriza es el control de

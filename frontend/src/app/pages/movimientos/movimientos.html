@@ -1,212 +1,289 @@
 <div class="contenedor">
 
-    <h1>Movimientos de Inventario</h1>
+  <h1>Movimientos de inventario</h1>
 
-    <div class="formulario">
+  <!-- Registro de movimiento (HU-12, HU-13, HU-14) -->
+  <div class="formulario">
 
-        <h2>Registrar Movimiento</h2>
+    <h2>Registrar movimiento</h2>
 
-        <select
-  [(ngModel)]="productoSeleccionado"
-  (change)="mensajeError=''; mensajeExito=''">
-            <option
-                [ngValue]="undefined">
-
-                Seleccione un producto
-
-            </option>
-
-            <option
-                *ngFor="let producto of productos"
-                [ngValue]="producto">
-
-                {{producto.nombre}}
-                (Stock: {{producto.stock}})
-
-            </option>
-
-        </select>
-
-        <input
-            type="number"
-            min="1"
-            placeholder="Cantidad"
-            [(ngModel)]="cantidad"
-            (input)="mensajeError=''; mensajeExito=''">
-
-            <p
-  class="mensaje-error"
-  *ngIf="mensajeError">
-
-  {{ mensajeError }}
-
-</p>
-
-<p
-  class="mensaje-exito"
-  *ngIf="mensajeExito">
-
-  {{ mensajeExito }}
-
-</p>
-        <div class="botones">
-
-            <button
-    *ngIf="!movimientoEditando"
-    class="entrada"
-    (click)="registrarEntrada()">
-
-    Registrar Entrada
-
-</button>
-
-<button
-    *ngIf="!movimientoEditando"
-    class="salida"
-    (click)="registrarSalida()">
-
-    Registrar Salida
-
-</button>
-
-<button
-    *ngIf="movimientoEditando"
-    class="editar"
-    (click)="guardarEdicion()">
-
-    Guardar cambios
-
-</button>
-
-<button
-    *ngIf="movimientoEditando"
-    class="cancelar"
-    (click)="cancelarEdicion()">
-
-    Cancelar edición
-
-</button>
-
-        </div>
-
+    <div class="selector-tipo">
+      <button
+        type="button"
+        class="entrada"
+        [class.activo]="tipo === 'ENTRADA'"
+        (click)="cambiarTipo('ENTRADA')">
+        Entrada
+      </button>
+      <button
+        type="button"
+        class="salida"
+        [class.activo]="tipo === 'SALIDA'"
+        (click)="cambiarTipo('SALIDA')">
+        Salida
+      </button>
     </div>
 
-    <h2>Historial de Movimientos</h2>
+    <div class="campo">
+      <label for="producto">Producto</label>
+      <select
+        id="producto"
+        [(ngModel)]="productoSeleccionado"
+        (change)="limpiarMensajes()">
+        <option [ngValue]="undefined">Seleccione un producto</option>
+        <option *ngFor="let producto of productos" [ngValue]="producto">
+          {{ producto.nombre }} (stock: {{ producto.stock }})
+        </option>
+      </select>
+      <small class="error" *ngIf="errorCampo['productoId']">
+        {{ errorCampo['productoId'] }}
+      </small>
+    </div>
 
-    <div class="filtros">
+    <div class="campo">
+      <label for="cantidad">Cantidad</label>
+      <input
+        id="cantidad"
+        type="number"
+        min="1"
+        [(ngModel)]="cantidad"
+        (input)="limpiarMensajes()">
+      <small class="error" *ngIf="errorCampo['cantidad']">
+        {{ errorCampo['cantidad'] }}
+      </small>
+    </div>
+
+    <!-- HU-14: el motivo es obligatorio y proviene del catalogo del servidor -->
+    <div class="campo">
+      <label for="motivo">Motivo</label>
+      <select
+        id="motivo"
+        [(ngModel)]="motivoSeleccionado"
+        (change)="limpiarMensajes()">
+        <option value="">Seleccione el motivo</option>
+        <option *ngFor="let motivo of motivos" [value]="motivo.codigo">
+          {{ motivo.nombre }}
+        </option>
+      </select>
+      <small class="error" *ngIf="errorCampo['motivo']">
+        {{ errorCampo['motivo'] }}
+      </small>
+    </div>
+
+    <div class="campo">
+      <label for="observacion">
+        Observacion
+        <span class="requerido" *ngIf="exigeNota">(obligatoria para este motivo)</span>
+      </label>
+      <textarea
+        id="observacion"
+        rows="2"
+        maxlength="200"
+        [(ngModel)]="observacion"
+        (input)="limpiarMensajes()"
+        [placeholder]="exigeNota
+          ? 'Explique el motivo del movimiento'
+          : 'Opcional'"></textarea>
+      <small class="error" *ngIf="errorCampo['observacion']">
+        {{ errorCampo['observacion'] }}
+      </small>
+    </div>
+
+    <!-- HU-17: el costo de la entrada alimenta el promedio ponderado -->
+    <div class="campo" *ngIf="pideCosto">
+      <label for="costo">Costo unitario</label>
+      <input
+        id="costo"
+        type="number"
+        min="0"
+        step="0.01"
+        [(ngModel)]="costoUnitario"
+        (input)="limpiarMensajes()"
+        placeholder="Si se deja vacio, se usa el costo promedio vigente">
+      <small class="ayuda">
+        Solo las compras traen un costo nuevo. Una devolucion o un traslado
+        reingresan al costo con el que el producto ya esta valorizado.
+      </small>
+      <small class="error" *ngIf="errorCampo['costoUnitario']">
+        {{ errorCampo['costoUnitario'] }}
+      </small>
+    </div>
+
+    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+    <p class="mensaje-exito" *ngIf="mensajeExito">{{ mensajeExito }}</p>
+
+    <div class="botones">
+      <button
+        type="button"
+        [class.entrada]="tipo === 'ENTRADA'"
+        [class.salida]="tipo === 'SALIDA'"
+        [disabled]="guardando"
+        (click)="registrar()">
+        {{ guardando
+            ? 'Registrando...'
+            : (tipo === 'ENTRADA' ? 'Registrar entrada' : 'Registrar salida') }}
+      </button>
+    </div>
+
+  </div>
+
+  <h2>Historial de movimientos</h2>
+
+  <div class="filtros">
 
     <div class="grupo-filtro">
-
-        <label>Desde</label>
-
-        <input
-            type="date"
-            [(ngModel)]="fechaInicio"
-            (change)="aplicarFiltros()">
-
+      <label for="desde">Desde</label>
+      <input id="desde" type="date" [(ngModel)]="fechaInicio" (change)="aplicarFiltros()">
     </div>
 
     <div class="grupo-filtro">
-
-        <label>Hasta</label>
-
-        <input
-            type="date"
-            [(ngModel)]="fechaFin"
-            (change)="aplicarFiltros()">
-
+      <label for="hasta">Hasta</label>
+      <input id="hasta" type="date" [(ngModel)]="fechaFin" (change)="aplicarFiltros()">
     </div>
 
     <div class="grupo-filtro">
-
-        <label>Tipo</label>
-
-        <select
-            [(ngModel)]="tipoFiltro"
-            (change)="aplicarFiltros()">
-
-            <option value="">
-                Todos
-            </option>
-
-            <option value="ENTRADA">
-                Entradas
-            </option>
-
-            <option value="SALIDA">
-                Salidas
-            </option>
-
-        </select>
-
+      <label for="tipoFiltro">Tipo</label>
+      <select id="tipoFiltro" [(ngModel)]="tipoFiltro" (change)="aplicarFiltros()">
+        <option value="">Todos</option>
+        <option value="ENTRADA">Entradas</option>
+        <option value="SALIDA">Salidas</option>
+      </select>
     </div>
 
-</div>
+    <button type="button" class="cancelar" (click)="limpiarFiltros()">
+      Limpiar
+    </button>
 
-    <table>
+  </div>
 
-        <thead>
+  <table>
 
-            <tr>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Producto</th>
+        <th>Tipo</th>
+        <th>Motivo</th>
+        <th>Cantidad</th>
+        <th>Saldo</th>
+        <th>Usuario</th>
+        <th>Fecha</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
 
-                <th>ID</th>
+    <tbody>
+      <tr
+        *ngFor="let movimiento of movimientosFiltrados"
+        [ngClass]="claseEstado(movimiento)">
 
-                <th>Producto</th>
+        <td>{{ movimiento.id }}</td>
 
-                <th>Tipo</th>
+        <td>
+          {{ movimiento.producto }}
+          <small class="sku" *ngIf="movimiento.sku">{{ movimiento.sku }}</small>
+        </td>
 
-                <th>Cantidad</th>
+        <td>{{ movimiento.tipo }}</td>
 
-                <th>Usuario</th>
+        <td>
+          {{ movimiento.motivoNombre || movimiento.motivo }}
+          <small class="observacion" *ngIf="movimiento.observacion">
+            {{ movimiento.observacion }}
+          </small>
+        </td>
 
-                <th>Fecha</th>
-                <th>Acciones</th>
+        <td>{{ movimiento.cantidad }}</td>
 
-            </tr>
+        <!-- HU-18: los movimientos heredados no tienen saldo registrado -->
+        <td>{{ movimiento.saldoResultante ?? '-' }}</td>
 
-        </thead>
+        <td>{{ movimiento.usuario }}</td>
 
-        <tbody>
+        <td>{{ movimiento.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
 
-            <tr *ngFor="let movimiento of movimientosFiltrados">
+        <td>
+          <span class="estado" [ngClass]="'estado-' + (movimiento.estado || '')">
+            {{ movimiento.estado }}
+          </span>
+          <small
+            class="compensa"
+            *ngIf="movimiento.movimientoOrigenId">
+            compensa al {{ movimiento.movimientoOrigenId }}
+          </small>
+        </td>
 
-                <td>{{movimiento.id}}</td>
+        <td>
+          <!-- HU-15: un movimiento no se edita ni se borra, se anula -->
+          <button
+            type="button"
+            class="eliminar"
+            *ngIf="sePuedeAnular(movimiento)"
+            (click)="abrirAnulacion(movimiento)">
+            Anular
+          </button>
+        </td>
 
-                <td>{{movimiento.producto}}</td>
+      </tr>
 
-                <td>{{movimiento.tipo}}</td>
+      <tr *ngIf="movimientosFiltrados.length === 0">
+        <td colspan="10" class="vacio">No hay movimientos que coincidan.</td>
+      </tr>
+    </tbody>
 
-                <td>{{movimiento.cantidad}}</td>
+  </table>
 
-                <td>{{movimiento.usuario}}</td>
+  <!-- Cuadro de anulacion (HU-15) -->
+  <div class="fondo-modal" *ngIf="movimientoAnulando">
+    <div class="modal">
 
-                <td>{{movimiento.fecha}}</td>
-                <td>
-<button
-*ngIf="puedeEditarMovimiento()"
-    class="editar"
-    (click)="editar(movimiento)">
+      <h3>Anular movimiento {{ movimientoAnulando.id }}</h3>
 
-    Editar
-</button>
+      <p>
+        {{ movimientoAnulando.tipo }} de {{ movimientoAnulando.cantidad }}
+        unidades de <strong>{{ movimientoAnulando.producto }}</strong>.
+      </p>
 
-  <button
-  *ngIf="puedeEliminarMovimiento()"
-    class="eliminar"
-    (click)="eliminar(movimiento.id!)">
+      <p class="advertencia">
+        El movimiento no se borra. Se marca como anulado y se registra un
+        asiento que lo compensa, de modo que el historial conserva lo ocurrido
+        y el stock vuelve al valor que tenia antes.
+      </p>
 
-    Eliminar
+      <div class="campo">
+        <label for="justificacion">Justificacion</label>
+        <textarea
+          id="justificacion"
+          rows="3"
+          maxlength="200"
+          [(ngModel)]="justificacion"
+          placeholder="Explique por que se anula este movimiento"></textarea>
+        <small class="error" *ngIf="errorCampo['justificacion']">
+          {{ errorCampo['justificacion'] }}
+        </small>
+      </div>
 
-  </button>
-  
-  
+      <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
 
-</td>
+      <div class="botones">
+        <button
+          type="button"
+          class="eliminar"
+          [disabled]="guardando"
+          (click)="confirmarAnulacion()">
+          {{ guardando ? 'Anulando...' : 'Confirmar anulacion' }}
+        </button>
+        <button
+          type="button"
+          class="cancelar"
+          [disabled]="guardando"
+          (click)="cerrarAnulacion()">
+          Cancelar
+        </button>
+      </div>
 
-            </tr>
-
-        </tbody>
-
-    </table>
+    </div>
+  </div>
 
 </div>

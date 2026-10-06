@@ -62,26 +62,23 @@
     <div class="busqueda">
         <i class="fa-solid fa-magnifying-glass"></i>
 
+        <label for="filtroTexto" class="solo-lectores">Buscar por SKU o nombre</label>
         <input
+            id="filtroTexto"
             type="text"
-            placeholder="Buscar por SKU, nombre o descripción..."
+            placeholder="Buscar por SKU o nombre..."
             [(ngModel)]="textoBusqueda"
-            (ngModelChange)="aplicarFiltros()">
+            (keyup.enter)="aplicarFiltros()">
     </div>
 
     <div class="filtro">
         <i class="fa-solid fa-layer-group"></i>
 
-        <select [(ngModel)]="categoriaFiltro"
-        (ngModelChange)="aplicarFiltros()">
-            <option value="">Todas las categorías</option>
-
-            <option
-                *ngFor="let categoria of categorias"
-                [value]="categoria.nombre">
-
+        <label for="filtroCategoria" class="solo-lectores">Filtrar por categoría</label>
+        <select id="filtroCategoria" [(ngModel)]="categoriaFiltro" (ngModelChange)="aplicarFiltros()">
+            <option [ngValue]="undefined">Todas las categorías</option>
+            <option *ngFor="let categoria of categorias" [ngValue]="categoria.id">
                 {{ categoria.nombre }}
-
             </option>
         </select>
     </div>
@@ -89,105 +86,294 @@
     <div class="filtro">
         <i class="fa-solid fa-truck"></i>
 
-        <select [(ngModel)]="proveedorFiltro"
-        (ngModelChange)="aplicarFiltros()">
-            <option value="">Todos los proveedores</option>
-
-            <option
-                *ngFor="let proveedor of proveedores"
-                [value]="proveedor.nombre">
-
+        <label for="filtroProveedor" class="solo-lectores">Filtrar por proveedor</label>
+        <select id="filtroProveedor" [(ngModel)]="proveedorFiltro" (ngModelChange)="aplicarFiltros()">
+            <option [ngValue]="undefined">Todos los proveedores</option>
+            <option *ngFor="let proveedor of proveedores" [ngValue]="proveedor.id">
                 {{ proveedor.nombre }}
-
             </option>
         </select>
     </div>
 
+    <!-- HU-20: ver de un golpe lo que hay que pedir -->
+    <label class="casilla">
+        <input type="checkbox" [(ngModel)]="soloPorReponer" (ngModelChange)="aplicarFiltros()">
+        Solo por reponer
+    </label>
+
+    <button type="button" class="buscar" (click)="aplicarFiltros()">Buscar</button>
+    <button type="button" class="cancelar" (click)="limpiarFiltros()">Limpiar</button>
+
 </div>
+
+<p class="resumen-lista" *ngIf="pagina">
+    {{ pagina.totalElementos }}
+    {{ pagina.totalElementos === 1 ? 'producto' : 'productos' }}
+    <span *ngIf="pagina.totalPaginas > 1">
+        &middot; página {{ pagina.pagina + 1 }} de {{ pagina.totalPaginas }}
+    </span>
+    <span class="cargando" *ngIf="cargandoLista">cargando...</span>
+</p>
+
   <table>
 
     <thead>
 
       <tr>
-
-        <th>SKU</th>
-        <th>Nombre</th>
-        <th>Descripción</th>
-        <th>Precio</th>
-        <th>Stock</th>
+        <th class="ordenable" [attr.aria-sort]="ariaOrden('sku')">
+          <button type="button" class="orden" (click)="ordenarPor('sku')">
+            SKU
+            <i class="fa-solid" *ngIf="orden === 'sku'"
+               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+          </button>
+        </th>
+        <th class="ordenable" [attr.aria-sort]="ariaOrden('nombre')">
+          <button type="button" class="orden" (click)="ordenarPor('nombre')">
+            Nombre
+            <i class="fa-solid" *ngIf="orden === 'nombre'"
+               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+          </button>
+        </th>
+        <th class="ordenable" [attr.aria-sort]="ariaOrden('precio')">
+          <button type="button" class="orden" (click)="ordenarPor('precio')">
+            Precio
+            <i class="fa-solid" *ngIf="orden === 'precio'"
+               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+          </button>
+        </th>
+        <th class="ordenable" [attr.aria-sort]="ariaOrden('stock')">
+          <button type="button" class="orden" (click)="ordenarPor('stock')">
+            Stock
+            <i class="fa-solid" *ngIf="orden === 'stock'"
+               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+          </button>
+        </th>
+        <th>Costo prom.</th>
+        <th>Valorizado</th>
         <th>Categoría</th>
         <th>Proveedor</th>
         <th>Estado</th>
         <th>Acciones</th>
-
       </tr>
 
     </thead>
 
     <tbody>
 
-      <tr
-        *ngFor="let p of productosFiltrados">
+      <tr *ngFor="let p of pagina?.contenido" [class.fila-reposicion]="p.necesitaReposicion">
 
-        <td>{{p.sku || '—'}}</td>
-
-        <td>{{p.nombre}}</td>
-
-        <td>{{p.descripcion}}</td>
-
-        <td>{{p.precio}}</td>
-
-        <td>{{p.stock}}</td>
-
-        <td>{{p.categoria?.nombre}}</td>
-
-        <td>{{p.proveedor?.nombre}}</td>
-        <td>
-
-  <span
-    *ngIf="p.stock > p.stockMinimo"
-    class="estado-normal">
-
-    Disponible
-
-  </span>
-
-  <span
-    *ngIf="p.stock <= p.stockMinimo"
-    class="estado-bajo">
-
-    Stock Bajo
-
-  </span>
-
-</td>
+        <td>{{ p.sku || '—' }}</td>
+        <td>{{ p.nombre }}</td>
+        <td>{{ p.precio | number:'1.2-2' }}</td>
+        <td>{{ p.stock }}</td>
+        <td>{{ p.costoPromedio | number:'1.2-2' }}</td>
+        <td>{{ p.valorizado | number:'1.2-2' }}</td>
+        <td>{{ p.categoria }}</td>
+        <td>{{ p.proveedor || '—' }}</td>
 
         <td>
-
-          <button
-          *ngIf="esAdministrador()"
-            class="editar"
-            (click)="editar(p)">
-
-            Editar
-
-          </button>
-
-          <button
-          *ngIf="esAdministrador()"
-            class="eliminar"
-            (click)="eliminar(p.id!)">
-
-            Eliminar
-
-          </button>
-
+          <!-- HU-20: el umbral que manda es el punto de reposicion cuando
+               esta definido, y eso lo decide el servidor. -->
+          <span *ngIf="!p.necesitaReposicion" class="estado-normal">Disponible</span>
+          <span *ngIf="p.necesitaReposicion" class="estado-bajo">Reponer</span>
         </td>
 
+        <td>
+          <button class="ficha" (click)="verFicha(p.id!)">Ficha</button>
+
+          <button *ngIf="puedeEditar()" class="editar" (click)="editar(p)">
+            Editar
+          </button>
+
+          <button *ngIf="esAdministrador()" class="eliminar" (click)="eliminar(p.id!)">
+            Eliminar
+          </button>
+        </td>
+
+      </tr>
+
+      <tr *ngIf="pagina && pagina.contenido.length === 0">
+        <td colspan="10" class="vacio">
+          Ningún producto coincide con la búsqueda.
+        </td>
       </tr>
 
     </tbody>
 
   </table>
+
+  <!-- HU-21: paginación en servidor -->
+  <div class="paginacion" *ngIf="pagina && pagina.totalPaginas > 1">
+
+    <button type="button" [disabled]="pagina.primera" (click)="irAPagina(0)">
+      Primera
+    </button>
+    <button type="button" [disabled]="pagina.primera" (click)="irAPagina(pagina.pagina - 1)">
+      Anterior
+    </button>
+
+    <button
+      type="button"
+      *ngFor="let n of paginasVisibles"
+      [class.actual]="n === pagina.pagina"
+      (click)="irAPagina(n)">
+      {{ n + 1 }}
+    </button>
+
+    <button type="button" [disabled]="pagina.ultima" (click)="irAPagina(pagina.pagina + 1)">
+      Siguiente
+    </button>
+    <button type="button" [disabled]="pagina.ultima" (click)="irAPagina(pagina.totalPaginas - 1)">
+      Última
+    </button>
+
+  </div>
+
+  <!-- HU-22: ficha de detalle consolidada -->
+  <!-- Se cierra con el boton o con la tecla Escape. Cerrar al hacer clic
+       en el fondo dejaba fuera a quien navega con teclado. -->
+  <div class="fondo-modal" *ngIf="ficha">
+    <dialog class="modal-ficha" open aria-modal="true" aria-labelledby="tituloFicha">
+
+      <div class="cabecera-ficha">
+        <div>
+          <h2 id="tituloFicha">{{ ficha.nombre }}</h2>
+          <p class="sku-ficha">{{ ficha.sku }}</p>
+        </div>
+        <button type="button" class="cerrar" aria-label="Cerrar la ficha" (click)="cerrarFicha()">&times;</button>
+      </div>
+
+      <p class="descripcion-ficha" *ngIf="ficha.descripcion">{{ ficha.descripcion }}</p>
+
+      <div class="rejilla-ficha">
+        <div class="dato">
+          <span>Categoría</span>
+          <strong>{{ ficha.categoria?.nombre || '—' }}</strong>
+        </div>
+        <div class="dato">
+          <span>Proveedor</span>
+          <strong>{{ ficha.proveedor?.nombre || '—' }}</strong>
+        </div>
+        <div class="dato">
+          <span>Stock actual</span>
+          <strong>{{ ficha.existencias?.stock }}</strong>
+        </div>
+        <div class="dato">
+          <span>Costo promedio</span>
+          <strong>S/ {{ ficha.valorizacion?.costoPromedio | number:'1.2-2' }}</strong>
+        </div>
+        <div class="dato">
+          <span>Valorizado</span>
+          <strong>S/ {{ ficha.valorizacion?.valorizado | number:'1.2-2' }}</strong>
+        </div>
+        <div class="dato">
+          <span>Precio de venta</span>
+          <strong>S/ {{ ficha.valorizacion?.precioVenta | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <div class="alerta-ficha" *ngIf="ficha.existencias?.necesitaReposicion">
+        Este producto alcanzó su umbral de reposición.
+      </div>
+
+      <div class="alerta-ficha pendiente" *ngIf="ficha.ajustesPendientes">
+        Tiene {{ ficha.ajustesPendientes }}
+        {{ ficha.ajustesPendientes === 1 ? 'conteo' : 'conteos' }}
+        pendiente de aprobación.
+      </div>
+
+      <!-- HU-20: umbrales editables sin reenviar el resto de la ficha -->
+      <h3>Umbrales de reposición</h3>
+
+      <div class="umbrales">
+        <div class="campo-umbral">
+          <label for="minimo">Stock mínimo</label>
+          <input id="minimo" type="number" min="0" [(ngModel)]="umbrales.stockMinimo">
+        </div>
+        <div class="campo-umbral">
+          <label for="reposicion">Punto de reposición</label>
+          <input id="reposicion" type="number" min="0" [(ngModel)]="umbrales.puntoReposicion">
+        </div>
+        <div class="campo-umbral">
+          <label for="maximo">Stock máximo</label>
+          <input id="maximo" type="number" min="0" [(ngModel)]="umbrales.stockMaximo">
+        </div>
+        <button
+          type="button"
+          class="guardar"
+          [disabled]="guardandoUmbrales"
+          (click)="guardarUmbrales()">
+          {{ guardandoUmbrales ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+
+      <p class="ayuda-umbral">
+        El punto de reposición es el nivel en el que hay que pedir. Si no se
+        define, se usa el stock mínimo.
+        <span *ngIf="ficha.existencias?.faltanteHastaElMaximo">
+          Faltan {{ ficha.existencias?.faltanteHastaElMaximo }} unidades para
+          llegar al máximo.
+        </span>
+      </p>
+
+      <p class="mensaje-exito" *ngIf="mensajeFicha">{{ mensajeFicha }}</p>
+      <p class="mensaje-error" *ngIf="errorFicha">{{ errorFicha }}</p>
+
+      <!-- Resumen del histórico -->
+      <h3>Histórico</h3>
+
+      <div class="rejilla-ficha">
+        <div class="dato">
+          <span>Movimientos</span>
+          <strong>{{ ficha.resumen?.movimientos }}</strong>
+        </div>
+        <div class="dato">
+          <span>Entradas</span>
+          <strong>{{ ficha.resumen?.entradas }}</strong>
+          <small>{{ ficha.resumen?.unidadesIngresadas }} unidades</small>
+        </div>
+        <div class="dato">
+          <span>Salidas</span>
+          <strong>{{ ficha.resumen?.salidas }}</strong>
+          <small>{{ ficha.resumen?.unidadesRetiradas }} unidades</small>
+        </div>
+        <div class="dato">
+          <span>Último movimiento</span>
+          <strong>
+            {{ ficha.resumen?.ultimoMovimiento
+                ? (ficha.resumen?.ultimoMovimiento | date:'dd/MM/yyyy')
+                : '—' }}
+          </strong>
+        </div>
+      </div>
+
+      <h3>Últimos movimientos</h3>
+
+      <table class="tabla-ficha">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Motivo</th>
+            <th class="numero">Entrada</th>
+            <th class="numero">Salida</th>
+            <th class="numero">Saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of ficha.ultimosMovimientos" [class.anulada]="l.estado === 'ANULADO'">
+            <td>{{ l.fecha | date:'dd/MM/yy HH:mm' }}</td>
+            <td>{{ l.motivoNombre || l.motivo }}</td>
+            <td class="numero">{{ l.entrada ?? '' }}</td>
+            <td class="numero">{{ l.salida ?? '' }}</td>
+            <td class="numero"><strong>{{ l.saldo }}</strong></td>
+          </tr>
+          <tr *ngIf="ficha.ultimosMovimientos.length === 0">
+            <td colspan="5" class="vacio">Sin movimientos registrados.</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </dialog>
+  </div>
 
 </div>

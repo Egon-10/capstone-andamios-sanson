@@ -1,5 +1,7 @@
 package com.proyecto.microservicio.model;
 
+import com.proyecto.microservicio.config.ZonaHoraria;
+
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -40,7 +42,7 @@ public class RefreshToken {
         this.usuario = usuario;
         this.expiracion = expiracion;
         this.revocado = false;
-        this.fechaCreacion = LocalDateTime.now();
+        this.fechaCreacion = ZonaHoraria.ahora();
     }
 
     public boolean estaVigente(LocalDateTime ahora) {

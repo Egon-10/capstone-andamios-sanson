@@ -3,6 +3,7 @@ package com.proyecto.microservicio.exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -61,6 +62,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> accesoDenegado(AccessDeniedException ex) {
         return respuesta(HttpStatus.FORBIDDEN, "No tiene permisos para realizar esta acción", Map.of());
+    }
+
+    /**
+     * HU-13: el bloqueo optimista rechazó la escritura porque otro usuario
+     * modificó el producto mientras se preparaba esta operación. No es un error
+     * del cliente ni del servidor: es la protección funcionando. Se responde
+     * 409 para que la interfaz pida reintentar sobre el stock ya actualizado.
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> bloqueoOptimista(ObjectOptimisticLockingFailureException ex) {
+        log.info("Conflicto de concurrencia: {}", ex.getMessage());
+        return respuesta(HttpStatus.CONFLICT,
+                "Otro usuario modificó el inventario de este producto mientras se registraba "
+                        + "la operación. Vuelva a intentarlo.",
+                Map.of());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

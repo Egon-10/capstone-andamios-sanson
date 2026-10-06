@@ -2,6 +2,9 @@ package com.proyecto.microservicio.repository;
 
 import com.proyecto.microservicio.model.Producto;
 import com.proyecto.microservicio.model.ProductoDTO;
+import com.proyecto.microservicio.model.ValorizacionProductoDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -31,7 +34,7 @@ public interface ProductoRepository
     FROM productos p
     INNER JOIN categorias c
         ON p.categoria_id = c.id
-    INNER JOIN proveedores pr
+    LEFT JOIN proveedores pr
         ON p.proveedor_id = pr.id
     """, nativeQuery = true)
     List<ProductoDTO> obtenerProductosConDetalle();
@@ -83,7 +86,7 @@ SELECT
 FROM productos p
 INNER JOIN categorias c
     ON p.categoria_id = c.id
-INNER JOIN proveedores pr
+LEFT JOIN proveedores pr
     ON p.proveedor_id = pr.id
 ORDER BY p.nombre
 """, nativeQuery = true)
@@ -125,7 +128,7 @@ SELECT
 FROM productos p
 INNER JOIN categorias c
     ON p.categoria_id = c.id
-INNER JOIN proveedores pr
+LEFT JOIN proveedores pr
     ON p.proveedor_id = pr.id
 WHERE
 (
@@ -139,5 +142,86 @@ List<Object[]> obtenerReporteProductos(
         @Param("categoria")
         String categoria
 );
-}
 
+    /**
+     * HU-17: productos con su valorizacion al costo promedio ponderado.
+     *
+     * Se valoriza al costo y no al precio de venta: usar el precio
+     * sobreestimaria el inventario en el margen comercial. Los productos dados
+     * de baja quedan fuera, pero los de stock cero se incluyen para que el
+     * conteo de productos del informe coincida con el catalogo activo.
+     */
+    @Query(value = """
+    SELECT
+        p.id AS productoId,
+        p.sku AS sku,
+        p.nombre AS producto,
+        c.nombre AS categoria,
+        p.stock AS stock,
+        p.stock_minimo AS stockMinimo,
+        p.punto_reposicion AS puntoReposicion,
+        p.costo_promedio AS costoPromedio,
+        ROUND(COALESCE(p.stock, 0) * COALESCE(p.costo_promedio, 0), 2) AS valor
+    FROM productos p
+    LEFT JOIN categorias c
+        ON p.categoria_id = c.id
+    WHERE p.activo = 1
+    ORDER BY c.nombre, p.nombre
+    """, nativeQuery = true)
+    List<ValorizacionProductoDTO> obtenerValorizacion();
+
+    /** HU-20: productos que alcanzaron su umbral de reposicion. */
+    @Query(value = """
+    SELECT
+        p.id AS productoId,
+        p.sku AS sku,
+        p.nombre AS producto,
+        c.nombre AS categoria,
+        p.stock AS stock,
+        p.stock_minimo AS stockMinimo,
+        p.punto_reposicion AS puntoReposicion,
+        p.costo_promedio AS costoPromedio,
+        ROUND(COALESCE(p.stock, 0) * COALESCE(p.costo_promedio, 0), 2) AS valor
+    FROM productos p
+    LEFT JOIN categorias c
+        ON p.categoria_id = c.id
+    WHERE p.activo = 1
+      AND COALESCE(p.punto_reposicion, p.stock_minimo) IS NOT NULL
+      AND COALESCE(p.stock, 0) <= COALESCE(p.punto_reposicion, p.stock_minimo)
+    ORDER BY COALESCE(p.stock, 0) ASC
+    """, nativeQuery = true)
+    List<ValorizacionProductoDTO> obtenerPorReponer();
+
+    /**
+     * HU-21: busqueda paginada en el servidor.
+     *
+     * La paginacion se hace en la base y no en el cliente: con el catalogo
+     * completo en memoria, el filtrado funcionaba solo mientras el catalogo era
+     * pequeno. El texto se compara contra el nombre y contra el SKU, en
+     * minusculas, de modo que buscar "pla-200" o "Plataforma" encuentre lo
+     * mismo.
+     *
+     * Cada filtro se anula a si mismo cuando su parametro viene vacio, lo que
+     * permite una sola consulta en lugar de una combinacion por cada caso.
+     */
+    @Query("""
+            SELECT p FROM Producto p
+            LEFT JOIN p.categoria c
+            LEFT JOIN p.proveedor pr
+            WHERE (:texto IS NULL
+                   OR LOWER(p.nombre) LIKE :texto
+                   OR LOWER(p.sku) LIKE :texto)
+              AND (:categoriaId IS NULL OR c.id = :categoriaId)
+              AND (:proveedorId IS NULL OR pr.id = :proveedorId)
+              AND (:soloActivos = FALSE OR p.activo = TRUE)
+              AND (:porReponer = FALSE
+                   OR (COALESCE(p.puntoReposicion, p.stockMinimo) IS NOT NULL
+                       AND p.stock <= COALESCE(p.puntoReposicion, p.stockMinimo)))
+            """)
+    Page<Producto> buscar(@Param("texto") String texto,
+                          @Param("categoriaId") Long categoriaId,
+                          @Param("proveedorId") Long proveedorId,
+                          @Param("soloActivos") boolean soloActivos,
+                          @Param("porReponer") boolean porReponer,
+                          Pageable paginacion);
+}

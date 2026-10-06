@@ -2,6 +2,8 @@ package com.proyecto.microservicio.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "proveedores")
 public class Proveedor {
@@ -10,8 +12,11 @@ public class Proveedor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 100, nullable = false)
     private String nombre;
 
+    /** RUC de 11 digitos. Unico: dos proveedores no pueden tener el mismo. */
+    @Column(length = 11, unique = true)
     private String ruc;
 
     private String direccion;
@@ -19,6 +24,16 @@ public class Proveedor {
     private String telefono;
 
     private String correo;
+
+    /**
+     * HU-11: baja logica. Un proveedor retirado deja de ofrecerse al registrar
+     * productos, pero los productos que ya lo referencian conservan el dato.
+     */
+    @Column(nullable = false)
+    private boolean activo = true;
+
+    @Column(name = "fecha_creacion")
+    private LocalDateTime fechaCreacion;
 
     public Proveedor() {
     }
@@ -84,5 +99,21 @@ public class Proveedor {
 
     public void setCorreo(String correo) {
         this.correo = correo;
+    }
+
+    public boolean isActivo() {
+        return activo;
+    }
+
+    public void setActivo(boolean activo) {
+        this.activo = activo;
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
     }
 }

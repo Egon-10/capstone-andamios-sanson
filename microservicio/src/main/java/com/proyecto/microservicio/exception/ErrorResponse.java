@@ -1,5 +1,7 @@
 package com.proyecto.microservicio.exception;
 
+import com.proyecto.microservicio.config.ZonaHoraria;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -12,10 +14,10 @@ public record ErrorResponse(
         Map<String, String> errores) {
 
     public static ErrorResponse of(int estado, String error, String mensaje) {
-        return new ErrorResponse(LocalDateTime.now(), estado, error, mensaje, Map.of());
+        return new ErrorResponse(ZonaHoraria.ahora(), estado, error, mensaje, Map.of());
     }
 
     public static ErrorResponse of(int estado, String error, String mensaje, Map<String, String> errores) {
-        return new ErrorResponse(LocalDateTime.now(), estado, error, mensaje, errores);
+        return new ErrorResponse(ZonaHoraria.ahora(), estado, error, mensaje, errores);
     }
 }

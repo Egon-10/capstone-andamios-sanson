@@ -1,5 +1,7 @@
 package com.proyecto.microservicio.service;
 
+import com.proyecto.microservicio.config.ZonaHoraria;
+
 import com.proyecto.microservicio.dto.UsuarioActualizacionRequest;
 import com.proyecto.microservicio.dto.UsuarioRegistroRequest;
 import com.proyecto.microservicio.dto.UsuarioResponse;
@@ -15,7 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -84,7 +85,7 @@ public class UsuarioService {
         u.setArea(s.area());
         u.setTurno(vacioANulo(s.turno()));
         u.setEstado(Usuario.ESTADO_ACTIVO);
-        u.setFechaCreacion(LocalDateTime.now());
+        u.setFechaCreacion(ZonaHoraria.ahora());
 
         Usuario guardado = repository.save(u);
         auditoria.registrar("CREAR USUARIO: " + guardado.getNombreUsuario(), creadorId);

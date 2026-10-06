@@ -43,6 +43,9 @@ public class SecurityConfig {
 
     private static final String ADMIN = Roles.ADMINISTRADOR;
     private static final String GERENTE = Roles.GERENTE;
+    private static final String ENCARGADO = Roles.ENCARGADO;
+
+    private static final String MOVIMIENTOS = "/api/movimientos/**";
 
     @Bean
     public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, JwtAuthenticationConverter convertidor) throws Exception {
@@ -69,12 +72,38 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/productos/**", "/api/proveedores/**", "/api/categorias/**").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.POST, "/api/categorias/**").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.PUT, "/api/categorias/**").hasRole(ADMIN)
+                // HU-19: la carga masiva da de alta decenas de productos de una vez,
+                // asi que queda al mismo nivel que el alta individual.
+                .requestMatchers(HttpMethod.POST, "/api/productos/carga-masiva").hasAnyRole(ADMIN, GERENTE)
+                // HU-20: los umbrales los define quien planifica las compras.
+                .requestMatchers(HttpMethod.PUT, "/api/productos/*/umbrales").hasAnyRole(ADMIN, GERENTE)
                 .requestMatchers(HttpMethod.POST, "/api/productos/**", "/api/proveedores/**").hasAnyRole(ADMIN, GERENTE)
                 .requestMatchers(HttpMethod.PUT, "/api/productos/**", "/api/proveedores/**").hasAnyRole(ADMIN, GERENTE)
 
                 // Movimientos: registrar (todos los roles), editar (admin y gerente), eliminar (admin)
-                .requestMatchers(HttpMethod.PUT, "/api/movimientos/**").hasAnyRole(ADMIN, GERENTE)
-                .requestMatchers(HttpMethod.DELETE, "/api/movimientos/**").hasRole(ADMIN)
+                // Un movimiento no se edita ni se borra (HU-15): se anula, y la
+                // anulacion corrige el inventario, por lo que queda reservada al
+                // administrador y al gerente. Los verbos PUT y DELETE sobre
+                // movimientos ya no existen en el controlador y se deniegan aqui
+                // para que una ruta reintroducida por error no quede abierta.
+                .requestMatchers(HttpMethod.PUT, MOVIMIENTOS).denyAll()
+                .requestMatchers(HttpMethod.DELETE, MOVIMIENTOS).denyAll()
+                .requestMatchers(HttpMethod.POST, "/api/movimientos/*/anulacion").hasAnyRole(ADMIN, GERENTE)
+                .requestMatchers(HttpMethod.POST, MOVIMIENTOS).hasAnyRole(ADMIN, GERENTE, ENCARGADO)
+
+                // HU-17: la valorizacion es informacion economica del negocio y
+                // queda para el administrador y el gerente. El kardex y la lista
+                // de reposicion los necesita tambien el encargado para operar.
+                .requestMatchers(HttpMethod.GET, "/api/inventario/valorizacion").hasAnyRole(ADMIN, GERENTE)
+                .requestMatchers(HttpMethod.GET, "/api/inventario/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
+
+                // HU-16: el encargado registra el conteo fisico, pero solo el
+                // administrador o el gerente aprueban o rechazan el ajuste. La
+                // separacion de quien cuenta y quien autoriza es el control de
+                // la historia.
+                .requestMatchers(HttpMethod.POST, "/api/ajustes/*/aprobacion",
+                        "/api/ajustes/*/rechazo").hasAnyRole(ADMIN, GERENTE)
+                .requestMatchers(HttpMethod.POST, "/api/ajustes/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
 
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(convertidor)));

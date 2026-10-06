@@ -46,4 +46,15 @@ class GlobalExceptionHandlerTest {
         assertEquals(422, manejador.reglaNegocio(new ReglaNegocioException("Stock insuficiente"))
                 .getStatusCode().value());
     }
+
+    @Test
+    @DisplayName("HU-13: el bloqueo optimista responde 409 y pide reintentar")
+    void bloqueoOptimista() {
+        ResponseEntity<ErrorResponse> r = manejador.bloqueoOptimista(
+                new org.springframework.orm.ObjectOptimisticLockingFailureException(
+                        com.proyecto.microservicio.model.Producto.class, 1L));
+
+        assertEquals(409, r.getStatusCode().value());
+        assertTrue(r.getBody().mensaje().contains("Vuelva a intentarlo"));
+    }
 }

@@ -69,6 +69,38 @@
 
             </a>
 
+            <!-- Sprint 2 -->
+
+            <a routerLink="/kardex" routerLinkActive="active">
+                <i class="fas fa-book"></i>
+                Kardex
+            </a>
+
+            <a routerLink="/ajustes" routerLinkActive="active">
+                <i class="fas fa-balance-scale"></i>
+                Ajustes
+            </a>
+
+            <a
+                *ngIf="esAdministrador() || esGerente()"
+                routerLink="/valorizacion"
+                routerLinkActive="active">
+
+                <i class="fas fa-coins"></i>
+                Valorización
+
+            </a>
+
+            <a
+                *ngIf="esAdministrador() || esGerente()"
+                routerLink="/carga-masiva"
+                routerLinkActive="active">
+
+                <i class="fas fa-file-upload"></i>
+                Carga masiva
+
+            </a>
+
             <a
                 *ngIf="esAdministrador() || esGerente()"
                 routerLink="/auditoria"

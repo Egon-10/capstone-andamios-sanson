@@ -1,0 +1,312 @@
+.contenedor {
+  padding: 30px;
+  font-family: Arial, sans-serif;
+}
+
+h1 {
+  color: #1e3c72;
+  margin-bottom: 8px;
+}
+
+h2 {
+  color: #1e3c72;
+  margin-bottom: 16px;
+}
+
+.explicacion {
+  color: #475569;
+  font-size: 14px;
+  max-width: 760px;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.formulario {
+  background: #fff;
+  padding: 24px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+  margin-bottom: 32px;
+  max-width: 640px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.campo label,
+.campo .etiqueta-campo {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.campo select,
+.campo input,
+.campo textarea {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.campo textarea {
+  resize: vertical;
+}
+
+.campo .error {
+  color: #b91c1c;
+  font-size: 12px;
+}
+
+.campo .ayuda,
+.ayuda {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.dato-sistema {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e3c72;
+  margin: 2px 0;
+}
+
+/* La diferencia es el dato que la persona confirma antes de enviar, asi que
+   se muestra en grande y con color segun el sentido. */
+.diferencia {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  margin-bottom: 16px;
+}
+
+.diferencia strong {
+  font-size: 20px;
+}
+
+.diferencia span {
+  font-size: 13px;
+}
+
+.diferencia.sobra {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1e3a8a;
+}
+
+.diferencia.falta {
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #991b1b;
+}
+
+.diferencia.igual {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #475569;
+}
+
+.botones {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: #fff;
+}
+
+button:disabled {
+  opacity: .6;
+  cursor: progress;
+}
+
+.principal {
+  background: #1e3c72;
+}
+
+.aprobar {
+  background: #15803d;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.rechazar {
+  background: #b91c1c;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.cancelar {
+  background: #64748b;
+}
+
+.filtros {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.grupo-filtro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grupo-filtro label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.grupo-filtro select {
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+}
+
+th {
+  background: #1e3c72;
+  color: #fff;
+  padding: 12px;
+  text-align: left;
+  font-size: 13px;
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+  vertical-align: top;
+}
+
+td.sobra strong {
+  color: #1d4ed8;
+}
+
+td.falta strong {
+  color: #b91c1c;
+}
+
+.sku,
+.observacion,
+.resuelto,
+.rechazo {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.rechazo {
+  color: #b91c1c;
+}
+
+.vacio {
+  text-align: center;
+  color: #64748b;
+  padding: 24px;
+}
+
+.estado {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.estado-PENDIENTE {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.estado-APROBADO {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.estado-RECHAZADO {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.fila-PENDIENTE td {
+  background: #fffbeb;
+}
+
+.fondo-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, .25);
+}
+
+.modal h3 {
+  margin: 0 0 12px;
+  color: #0f172a;
+}
+
+.modal .advertencia {
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #78350f;
+  margin: 12px 0;
+}
+
+.mensaje-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.mensaje-exito {
+  color: #166534;
+  background: #dcfce7;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}

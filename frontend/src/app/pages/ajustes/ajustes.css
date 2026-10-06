@@ -37,7 +37,8 @@ h2 {
   margin-bottom: 16px;
 }
 
-.campo label {
+.campo label,
+.campo .etiqueta-campo {
   font-size: 13px;
   font-weight: 600;
   color: #334155;

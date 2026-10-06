@@ -97,7 +97,7 @@ export class ValorizacionComponent implements OnInit {
     ]);
 
     const csv = [cabecera, ...lineas]
-      .map(f => f.map(c => `"${c.replace(/"/g, '""')}"`).join(';'))
+      .map(f => f.map(c => `"${c.replaceAll('"', '""')}"`).join(';'))
       .join('\n');
 
     // La marca de orden de bytes hace que Excel reconozca el UTF-8 y no

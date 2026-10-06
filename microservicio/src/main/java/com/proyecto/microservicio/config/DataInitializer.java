@@ -14,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -74,7 +73,7 @@ public class DataInitializer implements ApplicationRunner {
             admin.setPassword(encoder.encode(adminPassword));
             admin.setEstado(Usuario.ESTADO_ACTIVO);
             admin.setArea("ADMINISTRACION");
-            admin.setFechaCreacion(LocalDateTime.now());
+            admin.setFechaCreacion(ZonaHoraria.ahora());
             admin.setRol(roles.findByNombreIgnoreCase(Roles.ADMINISTRADOR).orElseThrow());
             usuarios.save(admin);
             log.info("Administrador inicial creado: {}", adminCorreo);

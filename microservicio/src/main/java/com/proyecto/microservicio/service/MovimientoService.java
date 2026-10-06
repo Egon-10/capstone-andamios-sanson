@@ -1,5 +1,7 @@
 package com.proyecto.microservicio.service;
 
+import com.proyecto.microservicio.config.ZonaHoraria;
+
 import com.proyecto.microservicio.dto.AnulacionRequest;
 import com.proyecto.microservicio.dto.MovimientoRequest;
 import com.proyecto.microservicio.exception.RecursoNoEncontradoException;
@@ -125,7 +127,7 @@ public class MovimientoService {
         movimiento.setMotivo(motivo);
         movimiento.setObservacion(limpiar(s.observacion()));
         movimiento.setCantidad(s.cantidad());
-        movimiento.setFecha(LocalDateTime.now());
+        movimiento.setFecha(ZonaHoraria.ahora());
         movimiento.setEstado(EstadosMovimiento.REGISTRADO);
         movimiento.setCostoUnitario(costoUnitario);
         movimiento.setSaldoResultante(stockResultante);
@@ -181,7 +183,7 @@ public class MovimientoService {
         }
 
         Usuario usuario = usuario(usuarioId);
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = ZonaHoraria.ahora();
 
         producto.setStock(stockResultante);
         productoRepository.save(producto);

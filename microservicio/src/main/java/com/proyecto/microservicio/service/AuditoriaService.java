@@ -1,11 +1,12 @@
 package com.proyecto.microservicio.service;
 
+import com.proyecto.microservicio.config.ZonaHoraria;
+
 import com.proyecto.microservicio.model.Auditoria;
 import com.proyecto.microservicio.repository.AuditoriaRepository;
 import com.proyecto.microservicio.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -46,7 +47,7 @@ public class AuditoriaService {
         Auditoria auditoria = new Auditoria();
         auditoria.setAccion(recortar(accion, LARGO_ACCION));
         auditoria.setDetalle(recortar(detalle, LARGO_DETALLE));
-        auditoria.setFecha(LocalDateTime.now());
+        auditoria.setFecha(ZonaHoraria.ahora());
         if (usuarioId != null) {
             usuarioRepository.findById(usuarioId).ifPresent(auditoria::setUsuario);
         }

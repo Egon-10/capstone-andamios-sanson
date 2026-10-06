@@ -62,7 +62,9 @@
     <div class="busqueda">
         <i class="fa-solid fa-magnifying-glass"></i>
 
+        <label for="filtroTexto" class="solo-lectores">Buscar por SKU o nombre</label>
         <input
+            id="filtroTexto"
             type="text"
             placeholder="Buscar por SKU o nombre..."
             [(ngModel)]="textoBusqueda"
@@ -72,7 +74,8 @@
     <div class="filtro">
         <i class="fa-solid fa-layer-group"></i>
 
-        <select [(ngModel)]="categoriaFiltro" (ngModelChange)="aplicarFiltros()">
+        <label for="filtroCategoria" class="solo-lectores">Filtrar por categoría</label>
+        <select id="filtroCategoria" [(ngModel)]="categoriaFiltro" (ngModelChange)="aplicarFiltros()">
             <option [ngValue]="undefined">Todas las categorías</option>
             <option *ngFor="let categoria of categorias" [ngValue]="categoria.id">
                 {{ categoria.nombre }}
@@ -83,7 +86,8 @@
     <div class="filtro">
         <i class="fa-solid fa-truck"></i>
 
-        <select [(ngModel)]="proveedorFiltro" (ngModelChange)="aplicarFiltros()">
+        <label for="filtroProveedor" class="solo-lectores">Filtrar por proveedor</label>
+        <select id="filtroProveedor" [(ngModel)]="proveedorFiltro" (ngModelChange)="aplicarFiltros()">
             <option [ngValue]="undefined">Todos los proveedores</option>
             <option *ngFor="let proveedor of proveedores" [ngValue]="proveedor.id">
                 {{ proveedor.nombre }}
@@ -116,25 +120,33 @@
     <thead>
 
       <tr>
-        <th class="ordenable" (click)="ordenarPor('sku')">
-          SKU
-          <i class="fa-solid" *ngIf="orden === 'sku'"
-             [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+        <th class="ordenable" [attr.aria-sort]="ariaOrden('sku')">
+          <button type="button" class="orden" (click)="ordenarPor('sku')">
+            SKU
+            <i class="fa-solid" *ngIf="orden === 'sku'"
+               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+          </button>
         </th>
-        <th class="ordenable" (click)="ordenarPor('nombre')">
-          Nombre
-          <i class="fa-solid" *ngIf="orden === 'nombre'"
-             [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+        <th class="ordenable" [attr.aria-sort]="ariaOrden('nombre')">
+          <button type="button" class="orden" (click)="ordenarPor('nombre')">
+            Nombre
+            <i class="fa-solid" *ngIf="orden === 'nombre'"
+               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+          </button>
         </th>
-        <th class="ordenable" (click)="ordenarPor('precio')">
-          Precio
-          <i class="fa-solid" *ngIf="orden === 'precio'"
-             [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+        <th class="ordenable" [attr.aria-sort]="ariaOrden('precio')">
+          <button type="button" class="orden" (click)="ordenarPor('precio')">
+            Precio
+            <i class="fa-solid" *ngIf="orden === 'precio'"
+               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+          </button>
         </th>
-        <th class="ordenable" (click)="ordenarPor('stock')">
-          Stock
-          <i class="fa-solid" *ngIf="orden === 'stock'"
-             [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+        <th class="ordenable" [attr.aria-sort]="ariaOrden('stock')">
+          <button type="button" class="orden" (click)="ordenarPor('stock')">
+            Stock
+            <i class="fa-solid" *ngIf="orden === 'stock'"
+               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
+          </button>
         </th>
         <th>Costo prom.</th>
         <th>Valorizado</th>
@@ -218,15 +230,17 @@
   </div>
 
   <!-- HU-22: ficha de detalle consolidada -->
-  <div class="fondo-modal" *ngIf="ficha" (click)="cerrarFicha()">
-    <div class="modal-ficha" (click)="$event.stopPropagation()">
+  <!-- Se cierra con el boton o con la tecla Escape. Cerrar al hacer clic
+       en el fondo dejaba fuera a quien navega con teclado. -->
+  <div class="fondo-modal" *ngIf="ficha">
+    <div class="modal-ficha" role="dialog" aria-modal="true" aria-labelledby="tituloFicha">
 
       <div class="cabecera-ficha">
         <div>
-          <h2>{{ ficha.nombre }}</h2>
+          <h2 id="tituloFicha">{{ ficha.nombre }}</h2>
           <p class="sku-ficha">{{ ficha.sku }}</p>
         </div>
-        <button type="button" class="cerrar" (click)="cerrarFicha()">&times;</button>
+        <button type="button" class="cerrar" aria-label="Cerrar la ficha" (click)="cerrarFicha()">&times;</button>
       </div>
 
       <p class="descripcion-ficha" *ngIf="ficha.descripcion">{{ ficha.descripcion }}</p>

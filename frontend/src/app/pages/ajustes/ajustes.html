@@ -30,7 +30,9 @@
     </div>
 
     <div class="campo" *ngIf="productoSeleccionado">
-      <label>Stock que el sistema tiene registrado</label>
+      <!-- No es un control editable, asi que no lleva <label>: un label
+           tiene que rotular un campo que la persona pueda usar. -->
+      <span class="etiqueta-campo">Stock que el sistema tiene registrado</span>
       <p class="dato-sistema">{{ productoSeleccionado.stock }} unidades</p>
       <small class="ayuda">
         Lo lee el servidor al guardar, no se envia desde esta pantalla.

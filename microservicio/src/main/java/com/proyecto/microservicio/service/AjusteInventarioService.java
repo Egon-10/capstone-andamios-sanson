@@ -1,5 +1,7 @@
 package com.proyecto.microservicio.service;
 
+import com.proyecto.microservicio.config.ZonaHoraria;
+
 import com.proyecto.microservicio.dto.AjusteRequest;
 import com.proyecto.microservicio.dto.MovimientoRequest;
 import com.proyecto.microservicio.dto.RechazoRequest;
@@ -16,7 +18,6 @@ import com.proyecto.microservicio.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -106,7 +107,7 @@ public class AjusteInventarioService {
         ajuste.setObservacion(limpiar(s.observacion()));
         ajuste.setEstado(EstadosAjuste.PENDIENTE);
         ajuste.setUsuarioSolicita(usuario);
-        ajuste.setFechaSolicitud(LocalDateTime.now());
+        ajuste.setFechaSolicitud(ZonaHoraria.ahora());
 
         AjusteInventario guardado = repository.save(ajuste);
 
@@ -162,7 +163,7 @@ public class AjusteInventarioService {
 
         ajuste.setEstado(EstadosAjuste.APROBADO);
         ajuste.setUsuarioAprueba(aprobador);
-        ajuste.setFechaResolucion(LocalDateTime.now());
+        ajuste.setFechaResolucion(ZonaHoraria.ahora());
         ajuste.setMovimiento(movimiento);
         ajuste.setMotivo(movimiento.getMotivo());
 
@@ -186,7 +187,7 @@ public class AjusteInventarioService {
 
         ajuste.setEstado(EstadosAjuste.RECHAZADO);
         ajuste.setUsuarioAprueba(aprobador);
-        ajuste.setFechaResolucion(LocalDateTime.now());
+        ajuste.setFechaResolucion(ZonaHoraria.ahora());
         ajuste.setMotivoRechazo(s.motivo().trim());
 
         AjusteInventario guardado = repository.save(ajuste);

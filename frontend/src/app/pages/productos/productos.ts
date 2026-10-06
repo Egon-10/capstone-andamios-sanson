@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ErrorApi } from '../../models/respuesta-login';
 import { CommonModule } from '@angular/common';
@@ -203,6 +203,22 @@ export class ProductosComponent implements OnInit {
         this.mensajeError = e.error?.mensaje || 'No se pudo cargar la ficha';
       }
     });
+  }
+
+  /** La ficha se cierra con Escape, ademas del boton. */
+  @HostListener('document:keydown.escape')
+  alPresionarEscape(): void {
+    if (this.ficha) {
+      this.cerrarFicha();
+    }
+  }
+
+  /** Estado de orden de una columna, para los lectores de pantalla. */
+  ariaOrden(campo: string): 'ascending' | 'descending' | 'none' {
+    if (this.orden !== campo) {
+      return 'none';
+    }
+    return this.direccion === 'asc' ? 'ascending' : 'descending';
   }
 
   cerrarFicha(): void {

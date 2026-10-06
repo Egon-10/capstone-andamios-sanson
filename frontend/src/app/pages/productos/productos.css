@@ -676,3 +676,36 @@ button.ficha {
   font-size: 13px;
   margin-top: 10px;
 }
+
+/* Etiqueta presente para los lectores de pantalla pero invisible: los
+   filtros ya se identifican por su icono y su texto de ejemplo. */
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* El encabezado ordenable es un boton para que funcione tambien con teclado */
+th.ordenable .orden {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+th.ordenable .orden:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

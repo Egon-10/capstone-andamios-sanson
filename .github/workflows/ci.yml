@@ -1,0 +1,272 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  # Sin filtro de rama: asi tambien se verifica un pull request apilado sobre
+  # otra rama de trabajo, que es como se encadenan los sprints mientras el
+  # anterior espera revision.
+  pull_request:
+
+
+# Una sola ejecucion por rama: si llegan varios push seguidos, se cancela la
+# anterior en lugar de encolarse detras de ella.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificacion:
+    name: Compilacion, pruebas y base de datos
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: inventario_andamios
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+    env:
+      MYSQL: mysql -h 127.0.0.1 -P 3306 -uroot -proot inventario_andamios
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # SonarCloud necesita el historico completo para atribuir los cambios.
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # ---------------------------------------------------------------
+      # Backend
+      # ---------------------------------------------------------------
+      - name: Backend - compilar y ejecutar pruebas unitarias
+        working-directory: microservicio
+        run: |
+          set -o pipefail
+          # Corre todas las pruebas salvo MicroservicioApplicationTests, que
+          # levanta el contexto completo y necesita MySQL. Antes se listaban
+          # los sufijos que si se corrian, y una clase nueva con otro sufijo
+          # (por ejemplo ControllerTest) quedaba fuera sin que nadie lo notara.
+          mvn -B test -Dtest='!MicroservicioApplicationTests' -Dsurefire.failIfNoSpecifiedTests=false | tee mvn.log
+
+      - name: Backend - comprobar que las pruebas se ejecutaron
+        working-directory: microservicio
+        run: |
+          # Un filtro mal escrito puede hacer que Maven no ejecute ninguna
+          # prueba y aun asi termine en verde. Se exige un minimo.
+          total=$(grep -E "Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+, Skipped: [0-9]+$" mvn.log | tail -1 | sed -E 's/.*Tests run: ([0-9]+).*/\1/')
+          echo "Pruebas ejecutadas: ${total:-0}"
+          if [ "${total:-0}" -lt 100 ]; then
+            echo "::error title=Pruebas del backend::Se ejecutaron ${total:-0} pruebas; se esperaban al menos 100."
+            exit 1
+          fi
+
+      - name: Backend - resumen de errores
+        if: failure()
+        working-directory: microservicio
+        run: |
+          resumen=$(grep -E "\[ERROR\]|Tests run:|FAIL|expected" mvn.log | grep -v "^\[ERROR\] *$" | head -80 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+          echo "::error title=Resumen de Maven::${resumen}"
+
+      - name: Backend - publicar reporte de pruebas
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: reporte-pruebas-backend
+          path: microservicio/target/surefire-reports/
+
+      # ---------------------------------------------------------------
+      # Frontend
+      # ---------------------------------------------------------------
+      - name: Frontend - instalar dependencias
+        working-directory: frontend
+        run: npm ci
+
+      - name: Frontend - compilar
+        working-directory: frontend
+        run: npx ng build --configuration development
+
+      - name: Frontend - pruebas unitarias
+        working-directory: frontend
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+
+      # ---------------------------------------------------------------
+      # Base de datos
+      # ---------------------------------------------------------------
+      - name: Cargar el volcado entregado por la empresa
+        run: $MYSQL < database/01-inventario_andamios.sql
+
+      - name: Aplicar la migracion del Sprint 1
+        run: $MYSQL < database/02-sprint1-seguridad.sql
+
+      - name: Repetir la migracion (debe ser idempotente)
+        run: $MYSQL < database/02-sprint1-seguridad.sql
+
+      - name: Aplicar la migracion del Sprint 2
+        run: $MYSQL < database/03-sprint2-movimientos.sql
+
+      - name: Repetir la migracion del Sprint 2 (debe ser idempotente)
+        run: $MYSQL < database/03-sprint2-movimientos.sql
+
+      - name: Verificar el esquema y los datos resultantes
+        run: |
+          set -euo pipefail
+          fallo=0
+          fallos=""
+          comprobar() {
+            local descripcion="$1" esperado="$2" obtenido="$3"
+            if [ "$esperado" = "$obtenido" ]; then
+              echo "  OK   $descripcion (= $obtenido)"
+            else
+              echo "  FALLA $descripcion: se esperaba '$esperado' y se obtuvo '$obtenido'"
+              fallos="${fallos}${descripcion}: se esperaba '${esperado}', se obtuvo '${obtenido}'%0A"
+              fallo=1
+            fi
+          }
+          consulta() { $MYSQL -N -B -e "$1"; }
+
+          echo "Usuarios"
+          comprobar "cuentas cargadas" 3 \
+            "$(consulta 'SELECT COUNT(*) FROM usuarios;')"
+          comprobar "contrasenas con hash BCrypt de 60 caracteres" 3 \
+            "$(consulta "SELECT COUNT(*) FROM usuarios WHERE password LIKE '\$2a\$10\$%' AND CHAR_LENGTH(password) = 60;")"
+          comprobar "ninguna contrasena en texto plano" 0 \
+            "$(consulta "SELECT COUNT(*) FROM usuarios WHERE password NOT LIKE '\$2%';")"
+          comprobar "cuentas activas con nombre de usuario" 3 \
+            "$(consulta "SELECT COUNT(*) FROM usuarios WHERE estado = 'ACTIVO' AND nombre_usuario IS NOT NULL;")"
+
+          echo "Productos"
+          comprobar "productos del catalogo" 5 \
+            "$(consulta 'SELECT COUNT(*) FROM productos;')"
+          comprobar "productos con SKU asignado" 5 \
+            "$(consulta 'SELECT COUNT(*) FROM productos WHERE sku IS NOT NULL;')"
+          comprobar "SKU distintos" 5 \
+            "$(consulta 'SELECT COUNT(DISTINCT sku) FROM productos;')"
+
+          echo "Restricciones de unicidad"
+          for columna in correo numero_documento nombre_usuario; do
+            comprobar "indice unico usuarios.$columna" 1 \
+              "$(consulta "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = 'inventario_andamios' AND table_name = 'usuarios' AND column_name = '$columna' AND non_unique = 0;")"
+          done
+          comprobar "indice unico productos.sku" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = 'inventario_andamios' AND table_name = 'productos' AND column_name = 'sku' AND non_unique = 0;")"
+
+          echo "Tablas de sesion"
+          for tabla in refresh_tokens tokens_revocados; do
+            comprobar "existe la tabla $tabla" 1 \
+              "$(consulta "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'inventario_andamios' AND table_name = '$tabla';")"
+          done
+
+          echo "Sprint 2: catalogo de motivos (HU-14)"
+          comprobar "existe la tabla motivos_movimiento" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'inventario_andamios' AND table_name = 'motivos_movimiento';")"
+          comprobar "motivos cargados" 11 \
+            "$(consulta 'SELECT COUNT(*) FROM motivos_movimiento;')"
+          comprobar "motivos de entrada" 5 \
+            "$(consulta "SELECT COUNT(*) FROM motivos_movimiento WHERE aplica_a = 'ENTRADA';")"
+          comprobar "motivos de salida" 6 \
+            "$(consulta "SELECT COUNT(*) FROM motivos_movimiento WHERE aplica_a = 'SALIDA';")"
+          comprobar "los dos motivos de anulacion estan cargados" 2 \
+            "$(consulta "SELECT COUNT(*) FROM motivos_movimiento WHERE codigo LIKE 'ANULACION%';")"
+
+          echo "Sprint 2: movimientos"
+          comprobar "ningun movimiento quedo sin motivo" 0 \
+            "$(consulta 'SELECT COUNT(*) FROM movimientos WHERE motivo IS NULL;')"
+          comprobar "todos los movimientos estan en estado REGISTRADO" 5 \
+            "$(consulta "SELECT COUNT(*) FROM movimientos WHERE estado = 'REGISTRADO';")"
+          comprobar "el costo unitario se derivo del precio del producto" 0 \
+            "$(consulta 'SELECT COUNT(*) FROM movimientos WHERE costo_unitario = 0;')"
+
+          echo "Sprint 2: productos (HU-13, HU-17, HU-20)"
+          for columna in version costo_promedio punto_reposicion stock_maximo activo; do
+            comprobar "existe productos.$columna" 1 \
+              "$(consulta "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'inventario_andamios' AND table_name = 'productos' AND column_name = '$columna';")"
+          done
+          comprobar "el costo promedio arranco del precio registrado" 0 \
+            "$(consulta 'SELECT COUNT(*) FROM productos WHERE costo_promedio = 0;')"
+          comprobar "el punto de reposicion se derivo del stock minimo" 0 \
+            "$(consulta 'SELECT COUNT(*) FROM productos WHERE punto_reposicion IS NULL AND stock_minimo IS NOT NULL;')"
+
+          echo "Sprint 2: ajustes de inventario (HU-16)"
+          comprobar "existe la tabla ajustes_inventario" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'inventario_andamios' AND table_name = 'ajustes_inventario';")"
+          comprobar "existe auditoria.detalle" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'inventario_andamios' AND table_name = 'auditoria' AND column_name = 'detalle';")"
+
+          echo "Sprint 2: el kardex cuadra con el stock (HU-18)"
+          # El saldo reconstruido desde el primer asiento debe terminar en el
+          # stock actual de cada producto. Si no cuadra, el kardex mentiria.
+          comprobar "productos cuyo kardex no cuadra" 0 \
+            "$(consulta "SELECT COUNT(*) FROM ( SELECT p.id, p.stock - COALESCE(SUM(m.cantidad * CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE -1 END), 0) AS saldo_inicial FROM productos p LEFT JOIN movimientos m ON m.producto_id = p.id GROUP BY p.id, p.stock ) t WHERE t.saldo_inicial < 0;")"
+
+          echo "Integridad referencial"
+          comprobar "claves foraneas declaradas" 14 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.table_constraints WHERE table_schema = 'inventario_andamios' AND constraint_type = 'FOREIGN KEY';")"
+
+          echo
+          if [ "$fallo" -ne 0 ]; then
+            echo "::error title=Verificacion de la base de datos::${fallos}"
+            exit 1
+          fi
+          echo "La base de datos quedo en el estado esperado."
+
+      - name: Rechazar contrasenas en texto plano en los scripts
+        run: |
+          if grep -nE "'(123456|admin|password|[0-9]{4,8})'[[:space:]]*,[[:space:]]*[0-9]+\)" database/*.sql; then
+            echo "Se encontro una posible contrasena en texto plano en database/."
+            exit 1
+          fi
+          echo "Sin contrasenas en texto plano en database/."
+
+      # ---------------------------------------------------------------
+      # Analisis estatico con SonarCloud
+      # ---------------------------------------------------------------
+      # Va en este mismo job y no en un workflow aparte porque en esta cuenta
+      # los runners se asignan de a uno: un job adicional se queda en cola
+      # hasta que GitHub lo cancela. Requiere el secreto SONAR_TOKEN; mientras
+      # no exista, los pasos se omiten con un aviso y la ejecucion no falla
+      # (ver docs/sonarcloud.md).
+      - name: Comprobar si SonarCloud esta configurado
+        id: sonar
+        run: |
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "configurado=si" >> "$GITHUB_OUTPUT"
+          else
+            echo "configurado=no" >> "$GITHUB_OUTPUT"
+            echo "::notice title=SonarCloud omitido::Falta el secreto SONAR_TOKEN. Ver docs/sonarcloud.md."
+          fi
+
+      - name: Medir cobertura del backend
+        if: steps.sonar.outputs.configurado == 'si'
+        working-directory: microservicio
+        run: |
+          mvn -B verify -Dtest='!MicroservicioApplicationTests' -Dsurefire.failIfNoSpecifiedTests=false
+          mvn -B dependency:copy-dependencies -DoutputDirectory=target/dependency
+
+      - name: Medir cobertura del frontend
+        if: steps.sonar.outputs.configurado == 'si'
+        working-directory: frontend
+        run: npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
+
+      - name: Analizar con SonarCloud
+        if: steps.sonar.outputs.configurado == 'si'
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

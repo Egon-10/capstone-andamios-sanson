@@ -1,0 +1,148 @@
+<div class="contenedor">
+
+  <h1>Carga masiva de productos</h1>
+
+  <p class="explicacion">
+    Da de alta varios productos a la vez desde un archivo CSV. Las categorias y
+    los proveedores se referencian por nombre y <strong>deben existir
+    previamente</strong>: no se crean al pasar, porque una categoria creada a
+    partir de un nombre mal escrito ensuciaria el catalogo sin que nadie lo
+    note.
+  </p>
+
+  <div class="formulario">
+
+    <h2>Archivo</h2>
+
+    <div class="campo">
+      <label for="archivo">Archivo CSV</label>
+      <input id="archivo" type="file" accept=".csv,text/csv" (change)="seleccionar($event)">
+      <small class="ayuda" *ngIf="nombreArchivo">
+        Seleccionado: {{ nombreArchivo }}
+      </small>
+      <small class="ayuda" *ngIf="!nombreArchivo">
+        Hasta 2 MB y 2000 filas. Acepta coma, punto y coma o tabulador como
+        separador, y decimales escritos con coma.
+      </small>
+    </div>
+
+    <div class="campo">
+      <label for="modo">Si alguna fila tiene errores</label>
+      <select id="modo" [(ngModel)]="modo">
+        <option value="TODO_O_NADA">No cargar ninguna (recomendado)</option>
+        <option value="PARCIAL">Cargar las filas validas e informar las demas</option>
+      </select>
+      <small class="ayuda">
+        La primera opcion es la segura para datos de inventario: una carga a
+        medias deja el catalogo en un estado que nadie pidio y hay que deshacerlo
+        a mano.
+      </small>
+    </div>
+
+    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+
+    <div class="botones">
+      <button type="button" class="secundario" [disabled]="procesando" (click)="simular()">
+        {{ procesando ? 'Procesando...' : 'Simular sin guardar' }}
+      </button>
+      <button type="button" class="principal" [disabled]="procesando" (click)="cargar()">
+        Cargar de verdad
+      </button>
+      <button type="button" class="cancelar" (click)="limpiar()">
+        Limpiar
+      </button>
+    </div>
+
+    <p class="nota">
+      Conviene simular primero: el informe es el mismo, pero no se guarda nada.
+    </p>
+
+    <hr>
+
+    <button type="button" class="enlace" (click)="descargarPlantilla()">
+      Descargar una planilla de ejemplo
+    </button>
+
+  </div>
+
+  <!-- Informe del resultado -->
+  <ng-container *ngIf="informe">
+
+    <h2>
+      {{ informe.simulacion ? 'Resultado de la simulacion' : 'Resultado de la carga' }}
+    </h2>
+
+    <div
+      class="resultado"
+      [ngClass]="{
+        'ok': informe.seGuardo,
+        'simulado': informe.simulacion,
+        'sin-guardar': !informe.seGuardo && !informe.simulacion
+      }">
+
+      <strong *ngIf="informe.simulacion">
+        Simulacion: no se guardo nada.
+      </strong>
+      <strong *ngIf="!informe.simulacion && informe.seGuardo">
+        Se cargaron {{ informe.aceptadas }} productos.
+      </strong>
+      <strong *ngIf="!informe.simulacion && !informe.seGuardo">
+        No se cargo ningun producto.
+      </strong>
+
+      <span *ngIf="!informe.simulacion && !informe.seGuardo && informe.rechazadas! > 0">
+        El modo elegido no guarda nada si alguna fila falla. Corrija las filas
+        de abajo, o cambie el modo para cargar solo las validas.
+      </span>
+
+    </div>
+
+    <div class="tarjetas">
+      <div class="tarjeta">
+        <span class="etiqueta">Filas leidas</span>
+        <strong>{{ informe.filasLeidas }}</strong>
+      </div>
+      <div class="tarjeta valida">
+        <span class="etiqueta">Validas</span>
+        <strong>{{ informe.aceptadas }}</strong>
+      </div>
+      <div class="tarjeta" [class.invalida]="informe.rechazadas! > 0">
+        <span class="etiqueta">Rechazadas</span>
+        <strong>{{ informe.rechazadas }}</strong>
+      </div>
+    </div>
+
+    <!-- El informe nombra la fila tal como se ve en Excel -->
+    <ng-container *ngIf="informe.errores.length > 0">
+      <h3>Filas rechazadas</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="estrecho">Fila</th>
+            <th>SKU</th>
+            <th>Motivo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of informe.errores">
+            <td class="estrecho"><strong>{{ e.fila }}</strong></td>
+            <td>{{ e.sku || '(vacio)' }}</td>
+            <td>{{ e.motivo }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="nota">
+        El numero de fila es el que se ve en Excel: la fila 1 es la cabecera.
+      </p>
+    </ng-container>
+
+    <ng-container *ngIf="informe.skusCargados.length > 0">
+      <h3>Productos cargados</h3>
+      <p class="skus">
+        <span class="sku" *ngFor="let s of informe.skusCargados">{{ s }}</span>
+      </p>
+    </ng-container>
+
+  </ng-container>
+
+</div>

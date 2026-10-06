@@ -1,6 +1,8 @@
 package com.proyecto.microservicio.repository;
 
 import com.proyecto.microservicio.model.Movimiento;
+import com.proyecto.microservicio.model.KardexLineaDTO;
+import com.proyecto.microservicio.model.ResumenProductoDTO;
 import com.proyecto.microservicio.model.MovimientoDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,16 +21,27 @@ public interface MovimientoRepository
     SELECT
         m.id AS id,
         m.tipo AS tipo,
+        m.motivo AS motivo,
+        mo.nombre AS motivoNombre,
+        m.observacion AS observacion,
         m.cantidad AS cantidad,
         m.fecha AS fecha,
+        m.estado AS estado,
+        m.costo_unitario AS costoUnitario,
+        m.saldo_resultante AS saldoResultante,
+        p.id AS productoId,
         p.nombre AS producto,
-        u.nombre AS usuario
+        p.sku AS sku,
+        TRIM(CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario,
+        m.movimiento_origen_id AS movimientoOrigenId
     FROM movimientos m
     INNER JOIN productos p
         ON m.producto_id = p.id
-    INNER JOIN usuarios u
+    LEFT JOIN usuarios u
         ON m.usuario_id = u.id
-    ORDER BY m.fecha DESC
+    LEFT JOIN motivos_movimiento mo
+        ON m.motivo = mo.codigo
+    ORDER BY m.fecha DESC, m.id DESC
     """, nativeQuery = true)
     List<MovimientoDTO> obtenerMovimientosConDetalle();
 
@@ -66,51 +79,143 @@ ORDER BY DAYOFWEEK(m.fecha)
 List<Object[]> movimientosPorSemana(
         Integer offset);
 
-        @Query(value = """
-SELECT
-    m.id AS id,
-    m.tipo AS tipo,
-    m.cantidad AS cantidad,
-    m.fecha AS fecha,
-    p.nombre AS producto,
-    u.nombre AS usuario
-FROM movimientos m
-INNER JOIN productos p
-    ON m.producto_id = p.id
-INNER JOIN usuarios u
-    ON m.usuario_id = u.id
-WHERE
-    (:fechaInicio IS NULL OR m.fecha >= :fechaInicio)
-AND
-    (:fechaFin IS NULL OR m.fecha <= :fechaFin)
-AND
-    (:tipo IS NULL OR m.tipo = :tipo)
-ORDER BY m.fecha DESC
-""", nativeQuery = true)
-List<MovimientoDTO> buscarConFiltros(
-        @Param("fechaInicio") LocalDateTime fechaInicio,
-        @Param("fechaFin") LocalDateTime fechaFin,
-        @Param("tipo") String tipo
-);
+    @Query(value = """
+    SELECT
+        m.id AS id,
+        m.tipo AS tipo,
+        m.motivo AS motivo,
+        mo.nombre AS motivoNombre,
+        m.observacion AS observacion,
+        m.cantidad AS cantidad,
+        m.fecha AS fecha,
+        m.estado AS estado,
+        m.costo_unitario AS costoUnitario,
+        m.saldo_resultante AS saldoResultante,
+        p.id AS productoId,
+        p.nombre AS producto,
+        p.sku AS sku,
+        TRIM(CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario,
+        m.movimiento_origen_id AS movimientoOrigenId
+    FROM movimientos m
+    INNER JOIN productos p
+        ON m.producto_id = p.id
+    LEFT JOIN usuarios u
+        ON m.usuario_id = u.id
+    LEFT JOIN motivos_movimiento mo
+        ON m.motivo = mo.codigo
+    WHERE
+        (:fechaInicio IS NULL OR m.fecha >= :fechaInicio)
+    AND
+        (:fechaFin IS NULL OR m.fecha <= :fechaFin)
+    AND
+        (:tipo IS NULL OR m.tipo = :tipo)
+    ORDER BY m.fecha DESC, m.id DESC
+    """, nativeQuery = true)
+    List<MovimientoDTO> buscarConFiltros(
+            @Param("fechaInicio") LocalDateTime fechaInicio,
+            @Param("fechaFin") LocalDateTime fechaFin,
+            @Param("tipo") String tipo);
 
-@Query(value = """
-SELECT
-    m.id AS id,
-    m.tipo AS tipo,
-    m.cantidad AS cantidad,
-    m.fecha AS fecha,
-    p.nombre AS producto,
-    u.nombre AS usuario
-FROM movimientos m
-INNER JOIN productos p
-    ON m.producto_id = p.id
-INNER JOIN usuarios u
-    ON m.usuario_id = u.id
-WHERE m.tipo = :tipo
-ORDER BY m.fecha DESC
-""", nativeQuery = true)
-List<MovimientoDTO> obtenerMovimientosPorTipo(
-        @Param("tipo")
-        String tipo
-);
+    @Query(value = """
+    SELECT
+        m.id AS id,
+        m.tipo AS tipo,
+        m.motivo AS motivo,
+        mo.nombre AS motivoNombre,
+        m.observacion AS observacion,
+        m.cantidad AS cantidad,
+        m.fecha AS fecha,
+        m.estado AS estado,
+        m.costo_unitario AS costoUnitario,
+        m.saldo_resultante AS saldoResultante,
+        p.id AS productoId,
+        p.nombre AS producto,
+        p.sku AS sku,
+        TRIM(CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario,
+        m.movimiento_origen_id AS movimientoOrigenId
+    FROM movimientos m
+    INNER JOIN productos p
+        ON m.producto_id = p.id
+    LEFT JOIN usuarios u
+        ON m.usuario_id = u.id
+    LEFT JOIN motivos_movimiento mo
+        ON m.motivo = mo.codigo
+    WHERE m.tipo = :tipo
+    ORDER BY m.fecha DESC, m.id DESC
+    """, nativeQuery = true)
+    List<MovimientoDTO> obtenerMovimientosPorTipo(@Param("tipo") String tipo);
+
+    /**
+     * HU-18: asientos de un producto con el acumulado de su efecto sobre el
+     * stock. La funcion de ventana calcula la suma corrida en la propia base,
+     * que es mucho mas eficiente que traer los asientos y acumularlos en Java.
+     *
+     * El acumulado parte de cero en el primer asiento: el servicio le suma el
+     * saldo inicial del producto para obtener el saldo real de cada linea.
+     */
+    @Query(value = """
+    SELECT
+        m.id AS id,
+        m.fecha AS fecha,
+        m.tipo AS tipo,
+        m.motivo AS motivo,
+        mo.nombre AS motivoNombre,
+        m.observacion AS observacion,
+        m.estado AS estado,
+        m.cantidad AS cantidad,
+        m.costo_unitario AS costoUnitario,
+        TRIM(CONCAT(COALESCE(u.nombre, ''), ' ', COALESCE(u.apellidos, ''))) AS usuario,
+        SUM(m.cantidad * CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE -1 END)
+            OVER (ORDER BY m.fecha, m.id) AS acumulado
+    FROM movimientos m
+    LEFT JOIN usuarios u
+        ON m.usuario_id = u.id
+    LEFT JOIN motivos_movimiento mo
+        ON m.motivo = mo.codigo
+    WHERE m.producto_id = :productoId
+      AND (:desde IS NULL OR m.fecha >= :desde)
+      AND (:hasta IS NULL OR m.fecha <= :hasta)
+    ORDER BY m.fecha, m.id
+    """, nativeQuery = true)
+    List<KardexLineaDTO> obtenerKardex(@Param("productoId") Long productoId,
+                                       @Param("desde") LocalDateTime desde,
+                                       @Param("hasta") LocalDateTime hasta);
+
+    /**
+     * Neto de todos los asientos de un producto: entradas menos salidas. El
+     * saldo inicial del kardex es el stock actual menos este neto.
+     */
+    @Query(value = """
+    SELECT COALESCE(SUM(m.cantidad * CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE -1 END), 0)
+    FROM movimientos m
+    WHERE m.producto_id = :productoId
+    """, nativeQuery = true)
+    Integer obtenerNeto(@Param("productoId") Long productoId);
+
+    /**
+     * Neto de los asientos anteriores a una fecha. Lo necesita el kardex
+     * filtrado por rango para saber con que saldo arranca la primera linea.
+     */
+    @Query(value = """
+    SELECT COALESCE(SUM(m.cantidad * CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE -1 END), 0)
+    FROM movimientos m
+    WHERE m.producto_id = :productoId
+      AND m.fecha < :desde
+    """, nativeQuery = true)
+    Integer obtenerNetoAntesDe(@Param("productoId") Long productoId,
+                               @Param("desde") LocalDateTime desde);
+
+    /** HU-22: totales del historico de un producto, para su ficha de detalle. */
+    @Query(value = """
+    SELECT
+        COUNT(*) AS movimientos,
+        SUM(CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE 0 END) AS entradas,
+        SUM(CASE WHEN m.tipo = 'SALIDA'  THEN 1 ELSE 0 END) AS salidas,
+        COALESCE(SUM(CASE WHEN m.tipo = 'ENTRADA' THEN m.cantidad ELSE 0 END), 0) AS unidadesIngresadas,
+        COALESCE(SUM(CASE WHEN m.tipo = 'SALIDA'  THEN m.cantidad ELSE 0 END), 0) AS unidadesRetiradas,
+        MAX(m.fecha) AS ultimoMovimiento
+    FROM movimientos m
+    WHERE m.producto_id = :productoId
+    """, nativeQuery = true)
+    ResumenProductoDTO obtenerResumen(@Param("productoId") Long productoId);
 }

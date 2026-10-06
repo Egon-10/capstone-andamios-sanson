@@ -227,3 +227,36 @@ td {
 .toggle-password:hover {
     color: #2563eb;
 }
+/* Sprint 1 — validación por campo (HU-43) */
+.error-campo {
+    display: block;
+    margin-top: -10px;
+    margin-bottom: 10px;
+    color: #c0392b;
+    font-size: 12px;
+}
+
+.formulario input.invalido,
+.formulario select.invalido {
+    border-color: #c0392b;
+}
+
+.formulario input:disabled,
+.formulario select:disabled {
+    background: #f1f1f1;
+    color: #666;
+}
+
+.mensaje-exito {
+    color: #1e7e34;
+    margin-bottom: 10px;
+}
+
+.estado-activo {
+    color: #1e7e34;
+    font-weight: bold;
+}
+
+.estado-inactivo {
+    color: #999;
+}

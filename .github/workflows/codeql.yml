@@ -1,0 +1,71 @@
+name: Analisis estatico (CodeQL)
+
+# SEG-AP-06: analisis estatico de seguridad del codigo. Revisa el backend Java
+# y el cliente TypeScript en busca de vulnerabilidades. Los hallazgos quedan en
+# la pestana Security > Code scanning del repositorio.
+
+# CodeQL no corre en cada pull request a proposito. Sus dos jobs son los mas
+# largos de todo el proyecto, y en esta cuenta los runners disponibles son
+# pocos: cuando corrian junto a la CI, los jobs que quedaban detras esperaban
+# tanto en cola que GitHub los cancelaba sin haberlos ejecutado. El analisis se
+# ejecuta al integrar a develop o main, y una vez por semana sobre la rama
+# principal, que es suficiente para mantener al dia la pestana Security.
+on:
+  push:
+    branches: [main, develop]
+  schedule:
+    # Revision semanal, los lunes a las 09:00 UTC (04:00 en Lima)
+    - cron: '0 9 * * 1'
+  # Permite lanzarlo a mano sobre cualquier rama desde la pestana Actions.
+  workflow_dispatch:
+
+
+# Una sola ejecucion por rama: si llegan varios push seguidos, se cancela la
+# anterior. Evita que decenas de jobs compitan por los runners disponibles.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analizar:
+    name: CodeQL (${{ matrix.lenguaje }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lenguaje: java-kotlin
+            construir: true
+          - lenguaje: javascript-typescript
+            construir: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Preparar Java 17
+        if: matrix.construir
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Inicializar CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.lenguaje }}
+          queries: security-and-quality
+
+      - name: Compilar el backend
+        if: matrix.construir
+        run: mvn -B -DskipTests compile
+        working-directory: microservicio
+
+      - name: Analizar
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.lenguaje }}

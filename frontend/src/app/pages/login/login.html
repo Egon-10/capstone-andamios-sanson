@@ -32,22 +32,31 @@
             <form (ngSubmit)="iniciarSesion()">
 
     <input
-        type="email"
+        type="text"
         name="correo"
-        placeholder="Correo"
+        placeholder="Correo o nombre de usuario"
+        autocomplete="username"
         [(ngModel)]="loginData.correo">
 
     <input
         type="password"
         name="password"
         placeholder="Contraseña"
+        autocomplete="current-password"
         [(ngModel)]="loginData.password">
 
-    <button type="submit">
-        Ingresar
+    <button type="submit" [disabled]="enviando">
+        {{ enviando ? 'Ingresando...' : 'Ingresar' }}
     </button>
 
 </form>
+
+            <p class="aviso"
+               *ngIf="mensajeAviso && !mensajeError">
+
+                {{ mensajeAviso }}
+
+            </p>
 
             <p class="error"
                *ngIf="mensajeError">

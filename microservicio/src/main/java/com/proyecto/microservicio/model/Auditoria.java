@@ -11,7 +11,16 @@ public class Auditoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 255)
     private String accion;
+
+    /**
+     * Explicación legible de la acción. Se separó de `accion`, que ahora es el
+     * código, porque una anulación o un ajuste necesitan dejar constancia de su
+     * justificación y 255 caracteres no alcanzaban para ambas cosas.
+     */
+    @Column(length = 500)
+    private String detalle;
 
     private LocalDateTime fecha;
 
@@ -63,5 +72,13 @@ public class Auditoria {
 
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
+    }
+
+    public String getDetalle() {
+        return detalle;
+    }
+
+    public void setDetalle(String detalle) {
+        this.detalle = detalle;
     }
 }

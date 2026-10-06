@@ -1,15 +1,48 @@
 import { Rol } from './rol';
 
+/** Usuario tal como lo devuelve la API (nunca incluye la contraseña). */
 export interface Usuario {
-
   id?: number;
-
   nombre: string;
-
+  apellidos?: string;
+  tipoDocumento?: string;
+  numeroDocumento?: string;
   correo: string;
-
-  password: string;
-
+  telefono?: string;
+  nombreUsuario?: string;
+  area?: string;
+  turno?: string;
+  estado?: string;
+  fechaCreacion?: string;
   rol?: Rol;
+}
 
+/** HU-43: datos del formulario de registro. */
+export interface UsuarioRegistro {
+  nombres: string;
+  apellidos: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  correo: string;
+  telefono: string;
+  nombreUsuario: string;
+  password: string;
+  confirmarPassword: string;
+  rolId: number | null;
+  area: string;
+  turno: string;
+}
+
+/** HU-07: edición parcial; solo se envían los campos que cambian. */
+export interface UsuarioActualizacion {
+  nombres?: string;
+  apellidos?: string;
+  correo?: string;
+  telefono?: string;
+  area?: string;
+  turno?: string;
+  rolId?: number;
+  estado?: string;
+  password?: string;
+  confirmarPassword?: string;
 }

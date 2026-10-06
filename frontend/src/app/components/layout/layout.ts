@@ -1,6 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
+
+import { AuthService } from '../../services/auth.service';
+import { SesionInactividadService } from '../../core/sesion-inactividad.service';
 
 @Component({
   selector: 'app-layout',
@@ -9,62 +12,49 @@ import { Router, RouterModule } from '@angular/router';
   templateUrl: './layout.html',
   styleUrl: './layout.css'
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit, OnDestroy {
 
-  rol: string = '';
+  private readonly auth = inject(AuthService);
+  readonly inactividad = inject(SesionInactividadService);
+
+  rol = '';
   usuarioNombre = '';
-usuarioRol = '';
-menuAbierto = false;
-  constructor(private router: Router) {
-
-    const usuario = localStorage.getItem('usuario');
-
-    if (usuario) {
-
-      const datos = JSON.parse(usuario);
-
-      this.rol = datos.rol.nombre;
-    }
-  }
+  usuarioRol = '';
+  menuAbierto = false;
 
   ngOnInit(): void {
-
-  const usuario =
-    localStorage.getItem('usuario');
-
-  if (usuario) {
-
-    const datos =
-      JSON.parse(usuario);
-
-    this.usuarioNombre =
-      datos.nombre;
-
-    this.usuarioRol =
-      datos.rol.nombre;
+    const usuario = this.auth.usuario;
+    if (usuario) {
+      this.rol = usuario.rol?.nombre ?? '';
+      this.usuarioNombre = usuario.nombre;
+      this.usuarioRol = this.rol;
+    }
+    this.inactividad.iniciar();
   }
-}
+
+  ngOnDestroy(): void {
+    this.inactividad.detener();
+  }
 
   esAdministrador(): boolean {
-
     return this.rol === 'ADMINISTRADOR';
   }
 
   esGerente(): boolean {
-
     return this.rol === 'GERENTE';
   }
 
   esEncargado(): boolean {
-
     return this.rol === 'ENCARGADO';
   }
 
+  seguirConectado(): void {
+    this.inactividad.continuar();
+  }
+
   logout(): void {
-
-    localStorage.removeItem('usuario');
-
-    this.router.navigate(['/login']);
+    this.inactividad.detener();
+    this.auth.cerrarSesion();
   }
 
 }

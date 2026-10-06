@@ -4,6 +4,8 @@ public interface ProductoDTO {
 
     Long getId();
 
+    String getSku();
+
     String getNombre();
 
     String getDescripcion();

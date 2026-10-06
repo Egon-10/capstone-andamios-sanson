@@ -1,11 +1,24 @@
 package com.proyecto.microservicio.service;
 
+import com.proyecto.microservicio.config.ZonaHoraria;
+import com.proyecto.microservicio.dto.CategoriaRequest;
+import com.proyecto.microservicio.exception.ConflictoException;
+import com.proyecto.microservicio.exception.RecursoNoEncontradoException;
 import com.proyecto.microservicio.model.Categoria;
 import com.proyecto.microservicio.repository.CategoriaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * HU-11: catalogo maestro de categorias.
+ *
+ * La baja es logica: dar de baja una categoria la saca de las listas para
+ * registrar productos, pero no la borra. Borrarla fallaria por la clave ajena
+ * de los productos que la usan, o peor, dejaria esos productos sin
+ * clasificacion historica.
+ */
 @Service
 public class CategoriaService {
 
@@ -15,21 +28,64 @@ public class CategoriaService {
         this.repository = repository;
     }
 
-    public List<Categoria> listar() {
-        return repository.findAll();
+    /** Por omision solo las activas, que son las que se pueden asignar. */
+    public List<Categoria> listar(boolean incluirInactivas) {
+        return incluirInactivas
+                ? repository.findAllByOrderByNombreAsc()
+                : repository.findByActivoTrueOrderByNombreAsc();
     }
 
     public Categoria obtener(Long id) {
         return repository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("Categoría no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Categoría no encontrada"));
     }
 
-    public Categoria guardar(Categoria categoria) {
-        return repository.save(categoria);
+    @Transactional
+    public Categoria registrar(CategoriaRequest s) {
+        String nombre = s.nombre().trim();
+        if (repository.existsByNombreIgnoreCase(nombre)) {
+            throw new ConflictoException("nombre", "Ya existe la categoría " + nombre);
+        }
+        Categoria c = new Categoria();
+        c.setNombre(nombre);
+        c.setDescripcion(limpiar(s.descripcion()));
+        c.setActivo(true);
+        c.setFechaCreacion(ZonaHoraria.ahora());
+        return repository.save(c);
     }
 
-    public void eliminar(Long id) {
-        repository.deleteById(id);
+    @Transactional
+    public Categoria actualizar(Long id, CategoriaRequest s) {
+        Categoria c = obtener(id);
+        String nombre = s.nombre().trim();
+        if (repository.existsByNombreIgnoreCaseAndIdNot(nombre, id)) {
+            throw new ConflictoException("nombre", "Ya existe la categoría " + nombre);
+        }
+        c.setNombre(nombre);
+        c.setDescripcion(limpiar(s.descripcion()));
+        return repository.save(c);
+    }
+
+    /** Baja logica: la categoria deja de ofrecerse pero no se borra. */
+    @Transactional
+    public Categoria darDeBaja(Long id) {
+        Categoria c = obtener(id);
+        c.setActivo(false);
+        return repository.save(c);
+    }
+
+    @Transactional
+    public Categoria reactivar(Long id) {
+        Categoria c = obtener(id);
+        c.setActivo(true);
+        return repository.save(c);
+    }
+
+    static String limpiar(String valor) {
+        if (valor == null) {
+            return null;
+        }
+        String limpio = valor.trim();
+        return limpio.isEmpty() ? null : limpio;
     }
 }

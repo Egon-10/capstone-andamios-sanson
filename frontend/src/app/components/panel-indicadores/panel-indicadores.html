@@ -1,0 +1,183 @@
+<section class="panel" aria-labelledby="tituloPanel">
+
+  <h2 id="tituloPanel">Indicadores de gestión</h2>
+
+  <p class="mensaje-error" *ngIf="error">{{ error }}</p>
+
+  <!-- HU-23: cifras del día. Solo administrador y gerente. -->
+  <div class="tiles" *ngIf="verResumen && indicadores">
+
+    <div class="tile principal">
+      <span class="tile-etiqueta">Valor del inventario</span>
+      <strong class="tile-valor">S/ {{ indicadores.valorInventario | number:'1.2-2' }}</strong>
+      <span class="tile-nota">al costo promedio · corte {{ indicadores.fechaCorte | date:'dd/MM HH:mm' }}</span>
+    </div>
+
+    <div class="tile">
+      <span class="tile-etiqueta">Productos activos</span>
+      <strong class="tile-valor">{{ indicadores.productosActivos | number }}</strong>
+      <span class="tile-nota">{{ indicadores.unidadesEnStock | number }} unidades en stock</span>
+    </div>
+
+    <div class="tile" [class.atencion]="indicadores.productosPorReponer > 0">
+      <span class="tile-etiqueta">Por reponer</span>
+      <strong class="tile-valor">{{ indicadores.productosPorReponer }}</strong>
+      <span class="tile-nota">{{ indicadores.productosSinStock }} sin stock</span>
+    </div>
+
+    <div class="tile">
+      <span class="tile-etiqueta">Movimientos de hoy</span>
+      <strong class="tile-valor">{{ indicadores.movimientosHoy }}</strong>
+      <span class="tile-nota">{{ indicadores.entradasHoy }} entradas · {{ indicadores.salidasHoy }} salidas</span>
+    </div>
+
+    <div class="tile" [class.atencion]="indicadores.ajustesPendientes > 0">
+      <span class="tile-etiqueta">Ajustes pendientes</span>
+      <strong class="tile-valor">{{ indicadores.ajustesPendientes }}</strong>
+      <span class="tile-nota">esperan aprobación</span>
+    </div>
+
+  </div>
+
+  <!-- HU-24: tendencia de movimientos -->
+  <div class="bloque">
+
+    <div class="bloque-cabecera">
+      <h3>Tendencia de movimientos</h3>
+
+      <div class="controles">
+        <div class="segmentado" role="group" aria-label="Periodo">
+          <button type="button" *ngFor="let p of [7, 30, 90]"
+                  [class.activo]="periodo === p"
+                  [attr.aria-pressed]="periodo === p"
+                  (click)="cambiarPeriodo(p)">{{ p }} días</button>
+        </div>
+        <div class="segmentado" role="group" aria-label="Medida">
+          <button type="button" [class.activo]="medida === 'movimientos'"
+                  [attr.aria-pressed]="medida === 'movimientos'"
+                  (click)="cambiarMedida('movimientos')">Movimientos</button>
+          <button type="button" [class.activo]="medida === 'unidades'"
+                  [attr.aria-pressed]="medida === 'unidades'"
+                  (click)="cambiarMedida('unidades')">Unidades</button>
+        </div>
+        <button type="button" class="enlace" (click)="verTabla = !verTabla">
+          {{ verTabla ? 'Ver gráfico' : 'Ver tabla' }}
+        </button>
+      </div>
+    </div>
+
+    <p class="mensaje-error" *ngIf="errorTendencia">{{ errorTendencia }}</p>
+
+    <ng-container *ngIf="tendencia">
+
+      <p class="resumen-tendencia">
+        <span class="clave entrada"></span>
+        Entradas: <strong>{{ medida === 'unidades' ? tendencia.unidadesEntrada : tendencia.totalEntradas | number }}</strong>
+        <span class="clave salida"></span>
+        Salidas: <strong>{{ medida === 'unidades' ? tendencia.unidadesSalida : tendencia.totalSalidas | number }}</strong>
+        <span class="periodo">del {{ tendencia.desde | date:'dd/MM/yyyy' }} al {{ tendencia.hasta | date:'dd/MM/yyyy' }}</span>
+      </p>
+
+      <p class="vacio" *ngIf="sinMovimientos">No hubo movimientos en este periodo.</p>
+
+      <div class="grafico" *ngIf="!verTabla && !sinMovimientos">
+        <svg [attr.viewBox]="'0 0 ' + ancho + ' ' + alto" role="img"
+             [attr.aria-label]="'Entradas y salidas por día, ' + medida">
+
+          <!-- Rejilla y eje: recesivos -->
+          <g class="rejilla">
+            <ng-container *ngFor="let m of marcasY">
+              <line [attr.x1]="margenIzq" [attr.x2]="ancho - margenDer" [attr.y1]="m.y" [attr.y2]="m.y"></line>
+              <text [attr.x]="margenIzq - 6" [attr.y]="m.y + 4" text-anchor="end">{{ m.valor }}</text>
+            </ng-container>
+          </g>
+
+          <g *ngFor="let g of grupos; let i = index" [class.atenuado]="diaActivo !== undefined && diaActivo !== i">
+            <path class="barra entrada" *ngIf="g.entrada.alto > 0" [attr.d]="g.entrada.trazo"></path>
+            <path class="barra salida" *ngIf="g.salida.alto > 0" [attr.d]="g.salida.trazo"></path>
+            <text *ngIf="g.etiqueta" class="eje-x" [attr.x]="g.etiquetaX" [attr.y]="alto - 8" text-anchor="middle">{{ g.etiqueta }}</text>
+            <!-- Zona de contacto: el día entero, más grande que la barra -->
+            <rect class="zona" tabindex="0"
+                  [attr.x]="g.hitX" [attr.y]="margenSup" [attr.width]="g.hitAncho"
+                  [attr.height]="alto - margenSup - margenInf"
+                  [attr.aria-label]="g.dia.fecha + ': ' + valorEntrada(g.dia) + ' entradas, ' + valorSalida(g.dia) + ' salidas'"
+                  (mouseenter)="activar(i)" (focus)="activar(i)"
+                  (mouseleave)="desactivar()" (blur)="desactivar()"></rect>
+          </g>
+        </svg>
+
+        <div class="tooltip" *ngIf="grupoActivo as g" [style.left.%]="tooltipIzquierda">
+          <span class="tooltip-fecha">{{ g.dia.fecha | date:'EEE dd/MM' }}</span>
+          <span class="tooltip-fila"><i class="trazo entrada"></i><strong>{{ valorEntrada(g.dia) }}</strong> entradas</span>
+          <span class="tooltip-fila"><i class="trazo salida"></i><strong>{{ valorSalida(g.dia) }}</strong> salidas</span>
+        </div>
+
+        <div class="leyenda">
+          <span><i class="muestra entrada"></i>Entradas</span>
+          <span><i class="muestra salida"></i>Salidas</span>
+        </div>
+      </div>
+
+      <table class="tabla-tendencia" *ngIf="verTabla">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th class="numero">Entradas</th>
+            <th class="numero">Salidas</th>
+            <th class="numero">Unid. entrada</th>
+            <th class="numero">Unid. salida</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of tendencia.dias">
+            <td>{{ d.fecha | date:'dd/MM/yyyy' }}</td>
+            <td class="numero">{{ d.entradas }}</td>
+            <td class="numero">{{ d.salidas }}</td>
+            <td class="numero">{{ d.unidadesEntrada }}</td>
+            <td class="numero">{{ d.unidadesSalida }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </ng-container>
+  </div>
+
+  <!-- HU-25: stock crítico -->
+  <div class="bloque">
+    <div class="bloque-cabecera">
+      <h3>Stock crítico</h3>
+      <span class="contador">{{ stockCritico.length }} {{ stockCritico.length === 1 ? 'producto' : 'productos' }}</span>
+    </div>
+
+    <p class="vacio" *ngIf="stockCritico.length === 0">Ningún producto alcanzó su umbral de reposición.</p>
+
+    <table class="tabla-critico" *ngIf="stockCritico.length > 0">
+      <thead>
+        <tr>
+          <th>Nivel</th>
+          <th>Producto</th>
+          <th>Categoría</th>
+          <th class="numero">Stock</th>
+          <th class="numero">Umbral</th>
+          <th class="numero">Reponer hasta el máximo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of stockCritico">
+          <td>
+            <span class="nivel" [ngClass]="'nivel-' + s.nivel">
+              <i class="fa-solid" [ngClass]="icono(s.nivel)" aria-hidden="true"></i>
+              {{ etiquetaNivel(s.nivel) }}
+            </span>
+          </td>
+          <td>{{ s.producto }} <small *ngIf="s.sku">{{ s.sku }}</small></td>
+          <td>{{ s.categoria }}</td>
+          <td class="numero"><strong>{{ s.stock }}</strong></td>
+          <td class="numero">{{ s.umbral }}</td>
+          <td class="numero">{{ s.reponerHastaMaximo ?? '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>

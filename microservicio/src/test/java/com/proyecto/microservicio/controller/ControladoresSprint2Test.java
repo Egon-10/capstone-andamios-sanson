@@ -313,4 +313,25 @@ class ControladoresSprint2Test {
         verify(proveedores).darDeBaja(2L);
         verify(proveedores).listar(false);
     }
+
+    // --- indicadores (HU-23 a HU-25) ---
+
+    @Test
+    @DisplayName("HU-23 a HU-25: resumen, tendencia con fechas y stock critico")
+    void indicadores() {
+        com.proyecto.microservicio.service.IndicadoresService servicio =
+                mock(com.proyecto.microservicio.service.IndicadoresService.class);
+        IndicadoresController c = new IndicadoresController(servicio);
+
+        c.resumen();
+        c.stockCritico();
+        c.tendencia("2026-06-01", "2026-06-30");
+        c.tendencia(null, " ");
+
+        verify(servicio).indicadores();
+        verify(servicio).stockCritico();
+        verify(servicio).tendencia(java.time.LocalDate.of(2026, 6, 1), java.time.LocalDate.of(2026, 6, 30));
+        verify(servicio).tendencia(null, null);
+        assertThrows(ReglaNegocioException.class, () -> c.tendencia("junio", null));
+    }
 }

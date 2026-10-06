@@ -27,10 +27,10 @@ export interface FiltrosProducto {
 })
 export class ProductoService {
 
-  private apiUrl =
+  private readonly apiUrl =
     `${environment.apiUrl}/productos`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   listar(): Observable<Producto[]> {
     return this.http.get<Producto[]>(this.apiUrl);

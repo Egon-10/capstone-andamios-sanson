@@ -4,6 +4,7 @@ import com.proyecto.microservicio.dto.AjusteRequest;
 import com.proyecto.microservicio.dto.AnulacionRequest;
 import com.proyecto.microservicio.dto.CargaMasivaResponse;
 import com.proyecto.microservicio.dto.CategoriaRequest;
+import com.proyecto.microservicio.dto.FiltroProductos;
 import com.proyecto.microservicio.dto.MotivoResponse;
 import com.proyecto.microservicio.dto.MovimientoRequest;
 import com.proyecto.microservicio.dto.PaginaResponse;
@@ -223,14 +224,14 @@ class ControladoresSprint2Test {
         p.setNombre("Marco");
         p.setStock(5);
         p.setStockMinimo(10);
-        when(servicio.buscar(any(), any(), any(), anyBoolean(), anyBoolean(), anyInt(), anyInt(),
-                anyString(), anyString())).thenReturn(new PageImpl<>(List.of(p)));
+        when(servicio.buscar(any(FiltroProductos.class))).thenReturn(new PageImpl<>(List.of(p)));
 
         PaginaResponse<ProductoResumen> pagina = c.buscar("marco", null, null, true, false, 0, 20,
                 "nombre", "asc");
 
         assertEquals(1, pagina.totalElementos());
         assertTrue(pagina.contenido().get(0).necesitaReposicion());
+        verify(servicio).buscar(new FiltroProductos("marco", null, null, true, false, 0, 20, "nombre", "asc"));
 
         c.ficha(1L, 10);
         verify(servicio).ficha(1L, 10);

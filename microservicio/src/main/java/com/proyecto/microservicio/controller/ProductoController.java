@@ -2,6 +2,7 @@ package com.proyecto.microservicio.controller;
 
 import com.proyecto.microservicio.dto.CargaMasivaResponse;
 import com.proyecto.microservicio.dto.FichaProductoResponse;
+import com.proyecto.microservicio.dto.FiltroProductos;
 import com.proyecto.microservicio.dto.PaginaResponse;
 import com.proyecto.microservicio.dto.ProductoRequest;
 import com.proyecto.microservicio.dto.ProductoResumen;
@@ -90,8 +91,8 @@ public class ProductoController {
             @RequestParam(defaultValue = "asc") String direccion) {
 
         return PaginaResponse.de(
-                service.buscar(q, categoriaId, proveedorId, soloActivos, porReponer,
-                        pagina, tamano, orden, direccion),
+                service.buscar(new FiltroProductos(q, categoriaId, proveedorId, soloActivos,
+                        porReponer, pagina, tamano, orden, direccion)),
                 ProductoResumen::de);
     }
 
@@ -114,7 +115,7 @@ public class ProductoController {
      *
      * Con simulacion=true se valida el archivo y se devuelve el informe sin
      * guardar nada, que es la forma razonable de revisar una planilla larga
-     * antes de aplicarla. El modo TODO_O_NADA, que es el de por omisión, no
+     * antes de aplicarla. El modo estricto, que es el de por omisión, no
      * guarda ninguna fila si alguna falla.
      */
     @PostMapping("/carga-masiva")

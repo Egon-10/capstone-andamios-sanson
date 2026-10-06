@@ -95,7 +95,7 @@ public class Movimiento {
     }
 
     /**
-     * Signo con el que este asiento afecta al stock. Todo asiento cuenta,
+     * Signo con el que este asiento afecta al stock. Cada asiento cuenta,
      * incluido el anulado: lo que revierte a un asiento anulado es su asiento
      * compensatorio, y la suma de los dos es cero (ver {@link EstadosMovimiento}).
      */

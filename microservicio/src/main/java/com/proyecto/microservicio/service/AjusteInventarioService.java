@@ -114,7 +114,7 @@ public class AjusteInventarioService {
         auditoria.registrar("AJUSTE_REGISTRADO",
                 "Conteo fisico " + guardado.getId() + " de " + producto.getNombre()
                         + ": sistema " + stockSistema + ", contado " + s.stockFisico()
-                        + ", diferencia " + con_signo(diferencia) + ". Pendiente de aprobacion.",
+                        + ", diferencia " + conSigno(diferencia) + ". Pendiente de aprobacion.",
                 usuarioId);
 
         return guardado;
@@ -171,7 +171,7 @@ public class AjusteInventarioService {
 
         auditoria.registrar("AJUSTE_APROBADO",
                 "Se aprobo el conteo " + ajuste.getId() + " de " + producto.getNombre()
-                        + ". Diferencia " + con_signo(ajuste.getDiferencia())
+                        + ". Diferencia " + conSigno(ajuste.getDiferencia())
                         + " aplicada con el movimiento " + movimiento.getId()
                         + ". Solicitado por " + nombre(ajuste.getUsuarioSolicita()) + ".",
                 usuarioId);
@@ -230,7 +230,7 @@ public class AjusteInventarioService {
         return u == null ? "?" : u.getNombre();
     }
 
-    static String con_signo(int valor) {
+    static String conSigno(int valor) {
         return valor > 0 ? "+" + valor : String.valueOf(valor);
     }
 

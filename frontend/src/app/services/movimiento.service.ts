@@ -25,9 +25,9 @@ export interface MovimientoSolicitud {
 @Injectable({ providedIn: 'root' })
 export class MovimientoService {
 
-  private apiUrl = `${environment.apiUrl}/movimientos`;
+  private readonly apiUrl = `${environment.apiUrl}/movimientos`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   listar(): Observable<MovimientoDetalle[]> {
     return this.http.get<MovimientoDetalle[]>(this.apiUrl);

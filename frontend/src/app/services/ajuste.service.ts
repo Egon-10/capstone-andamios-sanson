@@ -16,9 +16,9 @@ import { Ajuste } from '../models/ajuste';
 @Injectable({ providedIn: 'root' })
 export class AjusteService {
 
-  private apiUrl = `${environment.apiUrl}/ajustes`;
+  private readonly apiUrl = `${environment.apiUrl}/ajustes`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   listar(estado?: string, productoId?: number): Observable<Ajuste[]> {
     let params = new HttpParams();

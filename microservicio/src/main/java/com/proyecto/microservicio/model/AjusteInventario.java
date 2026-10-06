@@ -76,6 +76,7 @@ public class AjusteInventario {
     private Movimiento movimiento;
 
     public AjusteInventario() {
+        // Requerido por JPA para instanciar la entidad al leerla de la base.
     }
 
     /** Un ajuste solo se puede aprobar o rechazar mientras siga pendiente. */

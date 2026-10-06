@@ -26,7 +26,7 @@ import java.util.List;
  * Se hace así, y no leyendo la columna saldo_resultante, porque los
  * movimientos heredados de la base anterior no la tienen: el sistema empezó a
  * registrarla en el Sprint 2. Reconstruir el saldo hacia atrás desde el stock
- * actual es la única forma de que la columna cuadre para todo el histórico.
+ * actual es la única forma de que la columna cuadre para el histórico completo.
  */
 @Service
 public class KardexService {

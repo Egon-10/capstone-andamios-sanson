@@ -233,7 +233,7 @@
   <!-- Se cierra con el boton o con la tecla Escape. Cerrar al hacer clic
        en el fondo dejaba fuera a quien navega con teclado. -->
   <div class="fondo-modal" *ngIf="ficha">
-    <div class="modal-ficha" role="dialog" aria-modal="true" aria-labelledby="tituloFicha">
+    <dialog class="modal-ficha" open aria-modal="true" aria-labelledby="tituloFicha">
 
       <div class="cabecera-ficha">
         <div>
@@ -373,7 +373,7 @@
         </tbody>
       </table>
 
-    </div>
+    </dialog>
   </div>
 
 </div>

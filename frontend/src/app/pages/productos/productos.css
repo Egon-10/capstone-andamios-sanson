@@ -479,6 +479,12 @@ button.ficha {
 }
 
 .modal-ficha {
+  /* Se anulan los estilos por omision de <dialog>, que lo posicionan en
+     absoluto y le ponen borde: aqui lo centra el fondo. */
+  position: static;
+  margin: 0;
+  border: none;
+  color: inherit;
   background: #fff;
   border-radius: 12px;
   padding: 28px;

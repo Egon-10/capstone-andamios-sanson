@@ -72,9 +72,9 @@ export class MovimientosComponent implements OnInit {
   tipoFiltro = '';
 
   constructor(
-    private productoService: ProductoService,
-    private movimientoService: MovimientoService,
-    private motivoService: MotivoService
+    private readonly productoService: ProductoService,
+    private readonly movimientoService: MovimientoService,
+    private readonly motivoService: MotivoService
   ) {}
 
   ngOnInit(): void {

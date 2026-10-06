@@ -36,7 +36,7 @@ export class ValorizacionComponent implements OnInit {
   cargando = false;
   mensajeError = '';
 
-  constructor(private inventarioService: InventarioService) {}
+  constructor(private readonly inventarioService: InventarioService) {}
 
   ngOnInit(): void {
     this.cargando = true;

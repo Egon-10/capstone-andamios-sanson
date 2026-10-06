@@ -31,7 +31,7 @@ export class CargaMasivaComponent {
   procesando = false;
   mensajeError = '';
 
-  constructor(private productoService: ProductoService) {}
+  constructor(private readonly productoService: ProductoService) {}
 
   seleccionar(evento: Event): void {
     const entrada = evento.target as HTMLInputElement;

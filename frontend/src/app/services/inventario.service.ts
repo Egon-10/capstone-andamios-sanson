@@ -17,9 +17,9 @@ import { Valorizacion, ValorizacionProducto } from '../models/valorizacion';
 @Injectable({ providedIn: 'root' })
 export class InventarioService {
 
-  private apiUrl = `${environment.apiUrl}/inventario`;
+  private readonly apiUrl = `${environment.apiUrl}/inventario`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   /** HU-17: valor del inventario al costo promedio ponderado. */
   valorizacion(): Observable<Valorizacion> {

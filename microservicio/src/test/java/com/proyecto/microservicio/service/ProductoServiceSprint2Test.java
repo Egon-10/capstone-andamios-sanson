@@ -1,6 +1,7 @@
 package com.proyecto.microservicio.service;
 
 import com.proyecto.microservicio.dto.FichaProductoResponse;
+import com.proyecto.microservicio.dto.FiltroProductos;
 import com.proyecto.microservicio.dto.KardexResponse;
 import com.proyecto.microservicio.dto.ProductoRequest;
 import com.proyecto.microservicio.dto.UmbralesRequest;
@@ -93,10 +94,10 @@ class ProductoServiceSprint2Test {
         Page<Producto> vacia = new PageImpl<>(List.of());
         when(productos.buscar(any(), any(), any(), anyBoolean(), anyBoolean(), any())).thenReturn(vacia);
 
-        servicio.buscar("  PLAtaforma ", 3L, null, true, false, 0, 20, "nombre", "asc");
+        servicio.buscar(new FiltroProductos("  PLAtaforma ", 3L, null, true, false, 0, 20, "nombre", "asc"));
         verify(productos).buscar(eq("%plataforma%"), eq(3L), isNull(), eq(true), eq(false), any());
 
-        servicio.buscar("   ", null, null, false, true, 0, 20, null, null);
+        servicio.buscar(new FiltroProductos("   ", null, null, false, true, 0, 20, null, null));
         verify(productos).buscar(isNull(), isNull(), isNull(), eq(false), eq(true), any());
     }
 

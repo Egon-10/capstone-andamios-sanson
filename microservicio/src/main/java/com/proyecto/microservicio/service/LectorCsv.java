@@ -35,13 +35,18 @@ final class LectorCsv {
         int puntoYComa = contar(cabecera, ';');
         int tabuladores = contar(cabecera, '\t');
 
-        if (puntoYComa > comas && puntoYComa >= tabuladores) {
-            return ';';
+        // Gana el que mas aparece. En caso de empate se prefiere la coma, luego
+        // el punto y coma: es el orden en que son mas frecuentes.
+        char elegido = ',';
+        int maximo = comas;
+        if (puntoYComa > maximo) {
+            elegido = ';';
+            maximo = puntoYComa;
         }
-        if (tabuladores > comas && tabuladores > puntoYComa) {
-            return '\t';
+        if (tabuladores > maximo) {
+            elegido = '\t';
         }
-        return ',';
+        return elegido;
     }
 
     /**
@@ -91,7 +96,7 @@ final class LectorCsv {
                 actual.append(c);
             }
         }
-        if (actual.length() > 0) {
+        if (!actual.isEmpty()) {
             lineas.add(actual.toString());
         }
         return lineas;
@@ -101,33 +106,36 @@ final class LectorCsv {
         List<String> campos = new ArrayList<>();
         StringBuilder actual = new StringBuilder();
         boolean entreComillas = false;
+        int i = 0;
 
-        for (int i = 0; i < linea.length(); i++) {
+        while (i < linea.length()) {
             char c = linea.charAt(i);
 
-            if (entreComillas) {
-                if (c == COMILLA) {
-                    // Dos comillas seguidas representan una comilla literal.
-                    if (i + 1 < linea.length() && linea.charAt(i + 1) == COMILLA) {
-                        actual.append(COMILLA);
-                        i++;
-                    } else {
-                        entreComillas = false;
-                    }
-                } else {
-                    actual.append(c);
-                }
-            } else if (c == COMILLA) {
-                entreComillas = true;
-            } else if (c == separador) {
+            if (entreComillas && esComillaDoblada(linea, i)) {
+                // Dos comillas seguidas dentro de un campo son una comilla literal.
+                actual.append(COMILLA);
+                i += 2;
+                continue;
+            }
+
+            if (c == COMILLA) {
+                entreComillas = !entreComillas;
+            } else if (c == separador && !entreComillas) {
                 campos.add(actual.toString().trim());
                 actual.setLength(0);
             } else {
                 actual.append(c);
             }
+            i++;
         }
         campos.add(actual.toString().trim());
         return campos;
+    }
+
+    private static boolean esComillaDoblada(String linea, int i) {
+        return linea.charAt(i) == COMILLA
+                && i + 1 < linea.length()
+                && linea.charAt(i + 1) == COMILLA;
     }
 
     private static int contar(String texto, char buscado) {

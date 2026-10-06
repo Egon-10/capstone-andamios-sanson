@@ -3,9 +3,9 @@ package com.proyecto.microservicio.config;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,8 +21,8 @@ class ZonaHorariaTest {
     @Test
     @DisplayName("ahora() devuelve la hora de Lima aunque el servidor este en otra zona")
     void ahoraEnLima() {
-        LocalDateTime esperado = LocalDateTime.now(ZoneId.of("America/Lima"));
-        long diferencia = Math.abs(ChronoUnit.SECONDS.between(esperado, ZonaHoraria.ahora()));
+        Instant ahoraEnLima = ZonaHoraria.ahora().atZone(ZonaHoraria.NEGOCIO).toInstant();
+        long diferencia = Math.abs(Duration.between(Instant.now(), ahoraEnLima).toSeconds());
         assertTrue(diferencia < 5, "diferencia de " + diferencia + " segundos");
     }
 }

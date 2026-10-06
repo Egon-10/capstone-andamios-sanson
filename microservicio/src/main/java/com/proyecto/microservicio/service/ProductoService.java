@@ -1,6 +1,7 @@
 package com.proyecto.microservicio.service;
 
 import com.proyecto.microservicio.dto.FichaProductoResponse;
+import com.proyecto.microservicio.dto.FiltroProductos;
 import com.proyecto.microservicio.dto.KardexResponse;
 import com.proyecto.microservicio.dto.ProductoRequest;
 import com.proyecto.microservicio.dto.UmbralesRequest;
@@ -140,16 +141,13 @@ public class ProductoService {
      * búsqueda empieza a hacer falta.
      */
     @Transactional(readOnly = true)
-    public Page<Producto> buscar(String texto, Long categoriaId, Long proveedorId,
-                                 boolean soloActivos, boolean porReponer,
-                                 int pagina, int tamano, String orden, String direccion) {
-
-        String patron = texto == null || texto.isBlank()
+    public Page<Producto> buscar(FiltroProductos f) {
+        String patron = f.texto() == null || f.texto().isBlank()
                 ? null
-                : "%" + texto.trim().toLowerCase(Locale.ROOT) + "%";
+                : "%" + f.texto().trim().toLowerCase(Locale.ROOT) + "%";
 
-        return repository.buscar(patron, categoriaId, proveedorId, soloActivos, porReponer,
-                paginacion(pagina, tamano, orden, direccion));
+        return repository.buscar(patron, f.categoriaId(), f.proveedorId(), f.soloActivos(),
+                f.porReponer(), paginacion(f.pagina(), f.tamano(), f.orden(), f.direccion()));
     }
 
     /**

@@ -45,6 +45,8 @@ public class SecurityConfig {
     private static final String GERENTE = Roles.GERENTE;
     private static final String ENCARGADO = Roles.ENCARGADO;
 
+    private static final String MOVIMIENTOS = "/api/movimientos/**";
+
     @Bean
     public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, JwtAuthenticationConverter convertidor) throws Exception {
         http
@@ -84,10 +86,10 @@ public class SecurityConfig {
                 // administrador y al gerente. Los verbos PUT y DELETE sobre
                 // movimientos ya no existen en el controlador y se deniegan aqui
                 // para que una ruta reintroducida por error no quede abierta.
-                .requestMatchers(HttpMethod.PUT, "/api/movimientos/**").denyAll()
-                .requestMatchers(HttpMethod.DELETE, "/api/movimientos/**").denyAll()
+                .requestMatchers(HttpMethod.PUT, MOVIMIENTOS).denyAll()
+                .requestMatchers(HttpMethod.DELETE, MOVIMIENTOS).denyAll()
                 .requestMatchers(HttpMethod.POST, "/api/movimientos/*/anulacion").hasAnyRole(ADMIN, GERENTE)
-                .requestMatchers(HttpMethod.POST, "/api/movimientos/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
+                .requestMatchers(HttpMethod.POST, MOVIMIENTOS).hasAnyRole(ADMIN, GERENTE, ENCARGADO)
 
                 // HU-17: la valorizacion es informacion economica del negocio y
                 // queda para el administrador y el gerente. El kardex y la lista

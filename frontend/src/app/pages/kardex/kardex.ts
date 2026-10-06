@@ -36,8 +36,8 @@ export class KardexComponent implements OnInit {
   mensajeError = '';
 
   constructor(
-    private productoService: ProductoService,
-    private inventarioService: InventarioService
+    private readonly productoService: ProductoService,
+    private readonly inventarioService: InventarioService
   ) {}
 
   ngOnInit(): void {
@@ -88,8 +88,7 @@ export class KardexComponent implements OnInit {
     if (this.desde || this.hasta) {
       return true;
     }
-    const ultima = this.kardex.lineas[this.kardex.lineas.length - 1];
-    return ultima.saldo === this.kardex.stockActual;
+    return this.kardex.lineas.at(-1)?.saldo === this.kardex.stockActual;
   }
 
   claseEstado(estado?: string): string {

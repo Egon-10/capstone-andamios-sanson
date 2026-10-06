@@ -78,10 +78,10 @@ export class ProductosComponent implements OnInit {
   
 
   constructor(
-  private productoService: ProductoService,
-  private categoriaService: CategoriaService,
-  private proveedorService: ProveedorService,
-  private auditoriaService: AuditoriaService
+  private readonly productoService: ProductoService,
+  private readonly categoriaService: CategoriaService,
+  private readonly proveedorService: ProveedorService,
+  private readonly auditoriaService: AuditoriaService
 ) {}
 
   ngOnInit(): void {

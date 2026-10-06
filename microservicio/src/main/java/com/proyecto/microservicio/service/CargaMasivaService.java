@@ -26,12 +26,12 @@ import java.util.Set;
  *
  * El archivo se valida completo antes de guardar nada. Eso permite dos modos:
  *
- * - TODO_O_NADA, que es el de por omisión: si una sola fila falla, no se
- *   guarda ninguna. Es el comportamiento seguro para datos de inventario,
+ * - El modo estricto, que es el de por omisión: si una sola fila falla, no
+ *   se guarda ninguna. Es el comportamiento seguro para datos de inventario,
  *   porque una carga a medias deja el catálogo en un estado que nadie pidió y
  *   que hay que deshacer a mano.
  *
- * - PARCIAL, que guarda las filas válidas e informa las demás. Sirve para un
+ * - El modo parcial, que guarda las filas válidas e informa las demás. Sirve para un
  *   archivo largo del proveedor donde unas pocas filas vienen incompletas.
  *
  * En los dos casos el informe nombra la fila y el motivo de cada rechazo.
@@ -44,9 +44,15 @@ import java.util.Set;
 @Service
 public class CargaMasivaService {
 
+    private static final String COL_SKU = "sku";
+    private static final String COL_NOMBRE = "nombre";
+    private static final String COL_PRECIO = "precio";
+    private static final String COL_STOCK = "stock";
+    private static final String COL_CATEGORIA = "categoria";
+
     /** Columnas que debe traer la cabecera, en cualquier orden. */
     private static final List<String> COLUMNAS_OBLIGATORIAS =
-            List.of("sku", "nombre", "precio", "stock", "categoria");
+            List.of(COL_SKU, COL_NOMBRE, COL_PRECIO, COL_STOCK, COL_CATEGORIA);
 
     private static final int MAXIMO_FILAS = 2000;
 
@@ -103,7 +109,7 @@ public class CargaMasivaService {
             // el numero debe coincidir con lo que el usuario ve en Excel.
             int numeroDeFila = i + 2;
             List<String> fila = datos.get(i);
-            String sku = normalizarSku(valor(fila, columnas, "sku"));
+            String sku = normalizarSku(valor(fila, columnas, COL_SKU));
 
             try {
                 Producto producto = convertir(fila, columnas, porNombreCategoria,
@@ -153,7 +159,7 @@ public class CargaMasivaService {
                                Map<String, Proveedor> proveedoresPorNombre,
                                Set<String> skusYaVistos) {
 
-        String sku = normalizarSku(valor(fila, columnas, "sku"));
+        String sku = normalizarSku(valor(fila, columnas, COL_SKU));
         if (sku.isEmpty()) {
             throw new ReglaNegocioException("Falta el SKU");
         }
@@ -168,7 +174,7 @@ public class CargaMasivaService {
             throw new ReglaNegocioException("El SKU " + sku + " ya existe en el catalogo");
         }
 
-        String nombre = valor(fila, columnas, "nombre");
+        String nombre = valor(fila, columnas, COL_NOMBRE);
         if (nombre.isEmpty()) {
             throw new ReglaNegocioException("Falta el nombre del producto");
         }
@@ -176,7 +182,7 @@ public class CargaMasivaService {
             throw new ReglaNegocioException("El nombre admite hasta 100 caracteres");
         }
 
-        String nombreCategoria = valor(fila, columnas, "categoria");
+        String nombreCategoria = valor(fila, columnas, COL_CATEGORIA);
         Categoria categoria = categoriasPorNombre.get(clave(nombreCategoria));
         if (categoria == null) {
             throw new ReglaNegocioException("La categoria \"" + nombreCategoria
@@ -197,8 +203,8 @@ public class CargaMasivaService {
         p.setSku(sku);
         p.setNombre(nombre);
         p.setDescripcion(vacioComoNulo(valor(fila, columnas, "descripcion")));
-        p.setPrecio(comoDecimal(valor(fila, columnas, "precio"), "precio"));
-        p.setStock(comoEntero(valor(fila, columnas, "stock"), "stock", true));
+        p.setPrecio(comoDecimal(valor(fila, columnas, COL_PRECIO), COL_PRECIO));
+        p.setStock(comoEntero(valor(fila, columnas, COL_STOCK), COL_STOCK, true));
         p.setStockMinimo(comoEntero(valor(fila, columnas, "stockminimo"), "stock minimo", false));
         p.setPuntoReposicion(
                 comoEntero(valor(fila, columnas, "puntoreposicion"), "punto de reposicion", false));

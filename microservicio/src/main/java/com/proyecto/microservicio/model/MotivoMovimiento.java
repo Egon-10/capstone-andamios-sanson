@@ -35,6 +35,7 @@ public class MotivoMovimiento {
     private boolean activo = true;
 
     public MotivoMovimiento() {
+        // Requerido por JPA para instanciar la entidad al leerla de la base.
     }
 
     public String getCodigo() {

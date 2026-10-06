@@ -37,7 +37,7 @@ public class Producto {
 
     /**
      * HU-17: costo promedio ponderado, recalculado en cada entrada. Se guarda
-     * en la fila del producto para no recorrer todo el kardex cada vez que se
+     * en la fila del producto para no recorrer el kardex entero cada vez que se
      * pide la valorización del inventario.
      */
     @Column(name = "costo_promedio", nullable = false, precision = 12, scale = 4)

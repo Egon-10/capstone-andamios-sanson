@@ -16,9 +16,9 @@ import { Motivo } from '../models/motivo';
 @Injectable({ providedIn: 'root' })
 export class MotivoService {
 
-  private apiUrl = `${environment.apiUrl}/motivos-movimiento`;
+  private readonly apiUrl = `${environment.apiUrl}/motivos-movimiento`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   /** Motivos aplicables a un tipo de movimiento: ENTRADA o SALIDA. */
   listar(tipo?: string): Observable<Motivo[]> {

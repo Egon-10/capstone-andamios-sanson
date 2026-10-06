@@ -49,8 +49,8 @@ export class AjustesComponent implements OnInit {
   guardando = false;
 
   constructor(
-    private productoService: ProductoService,
-    private ajusteService: AjusteService
+    private readonly productoService: ProductoService,
+    private readonly ajusteService: AjusteService
   ) {}
 
   ngOnInit(): void {

@@ -173,16 +173,16 @@ Dos separaciones de responsabilidad que conviene conocer:
 ## Pruebas
 
 ```bash
-# Backend: 95 pruebas unitarias
+# Backend: pruebas unitarias (todas menos la que necesita MySQL)
 cd microservicio
-./mvnw test -Dtest='*ServiceTest,*ValidatorTest,*HandlerTest,*InitializerTest'
+./mvnw test -Dtest='!MicroservicioApplicationTests'
 
-# Frontend: 27 pruebas
+# Frontend: 98 pruebas
 cd frontend
 npm test -- --watch=false
 ```
 
-`MicroservicioApplicationTests` queda fuera de ese filtro porque levanta el contexto
+`MicroservicioApplicationTests` queda fuera porque levanta el contexto
 completo de Spring y necesita MySQL en ejecución.
 
 Cada pull request ejecuta en GitHub Actions, en un solo trabajo, las pruebas del

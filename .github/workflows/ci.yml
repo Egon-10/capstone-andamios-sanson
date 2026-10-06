@@ -60,7 +60,23 @@ jobs:
         working-directory: microservicio
         run: |
           set -o pipefail
-          mvn -B test -Dtest='*ServiceTest,*ValidatorTest,*HandlerTest,*InitializerTest' -Dsurefire.failIfNoSpecifiedTests=false | tee mvn.log
+          # Corre todas las pruebas salvo MicroservicioApplicationTests, que
+          # levanta el contexto completo y necesita MySQL. Antes se listaban
+          # los sufijos que si se corrian, y una clase nueva con otro sufijo
+          # (por ejemplo ControllerTest) quedaba fuera sin que nadie lo notara.
+          mvn -B test -Dtest='!MicroservicioApplicationTests' -Dsurefire.failIfNoSpecifiedTests=false | tee mvn.log
+
+      - name: Backend - comprobar que las pruebas se ejecutaron
+        working-directory: microservicio
+        run: |
+          # Un filtro mal escrito puede hacer que Maven no ejecute ninguna
+          # prueba y aun asi termine en verde. Se exige un minimo.
+          total=$(grep -E "Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+, Skipped: [0-9]+$" mvn.log | tail -1 | sed -E 's/.*Tests run: ([0-9]+).*/\1/')
+          echo "Pruebas ejecutadas: ${total:-0}"
+          if [ "${total:-0}" -lt 100 ]; then
+            echo "::error title=Pruebas del backend::Se ejecutaron ${total:-0} pruebas; se esperaban al menos 100."
+            exit 1
+          fi
 
       - name: Backend - resumen de errores
         if: failure()
@@ -241,7 +257,7 @@ jobs:
         if: steps.sonar.outputs.configurado == 'si'
         working-directory: microservicio
         run: |
-          mvn -B verify -Dtest='*ServiceTest,*ValidatorTest,*HandlerTest,*InitializerTest' -Dsurefire.failIfNoSpecifiedTests=false
+          mvn -B verify -Dtest='!MicroservicioApplicationTests' -Dsurefire.failIfNoSpecifiedTests=false
           mvn -B dependency:copy-dependencies -DoutputDirectory=target/dependency
 
       - name: Medir cobertura del frontend

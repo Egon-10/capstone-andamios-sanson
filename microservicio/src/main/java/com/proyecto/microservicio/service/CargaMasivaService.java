@@ -180,7 +180,7 @@ public class CargaMasivaService {
         Categoria categoria = categoriasPorNombre.get(clave(nombreCategoria));
         if (categoria == null) {
             throw new ReglaNegocioException("La categoria \"" + nombreCategoria
-                    + "\" no existe en el catalogo. Creela antes de cargar el archivo.");
+                    + "\" no existe en el catalogo o esta dada de baja. Creela antes de cargar el archivo.");
         }
 
         Proveedor proveedor = null;
@@ -246,13 +246,18 @@ public class CargaMasivaService {
 
     private Map<String, Categoria> indexarCategorias() {
         Map<String, Categoria> mapa = new HashMap<>();
-        categorias.findAll().forEach(c -> mapa.put(clave(c.getNombre()), c));
+        // Solo las activas: una categoria dada de baja no recibe productos nuevos.
+        categorias.findAll().stream()
+                .filter(Categoria::isActivo)
+                .forEach(c -> mapa.put(clave(c.getNombre()), c));
         return mapa;
     }
 
     private Map<String, Proveedor> indexarProveedores() {
         Map<String, Proveedor> mapa = new HashMap<>();
-        proveedores.findAll().forEach(p -> mapa.put(clave(p.getNombre()), p));
+        proveedores.findAll().stream()
+                .filter(Proveedor::isActivo)
+                .forEach(p -> mapa.put(clave(p.getNombre()), p));
         return mapa;
     }
 

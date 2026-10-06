@@ -108,11 +108,24 @@ public class ProductoService {
         p.setDescripcion(s.descripcion() == null ? null : s.descripcion().trim());
         p.setPrecio(s.precio());
         p.setStockMinimo(s.stockMinimo());
-        p.setCategoria(categoriaRepository.findById(s.categoria().id())
-                .orElseThrow(() -> new ReglaNegocioException("categoria", "La categoría seleccionada no existe")));
+        com.proyecto.microservicio.model.Categoria categoria = categoriaRepository.findById(s.categoria().id())
+                .orElseThrow(() -> new ReglaNegocioException("categoria", "La categoría seleccionada no existe"));
+        // HU-11: una categoria dada de baja no se asigna a un producto nuevo ni
+        // a uno que cambia de categoria. Si el producto ya la tenia, se respeta.
+        if (!categoria.isActivo() && !esLaMisma(p.getCategoria(), categoria.getId())) {
+            throw new ReglaNegocioException("categoria",
+                    "La categoría " + categoria.getNombre() + " está dada de baja");
+        }
+        p.setCategoria(categoria);
         if (s.proveedor() != null && s.proveedor().id() != null) {
-            p.setProveedor(proveedorRepository.findById(s.proveedor().id())
-                    .orElseThrow(() -> new ReglaNegocioException("proveedor", "El proveedor seleccionado no existe")));
+            com.proyecto.microservicio.model.Proveedor proveedor = proveedorRepository.findById(s.proveedor().id())
+                    .orElseThrow(() -> new ReglaNegocioException("proveedor", "El proveedor seleccionado no existe"));
+            if (!proveedor.isActivo()
+                    && (p.getProveedor() == null || !proveedor.getId().equals(p.getProveedor().getId()))) {
+                throw new ReglaNegocioException("proveedor",
+                        "El proveedor " + proveedor.getNombre() + " está dado de baja");
+            }
+            p.setProveedor(proveedor);
         } else {
             p.setProveedor(null);
         }
@@ -247,6 +260,10 @@ public class ProductoService {
                         .filter(a -> a.estaPendiente())
                         .toList()
                         .size());
+    }
+
+    private static boolean esLaMisma(com.proyecto.microservicio.model.Categoria actual, Long id) {
+        return actual != null && actual.getId() != null && actual.getId().equals(id);
     }
 
     private static long valor(Long numero) {

@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/movimientos")
-@CrossOrigin(origins = "*")
 public class MovimientoController {
 
     private final MovimientoService service;

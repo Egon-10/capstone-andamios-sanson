@@ -2,6 +2,7 @@ package com.proyecto.microservicio.service;
 
 import com.proyecto.microservicio.model.Proveedor;
 import com.proyecto.microservicio.repository.ProveedorRepository;
+import com.proyecto.microservicio.exception.RecursoNoEncontradoException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class ProveedorService {
     public Proveedor obtener(Long id) {
         return repository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Proveedor no encontrado"));
+                        new RecursoNoEncontradoException("Proveedor no encontrado"));
     }
 
     public Proveedor guardar(Proveedor proveedor) {

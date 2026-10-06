@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ErrorApi } from '../../models/respuesta-login';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuditoriaService }
@@ -38,6 +40,7 @@ proveedorFiltro: string = '';
   proveedores: Proveedor[] = [];
 
   producto: Producto = {
+    sku: '',
     nombre: '',
     descripcion: '',
     precio: 0,
@@ -93,6 +96,8 @@ aplicarFiltros(): void {
 
       !texto ||
 
+      p.sku?.toLowerCase().includes(texto) ||
+
       p.nombre?.toLowerCase().includes(texto) ||
 
       p.descripcion?.toLowerCase().includes(texto);
@@ -141,6 +146,14 @@ aplicarFiltros(): void {
 
     this.mensajeError =
       'No tiene permisos para realizar esta acción.';
+
+    return;
+  }
+
+  if (!/^[A-Za-z0-9-]{3,20}$/.test(this.producto.sku?.trim() ?? '')) {
+
+    this.mensajeError =
+      'El SKU debe tener entre 3 y 20 caracteres: letras, números o guiones.';
 
     return;
   }
@@ -237,17 +250,19 @@ if (this.producto.stockMinimo < 0) {
       this.producto.id!,
       this.producto
     )
-    .subscribe(() => {
+    .subscribe({
+      next: () => {
 
-      this.registrarAuditoria(
-        'Editó el producto: ' +
-        nombreProducto
-      );
+        this.registrarAuditoria(
+          'Editó el producto: ' +
+          nombreProducto
+        );
 
-      this.listarProductos();
+        this.listarProductos();
 
-      this.limpiar();
-
+        this.limpiar();
+      },
+      error: (e: HttpErrorResponse) => this.mostrarErrorServidor(e)
     });
 
 } else {
@@ -256,17 +271,19 @@ if (this.producto.stockMinimo < 0) {
 
 this.productoService
   .crear(this.producto)
-  .subscribe(() => {
+  .subscribe({
+    next: () => {
 
-    this.registrarAuditoria(
-      'Creó el producto: ' +
-      nombreProducto
-    );
+      this.registrarAuditoria(
+        'Creó el producto: ' +
+        nombreProducto
+      );
 
-    this.listarProductos();
+      this.listarProductos();
 
-    this.limpiar();
-
+      this.limpiar();
+    },
+    error: (e: HttpErrorResponse) => this.mostrarErrorServidor(e)
   });
   }
 }
@@ -324,6 +341,7 @@ this.productoService
 
   this.producto = {
 
+    sku: '',
     nombre: '',
     descripcion: '',
     precio: 0,
@@ -363,6 +381,16 @@ registrarAuditoria(
   .crear(auditoria)
   .subscribe();
 }
+  /** Muestra el mensaje de validación que devuelve el servidor (HU-10). */
+  private mostrarErrorServidor(error: HttpErrorResponse): void {
+
+    const cuerpo = error.error as ErrorApi | null;
+    const detalle = cuerpo?.errores ? Object.values(cuerpo.errores)[0] : undefined;
+
+    this.mensajeError =
+      detalle ?? cuerpo?.mensaje ?? 'No se pudo guardar el producto.';
+  }
+
   /* ======== MÉTODOS DE ROLES ======== */
 
   esAdministrador(): boolean {

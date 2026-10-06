@@ -1,0 +1,161 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+
+# Una sola ejecucion por rama: si llegan varios push seguidos, se cancela la
+# anterior. Evita que decenas de jobs compitan por los runners disponibles.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Spring Boot)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: microservicio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Compilar y ejecutar pruebas unitarias
+        run: |
+          set -o pipefail
+          mvn -B test -Dtest='*ServiceTest,*ValidatorTest,*HandlerTest,*InitializerTest' -Dsurefire.failIfNoSpecifiedTests=false | tee mvn.log
+      - name: Resumen de errores
+        if: failure()
+        run: |
+          resumen=$(grep -E "\[ERROR\]|Tests run:|FAIL|expected" mvn.log | grep -v "^\[ERROR\] *$" | head -80 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+          echo "::error title=Resumen de Maven::${resumen}"
+      - name: Publicar reporte de pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-pruebas-backend
+          path: microservicio/target/surefire-reports/
+
+  frontend:
+    name: Frontend (Angular)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Compilar
+        run: npx ng build --configuration development
+      - name: Pruebas unitarias
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+
+  database:
+    name: Base de datos (MySQL)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: inventario_andamios
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+    env:
+      MYSQL: mysql -h 127.0.0.1 -P 3306 -uroot -proot inventario_andamios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cargar el volcado entregado por la empresa
+        run: $MYSQL < database/01-inventario_andamios.sql
+
+      - name: Aplicar la migracion del Sprint 1
+        run: $MYSQL < database/02-sprint1-seguridad.sql
+
+      - name: Repetir la migracion (debe ser idempotente)
+        run: $MYSQL < database/02-sprint1-seguridad.sql
+
+      - name: Verificar el esquema y los datos resultantes
+        run: |
+          set -euo pipefail
+          fallo=0
+          fallos=""
+          comprobar() {
+            local descripcion="$1" esperado="$2" obtenido="$3"
+            if [ "$esperado" = "$obtenido" ]; then
+              echo "  OK   $descripcion (= $obtenido)"
+            else
+              echo "  FALLA $descripcion: se esperaba '$esperado' y se obtuvo '$obtenido'"
+              fallos="${fallos}${descripcion}: se esperaba '${esperado}', se obtuvo '${obtenido}'%0A"
+              fallo=1
+            fi
+          }
+          consulta() { $MYSQL -N -B -e "$1"; }
+
+          echo "Usuarios"
+          comprobar "cuentas cargadas" 3 \
+            "$(consulta 'SELECT COUNT(*) FROM usuarios;')"
+          comprobar "contrasenas con hash BCrypt de 60 caracteres" 3 \
+            "$(consulta "SELECT COUNT(*) FROM usuarios WHERE password LIKE '\$2a\$10\$%' AND CHAR_LENGTH(password) = 60;")"
+          comprobar "ninguna contrasena en texto plano" 0 \
+            "$(consulta "SELECT COUNT(*) FROM usuarios WHERE password NOT LIKE '\$2%';")"
+          comprobar "cuentas activas con nombre de usuario" 3 \
+            "$(consulta "SELECT COUNT(*) FROM usuarios WHERE estado = 'ACTIVO' AND nombre_usuario IS NOT NULL;")"
+
+          echo "Productos"
+          comprobar "productos del catalogo" 5 \
+            "$(consulta 'SELECT COUNT(*) FROM productos;')"
+          comprobar "productos con SKU asignado" 5 \
+            "$(consulta 'SELECT COUNT(*) FROM productos WHERE sku IS NOT NULL;')"
+          comprobar "SKU distintos" 5 \
+            "$(consulta 'SELECT COUNT(DISTINCT sku) FROM productos;')"
+
+          echo "Restricciones de unicidad"
+          for columna in correo numero_documento nombre_usuario; do
+            comprobar "indice unico usuarios.$columna" 1 \
+              "$(consulta "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = 'inventario_andamios' AND table_name = 'usuarios' AND column_name = '$columna' AND non_unique = 0;")"
+          done
+          comprobar "indice unico productos.sku" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = 'inventario_andamios' AND table_name = 'productos' AND column_name = 'sku' AND non_unique = 0;")"
+
+          echo "Tablas de sesion"
+          for tabla in refresh_tokens tokens_revocados; do
+            comprobar "existe la tabla $tabla" 1 \
+              "$(consulta "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'inventario_andamios' AND table_name = '$tabla';")"
+          done
+
+          echo "Integridad referencial"
+          comprobar "claves foraneas declaradas" 7 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.table_constraints WHERE table_schema = 'inventario_andamios' AND constraint_type = 'FOREIGN KEY';")"
+
+          echo
+          if [ "$fallo" -ne 0 ]; then
+            echo "::error title=Verificacion de la base de datos::${fallos}"
+            exit 1
+          fi
+          echo "La base de datos quedo en el estado esperado."
+
+      - name: Rechazar contrasenas en texto plano en los scripts
+        run: |
+          if grep -nE "'(123456|admin|password|[0-9]{4,8})'[[:space:]]*,[[:space:]]*[0-9]+\)" database/*.sql; then
+            echo "Se encontro una posible contrasena en texto plano en database/."
+            exit 1
+          fi
+          echo "Sin contrasenas en texto plano en database/."

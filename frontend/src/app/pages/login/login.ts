@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { Login } from '../../models/login';
 import { AuthService } from '../../services/auth.service';
@@ -16,7 +17,11 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './login.html',
   styleUrl: './login.css'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
+
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly ruta = inject(ActivatedRoute);
 
   loginData: Login = {
     correo: '',
@@ -24,66 +29,48 @@ export class LoginComponent {
   };
 
   mensajeError = '';
+  mensajeAviso = '';
+  enviando = false;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  ngOnInit(): void {
+    const motivo = this.ruta.snapshot.queryParamMap.get('motivo');
+    if (motivo === 'inactividad') {
+      this.mensajeAviso = 'Su sesión se cerró por inactividad. Ingrese nuevamente.';
+    } else if (motivo === 'expirada') {
+      this.mensajeAviso = 'Su sesión expiró. Ingrese nuevamente.';
+    }
+  }
 
   iniciarSesion(): void {
 
-  this.mensajeError = '';
+    this.mensajeError = '';
 
-  /* Validar correo vacío */
-  if (!this.loginData.correo?.trim()) {
+    if (!this.loginData.correo?.trim()) {
+      this.mensajeError = 'Debe ingresar su correo o nombre de usuario.';
+      return;
+    }
 
-    this.mensajeError =
-      'Debe ingresar el correo.';
+    if (!this.loginData.password?.trim()) {
+      this.mensajeError = 'Debe ingresar la contraseña.';
+      return;
+    }
 
-    return;
+    this.enviando = true;
+
+    this.authService
+      .login({ correo: this.loginData.correo.trim(), password: this.loginData.password })
+      .subscribe({
+        next: () => {
+          this.enviando = false;
+          this.router.navigate(['/dashboard']);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.enviando = false;
+          this.mensajeError = error.status === 401
+            ? 'Usuario o contraseña incorrectos.'
+            : 'No se pudo conectar con el servidor. Intente nuevamente.';
+        }
+      });
   }
-
-  /* Validar formato del correo */
-  const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!regexCorreo.test(this.loginData.correo)) {
-
-    this.mensajeError =
-      'Debe ingresar un correo válido.';
-
-    return;
-  }
-
-  /* Validar contraseña vacía */
-  if (!this.loginData.password?.trim()) {
-
-    this.mensajeError =
-      'Debe ingresar la contraseña.';
-
-    return;
-  }
-
-  /* Si todo está correcto */
-  this.authService
-    .login(this.loginData)
-    .subscribe({
-
-      next: (usuario) => {
-
-        localStorage.setItem(
-          'usuario',
-          JSON.stringify(usuario)
-        );
-
-        this.router.navigate(['/dashboard']);
-      },
-
-      error: () => {
-
-        this.mensajeError =
-          'Correo o contraseña incorrectos';
-      }
-    });
-}
 
 }

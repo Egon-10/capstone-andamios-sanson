@@ -3,6 +3,8 @@ package com.proyecto.microservicio.service;
 import com.proyecto.microservicio.model.*;
 import com.proyecto.microservicio.repository.*;
 
+import com.proyecto.microservicio.exception.RecursoNoEncontradoException;
+import com.proyecto.microservicio.exception.ReglaNegocioException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -37,12 +39,12 @@ public class MovimientoService {
         Producto producto =
                 productoRepository.findById(productoId)
                         .orElseThrow(() ->
-                                new RuntimeException("Producto no encontrado"));
+                                new RecursoNoEncontradoException("Producto no encontrado"));
 
         Usuario usuario =
                 usuarioRepository.findById(usuarioId)
                         .orElseThrow(() ->
-                                new RuntimeException("Usuario no encontrado"));
+                                new RecursoNoEncontradoException("Usuario no encontrado"));
 
         producto.setStock(
                 producto.getStock() + cantidad);
@@ -69,16 +71,16 @@ public class MovimientoService {
         Producto producto =
                 productoRepository.findById(productoId)
                         .orElseThrow(() ->
-                                new RuntimeException("Producto no encontrado"));
+                                new RecursoNoEncontradoException("Producto no encontrado"));
 
         Usuario usuario =
                 usuarioRepository.findById(usuarioId)
                         .orElseThrow(() ->
-                                new RuntimeException("Usuario no encontrado"));
+                                new RecursoNoEncontradoException("Usuario no encontrado"));
 
         if (producto.getStock() < cantidad) {
 
-            throw new RuntimeException(
+            throw new ReglaNegocioException(
                     "Stock insuficiente");
         }
 
@@ -105,7 +107,7 @@ public class MovimientoService {
     Movimiento movimiento =
             movimientoRepository.findById(id)
                     .orElseThrow(() ->
-                            new RuntimeException(
+                            new RecursoNoEncontradoException(
                                     "Movimiento no encontrado"));
 
     Producto producto = movimiento.getProducto();
@@ -138,7 +140,7 @@ public Movimiento actualizarMovimiento(
     Movimiento movimiento =
             movimientoRepository.findById(id)
                     .orElseThrow(() ->
-                            new RuntimeException(
+                            new RecursoNoEncontradoException(
                                     "Movimiento no encontrado"));
 
     Producto producto =
@@ -178,7 +180,7 @@ public Movimiento actualizarMovimiento(
 
         if (producto.getStock() < nuevaCantidad) {
 
-            throw new RuntimeException(
+            throw new ReglaNegocioException(
                     "Stock insuficiente");
         }
 

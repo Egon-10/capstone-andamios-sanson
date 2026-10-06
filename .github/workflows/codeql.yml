@@ -1,0 +1,64 @@
+name: Analisis estatico (CodeQL)
+
+# SEG-AP-06: analisis estatico de seguridad del codigo. Revisa el backend Java
+# y el cliente TypeScript en busca de vulnerabilidades. Los hallazgos quedan en
+# la pestana Security > Code scanning del repositorio.
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Revision semanal, los lunes a las 09:00 UTC (04:00 en Lima)
+    - cron: '0 9 * * 1'
+
+
+# Una sola ejecucion por rama: si llegan varios push seguidos, se cancela la
+# anterior. Evita que decenas de jobs compitan por los runners disponibles.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analizar:
+    name: CodeQL (${{ matrix.lenguaje }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lenguaje: java-kotlin
+            construir: true
+          - lenguaje: javascript-typescript
+            construir: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar Java 17
+        if: matrix.construir
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Inicializar CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.lenguaje }}
+          queries: security-and-quality
+
+      - name: Compilar el backend
+        if: matrix.construir
+        run: mvn -B -DskipTests compile
+        working-directory: microservicio
+
+      - name: Analizar
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.lenguaje }}

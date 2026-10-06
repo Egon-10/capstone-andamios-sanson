@@ -14,6 +14,18 @@ public interface UsuarioRepository
 
     Optional<Usuario> findByCorreo(String correo);
 
+    Optional<Usuario> findByCorreoIgnoreCase(String correo);
+
+    Optional<Usuario> findByNombreUsuario(String nombreUsuario);
+
+    boolean existsByCorreoIgnoreCase(String correo);
+
+    boolean existsByCorreoIgnoreCaseAndIdNot(String correo, Long id);
+
+    boolean existsByNombreUsuario(String nombreUsuario);
+
+    boolean existsByNumeroDocumento(String numeroDocumento);
+
 
     @Query("""
 SELECT u

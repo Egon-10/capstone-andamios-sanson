@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 import { Injectable } from '@angular/core';
 
 import {
@@ -10,7 +11,7 @@ import {
 export class ReporteService {
 
   private apiUrl =
-    'http://localhost:8081/api/reportes';
+    `${environment.apiUrl}/reportes`;
 
   constructor(
     private http: HttpClient

@@ -317,3 +317,25 @@ nav a.active{
 
     background:#f5f7fa;
 }
+.aviso-inactividad {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 12px 24px 0;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: #fff7d6;
+    border: 1px solid #f0d77a;
+    color: #6b5400;
+    font-size: 14px;
+}
+
+.aviso-inactividad button {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    background: #1e3a8a;
+    color: #fff;
+    cursor: pointer;
+}

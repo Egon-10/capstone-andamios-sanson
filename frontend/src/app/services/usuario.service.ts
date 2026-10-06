@@ -2,15 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { Usuario } from '../models/usuario';
+import { environment } from '../../environments/environment';
+import { Usuario, UsuarioActualizacion, UsuarioRegistro } from '../models/usuario';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UsuarioService {
 
-  private apiUrl =
-    'http://localhost:8081/api/usuarios';
+  private apiUrl = `${environment.apiUrl}/usuarios`;
 
   constructor(private http: HttpClient) {}
 
@@ -19,32 +19,28 @@ export class UsuarioService {
   }
 
   buscarPorId(id: number): Observable<Usuario> {
-    return this.http.get<Usuario>(
-      `${this.apiUrl}/${id}`
-    );
+    return this.http.get<Usuario>(`${this.apiUrl}/${id}`);
   }
 
-  crear(usuario: Usuario): Observable<Usuario> {
-    return this.http.post<Usuario>(
-      this.apiUrl,
-      usuario
-    );
+  /** HU-43 */
+  registrar(usuario: UsuarioRegistro): Observable<Usuario> {
+    return this.http.post<Usuario>(this.apiUrl, usuario);
   }
 
-  actualizar(
-    id: number,
-    usuario: Usuario
-  ): Observable<Usuario> {
-
-    return this.http.put<Usuario>(
-      `${this.apiUrl}/${id}`,
-      usuario
-    );
+  /** HU-07: edición parcial mediante PATCH. */
+  actualizarParcial(id: number, cambios: UsuarioActualizacion): Observable<Usuario> {
+    return this.http.patch<Usuario>(`${this.apiUrl}/${id}`, cambios);
   }
 
-  eliminar(id: number): Observable<any> {
-    return this.http.delete(
-      `${this.apiUrl}/${id}`
-    );
+  miPerfil(): Observable<Usuario> {
+    return this.http.get<Usuario>(`${this.apiUrl}/me`);
+  }
+
+  actualizarMiPerfil(cambios: UsuarioActualizacion): Observable<Usuario> {
+    return this.http.patch<Usuario>(`${this.apiUrl}/me`, cambios);
+  }
+
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

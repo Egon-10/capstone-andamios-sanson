@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -11,7 +12,7 @@ import { Movimiento } from '../models/movimiento';
 export class MovimientoService {
 
   private apiUrl =
-    'http://localhost:8081/api/movimientos';
+    `${environment.apiUrl}/movimientos`;
 
   constructor(private http: HttpClient) {}
 

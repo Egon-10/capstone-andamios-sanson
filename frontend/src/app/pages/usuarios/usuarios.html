@@ -4,130 +4,167 @@
   <div class="formulario">
     <h2>{{ editando ? 'Editar Usuario' : 'Nuevo Usuario' }}</h2>
 
-    <!-- Contenedor en grilla -->
     <div class="campos-grid">
-      <!-- Fila 1: Nombre, Correo, Contraseña -->
+
       <div class="campo">
-        <h5>Nombre usuario</h5>
-        <input
-          type="text"
-          placeholder="Nombre"
-          [(ngModel)]="usuario.nombre"
-          (input)="mensajeError = ''">
+        <h5>Nombres *</h5>
+        <input type="text" placeholder="Nombres" maxlength="60"
+               [class.invalido]="errores['nombres']"
+               [(ngModel)]="form.nombres" (input)="limpiarError('nombres')">
+        <small class="error-campo" *ngIf="errores['nombres']">{{ errores['nombres'] }}</small>
       </div>
+
       <div class="campo">
-        <h5>Correo</h5>
-        <input
-          type="email"
-          placeholder="Correo"
-          [(ngModel)]="usuario.correo"
-          (input)="mensajeError = ''">
+        <h5>Apellidos *</h5>
+        <input type="text" placeholder="Apellidos" maxlength="60"
+               [class.invalido]="errores['apellidos']"
+               [(ngModel)]="form.apellidos" (input)="limpiarError('apellidos')">
+        <small class="error-campo" *ngIf="errores['apellidos']">{{ errores['apellidos'] }}</small>
       </div>
+
       <div class="campo">
+        <h5>Tipo de documento *</h5>
+        <select [(ngModel)]="form.tipoDocumento" [disabled]="editando"
+                (ngModelChange)="limpiarError('tipoDocumento')">
+          <option *ngFor="let t of tiposDocumento" [value]="t.valor">{{ t.texto }}</option>
+        </select>
+        <small class="error-campo" *ngIf="errores['tipoDocumento']">{{ errores['tipoDocumento'] }}</small>
+      </div>
 
-  <h5>Contraseña</h5>
+      <div class="campo">
+        <h5>Número de documento *</h5>
+        <input type="text" placeholder="Número de documento" maxlength="20" [disabled]="editando"
+               [class.invalido]="errores['numeroDocumento']"
+               [(ngModel)]="form.numeroDocumento" (input)="limpiarError('numeroDocumento')">
+        <small class="error-campo" *ngIf="errores['numeroDocumento']">{{ errores['numeroDocumento'] }}</small>
+      </div>
 
-  <div class="input-password">
+      <div class="campo">
+        <h5>Correo electrónico *</h5>
+        <input type="email" placeholder="correo@empresa.com" maxlength="100"
+               [class.invalido]="errores['correo']"
+               [(ngModel)]="form.correo" (input)="limpiarError('correo')">
+        <small class="error-campo" *ngIf="errores['correo']">{{ errores['correo'] }}</small>
+      </div>
 
-    <input
-      [type]="mostrarPassword ? 'text' : 'password'"
-      placeholder="Contraseña"
-      [(ngModel)]="usuario.password"
-      (input)="mensajeError = ''">
+      <div class="campo">
+        <h5>Teléfono</h5>
+        <input type="text" placeholder="Teléfono" maxlength="15" inputmode="numeric"
+               [class.invalido]="errores['telefono']"
+               [(ngModel)]="form.telefono" (input)="limpiarError('telefono')">
+        <small class="error-campo" *ngIf="errores['telefono']">{{ errores['telefono'] }}</small>
+      </div>
 
-    <button
-      type="button"
-      class="toggle-password"
-      (click)="mostrarPassword = !mostrarPassword">
+      <div class="campo">
+        <h5>Nombre de usuario *</h5>
+        <input type="text" placeholder="Nombre de usuario" maxlength="30" [disabled]="editando"
+               autocomplete="off"
+               [class.invalido]="errores['nombreUsuario']"
+               [(ngModel)]="form.nombreUsuario" (input)="limpiarError('nombreUsuario')">
+        <small class="error-campo" *ngIf="errores['nombreUsuario']">{{ errores['nombreUsuario'] }}</small>
+      </div>
 
-      <i
-        class="fas"
-        [class.fa-eye]="!mostrarPassword"
-        [class.fa-eye-slash]="mostrarPassword">
-      </i>
+      <div class="campo">
+        <h5>{{ editando ? 'Nueva contraseña (opcional)' : 'Contraseña *' }}</h5>
+        <div class="input-password">
+          <input [type]="mostrarPassword ? 'text' : 'password'" placeholder="Contraseña"
+                 autocomplete="new-password"
+                 [class.invalido]="errores['password']"
+                 [(ngModel)]="form.password" (input)="limpiarError('password')">
+          <button type="button" class="toggle-password" (click)="mostrarPassword = !mostrarPassword"
+                  [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+            <i class="fas" [class.fa-eye]="!mostrarPassword" [class.fa-eye-slash]="mostrarPassword"></i>
+          </button>
+        </div>
+        <small class="error-campo" *ngIf="errores['password']">{{ errores['password'] }}</small>
+      </div>
 
-    </button>
+      <div class="campo">
+        <h5>{{ editando ? 'Confirmar nueva contraseña' : 'Confirmar contraseña *' }}</h5>
+        <input [type]="mostrarPassword ? 'text' : 'password'" placeholder="Confirmar contraseña"
+               autocomplete="new-password"
+               [class.invalido]="errores['confirmarPassword']"
+               [(ngModel)]="form.confirmarPassword" (input)="limpiarError('confirmarPassword')">
+        <small class="error-campo" *ngIf="errores['confirmarPassword']">{{ errores['confirmarPassword'] }}</small>
+      </div>
 
-  </div>
+      <div class="campo">
+        <h5>Rol *</h5>
+        <select [(ngModel)]="form.rolId" (ngModelChange)="limpiarError('rolId')" [class.invalido]="errores['rolId']">
+          <option [ngValue]="null">Seleccione un rol</option>
+          <option *ngFor="let rol of roles" [ngValue]="rol.id">{{ rol.nombre }}</option>
+        </select>
+        <small class="error-campo" *ngIf="errores['rolId']">{{ errores['rolId'] }}</small>
+      </div>
 
-</div>
+      <div class="campo">
+        <h5>Área *</h5>
+        <select [(ngModel)]="form.area" (ngModelChange)="limpiarError('area')" [class.invalido]="errores['area']">
+          <option value="">Seleccione el área</option>
+          <option *ngFor="let a of areas" [value]="a.valor">{{ a.texto }}</option>
+        </select>
+        <small class="error-campo" *ngIf="errores['area']">{{ errores['area'] }}</small>
+      </div>
 
-      <!-- Fila 2: Rol (ocupa toda la fila) -->
-      <div class="campo ancho-completo">
-        <h5>Rol</h5>
-        <select [(ngModel)]="usuario.rol" (input)="mensajeError = ''">
-          <option [ngValue]="undefined">Seleccione un rol</option>
-          <option *ngFor="let rol of roles" [ngValue]="rol">
-            {{rol.nombre}}
-          </option>
+      <div class="campo">
+        <h5>Turno</h5>
+        <select [(ngModel)]="form.turno">
+          <option value="">Sin turno asignado</option>
+          <option *ngFor="let t of turnos" [value]="t.valor">{{ t.texto }}</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <h5>Estado</h5>
+        <select [(ngModel)]="estado" [disabled]="!editando">
+          <option value="ACTIVO">Activo</option>
+          <option value="INACTIVO">Inactivo</option>
         </select>
       </div>
     </div>
 
     <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+    <p class="mensaje-exito" *ngIf="mensajeExito">{{ mensajeExito }}</p>
 
     <div class="botones">
-      <button class="guardar" (click)="guardar()">Guardar</button>
+      <button class="guardar" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Guardando...' : 'Guardar' }}
+      </button>
       <button class="cancelar" (click)="limpiar()">Cancelar</button>
     </div>
   </div>
 
-    <table>
-
-        <thead>
-
-            <tr>
-
-                <th>ID</th>
-
-                <th>Nombre</th>
-
-                <th>Correo</th>
-
-                <th>Rol</th>
-
-                <th>Acciones</th>
-
-            </tr>
-
-        </thead>
-
-        <tbody>
-
-            <tr *ngFor="let u of usuarios">
-
-                <td>{{u.id}}</td>
-
-                <td>{{u.nombre}}</td>
-
-                <td>{{u.correo}}</td>
-
-                <td>{{u.rol?.nombre}}</td>
-
-                <td>
-
-                    <button
-                        class="editar"
-                        (click)="editar(u)">
-
-                        Editar
-
-                    </button>
-
-                    <button
-                        class="eliminar"
-                        (click)="eliminar(u.id!)">
-
-                        Eliminar
-
-                    </button>
-
-                </td>
-
-            </tr>
-
-        </tbody>
-
-    </table>
-
+  <table>
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Nombres y apellidos</th>
+        <th>Documento</th>
+        <th>Correo</th>
+        <th>Área</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let u of usuarios">
+        <td>{{ u.nombreUsuario || '—' }}</td>
+        <td>{{ u.nombre }} {{ u.apellidos }}</td>
+        <td>{{ u.tipoDocumento ? u.tipoDocumento + ' ' + u.numeroDocumento : '—' }}</td>
+        <td>{{ u.correo }}</td>
+        <td>{{ u.area || '—' }}</td>
+        <td>{{ u.rol?.nombre }}</td>
+        <td>
+          <span [class.estado-activo]="u.estado === 'ACTIVO'" [class.estado-inactivo]="u.estado !== 'ACTIVO'">
+            {{ u.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+        <td>
+          <button class="editar" (click)="editar(u)">Editar</button>
+          <button class="eliminar" (click)="eliminar(u)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>

@@ -28,11 +28,33 @@
 
         <div class="campo">
 
-            <label>Nombre</label>
+            <label>Nombres</label>
 
             <input
                 type="text"
                 [(ngModel)]="usuario.nombre">
+
+        </div>
+
+        <div class="campo">
+
+            <label>Apellidos</label>
+
+            <input
+                type="text"
+                [(ngModel)]="usuario.apellidos">
+
+        </div>
+
+        <div class="campo">
+
+            <label>Teléfono</label>
+
+            <input
+                type="text"
+                inputmode="numeric"
+                maxlength="15"
+                [(ngModel)]="usuario.telefono">
 
         </div>
 
@@ -65,8 +87,8 @@
 
         <input
             [type]="mostrarPassword ? 'text' : 'password'"
-            [(ngModel)]="usuario.password"
-            placeholder="Ingrese la nueva contraseña">
+            [(ngModel)]="password"
+            placeholder="Déjela vacía para no cambiarla">
 
         <button
             type="button"

@@ -150,6 +150,22 @@
 
         </header>
 
+        <!-- AVISO DE CIERRE POR INACTIVIDAD (HU-09) -->
+        <div
+            class="aviso-inactividad"
+            role="alertdialog"
+            *ngIf="inactividad.segundosRestantes() as segundos">
+
+            <span>
+                Su sesión se cerrará en {{ segundos }} s por inactividad.
+            </span>
+
+            <button type="button" (click)="seguirConectado()">
+                Seguir conectado
+            </button>
+
+        </div>
+
         <!-- CONTENIDO DE LAS PÁGINAS -->
         <main class="content">
 

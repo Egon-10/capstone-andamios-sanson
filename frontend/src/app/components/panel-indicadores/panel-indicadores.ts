@@ -233,6 +233,11 @@ export class PanelIndicadoresComponent implements OnInit {
     return nivel === 'CRITICO' ? 'fa-triangle-exclamation' : 'fa-circle-exclamation';
   }
 
+  /** Antepone la cantidad y elige singular o plural: 1 entrada, 2 entradas. */
+  conUnidad(cantidad: number, singular: string, plural: string): string {
+    return `${cantidad} ${cantidad === 1 ? singular : plural}`;
+  }
+
   etiquetaNivel(nivel: string): string {
     if (nivel === 'AGOTADO') {
       return 'Agotado';

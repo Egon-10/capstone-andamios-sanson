@@ -28,7 +28,7 @@
     <div class="tile">
       <span class="tile-etiqueta">Movimientos de hoy</span>
       <strong class="tile-valor">{{ indicadores.movimientosHoy }}</strong>
-      <span class="tile-nota">{{ indicadores.entradasHoy }} entradas · {{ indicadores.salidasHoy }} salidas</span>
+      <span class="tile-nota">{{ conUnidad(indicadores.entradasHoy, 'entrada', 'entradas') }} · {{ conUnidad(indicadores.salidasHoy, 'salida', 'salidas') }}</span>
     </div>
 
     <div class="tile" [class.atencion]="indicadores.ajustesPendientes > 0">
@@ -108,8 +108,8 @@
 
         <div class="tooltip" *ngIf="grupoActivo as g" [style.left.%]="tooltipIzquierda">
           <span class="tooltip-fecha">{{ g.dia.fecha | date:'dd/MM/yyyy' }}</span>
-          <span class="tooltip-fila"><i class="trazo entrada"></i><strong>{{ valorEntrada(g.dia) }}</strong> entradas</span>
-          <span class="tooltip-fila"><i class="trazo salida"></i><strong>{{ valorSalida(g.dia) }}</strong> salidas</span>
+          <span class="tooltip-fila"><i class="trazo entrada"></i><strong>{{ valorEntrada(g.dia) }}</strong> {{ valorEntrada(g.dia) === 1 ? 'entrada' : 'entradas' }}</span>
+          <span class="tooltip-fila"><i class="trazo salida"></i><strong>{{ valorSalida(g.dia) }}</strong> {{ valorSalida(g.dia) === 1 ? 'salida' : 'salidas' }}</span>
         </div>
 
         <div class="leyenda">

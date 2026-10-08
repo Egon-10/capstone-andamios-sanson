@@ -193,4 +193,11 @@ describe('PanelIndicadoresComponent', () => {
     crear('GERENTE');
     expect(fixture.nativeElement.textContent).toContain('Ningún producto alcanzó su umbral');
   });
+
+  it('HU-23: usa singular o plural según la cantidad', () => {
+    crear('GERENTE');
+    expect(c.conUnidad(1, 'entrada', 'entradas')).toBe('1 entrada');
+    expect(c.conUnidad(0, 'salida', 'salidas')).toBe('0 salidas');
+    expect(c.conUnidad(2, 'salida', 'salidas')).toBe('2 salidas');
+  });
 });

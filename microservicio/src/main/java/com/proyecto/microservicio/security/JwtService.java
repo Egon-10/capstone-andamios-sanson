@@ -21,6 +21,12 @@ public class JwtService {
 
     public static final String CLAIM_ROLES = "roles";
 
+    /**
+     * HU-36: marca el token de una sesión abierta con contraseña temporal.
+     * Mientras la tenga, el servidor solo admite el cambio de contraseña.
+     */
+    public static final String CLAIM_CONTRASENA_TEMPORAL = "pwd_temporal";
+
     private final JwtEncoder encoder;
     private final JwtProperties propiedades;
     private final Clock reloj;
@@ -48,6 +54,7 @@ public class JwtService {
                 .id(UUID.randomUUID().toString())
                 .claim(CLAIM_ROLES, List.of(rol))
                 .claim("nombre", usuario.getNombre() == null ? "" : usuario.getNombre())
+                .claim(CLAIM_CONTRASENA_TEMPORAL, usuario.isDebeCambiarPassword())
                 .build();
 
         JwsHeader cabecera = JwsHeader.with(MacAlgorithm.HS256).build();

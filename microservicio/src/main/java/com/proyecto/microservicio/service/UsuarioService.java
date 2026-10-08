@@ -5,6 +5,7 @@ import com.proyecto.microservicio.config.ZonaHoraria;
 import com.proyecto.microservicio.dto.CambioEstadoRequest;
 import com.proyecto.microservicio.dto.FiltroBitacora;
 import com.proyecto.microservicio.dto.PerfilResponse;
+import com.proyecto.microservicio.dto.RestablecimientoResponse;
 import com.proyecto.microservicio.dto.UsuarioActualizacionRequest;
 import com.proyecto.microservicio.dto.UsuarioOpcion;
 import com.proyecto.microservicio.dto.UsuarioRegistroRequest;
@@ -19,6 +20,7 @@ import com.proyecto.microservicio.model.Usuario;
 import com.proyecto.microservicio.repository.AccesoRepository;
 import com.proyecto.microservicio.repository.RolRepository;
 import com.proyecto.microservicio.repository.UsuarioRepository;
+import com.proyecto.microservicio.security.PoliticaContrasena;
 import com.proyecto.microservicio.security.RefreshTokenService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +30,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +42,8 @@ import java.util.Map;
  * HU-30: listado con búsqueda, filtros y paginación.
  * HU-31: activación y desactivación con efecto inmediato sobre las sesiones.
  * HU-34: perfil propio.
+ * HU-35 y HU-36: desbloqueo y restablecimiento de contraseña por el administrador.
+ * HU-37: la política de complejidad se aplica también al registrar.
  * HU-05: las operaciones de administración exigen el rol ADMINISTRADOR también
  * a nivel de método, además de la regla por endpoint.
  */
@@ -50,6 +56,7 @@ public class UsuarioService {
     private final AuditoriaService auditoria;
     private final AccesoRepository accesos;
     private final RefreshTokenService refreshTokens;
+    private final SecureRandom aleatorio = new SecureRandom();
 
     /** Campos por los que se puede ordenar el listado, con su ruta en la entidad. */
     private static final Map<String, String> ORDENABLES = Map.of(
@@ -120,6 +127,7 @@ public class UsuarioService {
             throw new ReglaNegocioException("confirmarPassword", "La contraseña y su confirmación no coinciden");
         }
         validarDocumento(s.tipoDocumento(), s.numeroDocumento());
+        PoliticaContrasena.exigir("password", s.password(), s.nombreUsuario(), s.numeroDocumento());
 
         String nombreUsuario = s.nombreUsuario().trim();
         String correo = s.correo().trim().toLowerCase();
@@ -162,6 +170,11 @@ public class UsuarioService {
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Transactional
     public UsuarioResponse actualizarParcial(Long id, UsuarioActualizacionRequest s, Long actorId) {
+        if (s.password() != null && !s.password().isBlank()) {
+            throw new ReglaNegocioException("password",
+                    "La contraseña de otro usuario no se fija a mano: use Restablecer contraseña, que genera "
+                            + "una temporal y obliga a cambiarla al ingresar");
+        }
         Usuario u = buscar(id);
         aplicarCambiosComunes(u, s);
         if (s.rolId() != null) {
@@ -221,6 +234,57 @@ public class UsuarioService {
         return UsuarioResponse.from(u);
     }
 
+    /**
+     * HU-36: restablece la contraseña de otro usuario.
+     *
+     * Genera una contraseña temporal aleatoria que cumple la política y la
+     * devuelve una sola vez. La cuenta queda obligada a cambiarla en su
+     * siguiente ingreso, se desbloquea y pierde las sesiones que tuviera
+     * abiertas. La contraseña nunca se escribe en la bitácora.
+     */
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @Transactional
+    public RestablecimientoResponse restablecerPassword(Long id, Long actorId) {
+        if (id.equals(actorId)) {
+            throw new ReglaNegocioException("id", "Para su propia cuenta use Cambiar contraseña en su perfil");
+        }
+        Usuario u = buscar(id);
+        String temporal;
+        do {
+            temporal = PoliticaContrasena.generarTemporal(aleatorio);
+        } while (!PoliticaContrasena.incumplimientos(temporal, u.getNombreUsuario(), u.getNumeroDocumento()).isEmpty());
+
+        LocalDateTime ahora = ZonaHoraria.ahora().truncatedTo(ChronoUnit.SECONDS);
+        u.setPassword(encoder.encode(temporal));
+        u.setDebeCambiarPassword(true);
+        u.setIntentosFallidos(0);
+        u.setBloqueadoHasta(null);
+        u.setSesionesValidasDesde(ahora);
+        repository.save(u);
+        int cerradas = refreshTokens.revocarTodos(u.getId());
+
+        auditoria.registrar("PASSWORD_RESTABLECIDA",
+                "Se generó una contraseña temporal para " + etiqueta(u) + " y se cerraron " + cerradas
+                        + " sesiones abiertas",
+                actorId);
+        return new RestablecimientoResponse(u.getNombreUsuario(), temporal);
+    }
+
+    /** HU-35: levanta el bloqueo antes de que venza. */
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @Transactional
+    public UsuarioResponse desbloquear(Long id, Long actorId) {
+        Usuario u = buscar(id);
+        if (u.getBloqueadoHasta() == null && u.getIntentosFallidos() == 0) {
+            return UsuarioResponse.from(u);
+        }
+        u.setBloqueadoHasta(null);
+        u.setIntentosFallidos(0);
+        repository.save(u);
+        auditoria.registrar("CUENTA_DESBLOQUEADA", "Se desbloqueó la cuenta " + etiqueta(u), actorId);
+        return UsuarioResponse.from(u);
+    }
+
     private void exigirOtroAdministrador(Usuario u, String mensaje) {
         boolean esAdministradorActivo = u.getRol() != null
                 && Roles.ADMINISTRADOR.equals(u.getRol().getNombre()) && u.estaActivo();
@@ -257,6 +321,10 @@ public class UsuarioService {
         }
         if (s.area() != null || s.turno() != null) {
             throw new ReglaNegocioException("area", "El área y el turno los asigna el administrador");
+        }
+        if (s.password() != null && !s.password().isBlank()) {
+            throw new ReglaNegocioException("password",
+                    "La contraseña se cambia desde Cambiar contraseña, que pide la actual");
         }
         Usuario u = buscar(id);
         aplicarCambiosComunes(u, s);
@@ -298,12 +366,6 @@ public class UsuarioService {
         }
         if (s.turno() != null) {
             u.setTurno(vacioANulo(s.turno()));
-        }
-        if (s.password() != null && !s.password().isBlank()) {
-            if (!s.password().equals(s.confirmarPassword())) {
-                throw new ReglaNegocioException("confirmarPassword", "La contraseña y su confirmación no coinciden");
-            }
-            u.setPassword(encoder.encode(s.password()));
         }
     }
 

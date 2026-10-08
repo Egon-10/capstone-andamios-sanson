@@ -219,7 +219,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       error: (e: HttpErrorResponse) => {
         this.descargando = null;
         // El cuerpo del error llega como Blob y se lee de forma asincrona.
-        mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte.').then(m => (this.mensajeError = m));
+        void mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte.').then(m => (this.mensajeError = m));
       }
     });
   }

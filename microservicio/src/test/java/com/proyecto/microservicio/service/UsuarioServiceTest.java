@@ -7,7 +7,9 @@ import com.proyecto.microservicio.exception.ConflictoException;
 import com.proyecto.microservicio.exception.ReglaNegocioException;
 import com.proyecto.microservicio.model.Rol;
 import com.proyecto.microservicio.model.Usuario;
+import com.proyecto.microservicio.repository.AccesoRepository;
 import com.proyecto.microservicio.repository.RolRepository;
+import com.proyecto.microservicio.security.RefreshTokenService;
 import com.proyecto.microservicio.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,12 +33,17 @@ class UsuarioServiceTest {
     private final PasswordEncoder encoder = new BCryptPasswordEncoder();
     private UsuarioService servicio;
 
+    private AccesoRepository accesos;
+    private RefreshTokenService refreshTokens;
+
     @BeforeEach
     void preparar() {
         repositorio = mock(UsuarioRepository.class);
         roles = mock(RolRepository.class);
         auditoria = mock(AuditoriaService.class);
-        servicio = new UsuarioService(repositorio, roles, encoder, auditoria);
+        accesos = mock(AccesoRepository.class);
+        refreshTokens = mock(RefreshTokenService.class);
+        servicio = new UsuarioService(repositorio, roles, encoder, auditoria, accesos, refreshTokens);
         when(repositorio.save(any(Usuario.class))).thenAnswer(inv -> {
             Usuario u = inv.getArgument(0);
             if (u.getId() == null) {

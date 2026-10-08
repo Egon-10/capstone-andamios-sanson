@@ -19,9 +19,11 @@ import java.util.List;
 public class ProveedorService {
 
     private final ProveedorRepository repository;
+    private final AuditoriaService auditoria;
 
-    public ProveedorService(ProveedorRepository repository) {
+    public ProveedorService(ProveedorRepository repository, AuditoriaService auditoria) {
         this.repository = repository;
+        this.auditoria = auditoria;
     }
 
     public List<Proveedor> listar(boolean incluirInactivos) {
@@ -45,7 +47,7 @@ public class ProveedorService {
         aplicar(p, s, ruc);
         p.setActivo(true);
         p.setFechaCreacion(ZonaHoraria.ahora());
-        return repository.save(p);
+        return auditar(repository.save(p), "PROVEEDOR_CREADO");
     }
 
     @Transactional
@@ -56,21 +58,21 @@ public class ProveedorService {
             throw new ConflictoException("ruc", "Ya existe un proveedor con el RUC " + ruc);
         }
         aplicar(p, s, ruc);
-        return repository.save(p);
+        return auditar(repository.save(p), "PROVEEDOR_EDITADO");
     }
 
     @Transactional
     public Proveedor darDeBaja(Long id) {
         Proveedor p = obtener(id);
         p.setActivo(false);
-        return repository.save(p);
+        return auditar(repository.save(p), "PROVEEDOR_BAJA");
     }
 
     @Transactional
     public Proveedor reactivar(Long id) {
         Proveedor p = obtener(id);
         p.setActivo(true);
-        return repository.save(p);
+        return auditar(repository.save(p), "PROVEEDOR_REACTIVADO");
     }
 
     private static void aplicar(Proveedor p, ProveedorRequest s, String ruc) {
@@ -79,5 +81,10 @@ public class ProveedorService {
         p.setDireccion(CategoriaService.limpiar(s.direccion()));
         p.setTelefono(CategoriaService.limpiar(s.telefono()));
         p.setCorreo(CategoriaService.limpiar(s.correo()));
+    }
+
+    private Proveedor auditar(Proveedor guardado, String accion) {
+        auditoria.registrarComoUsuarioActual(accion, "Proveedor " + guardado.getId() + ": " + guardado.getNombre());
+        return guardado;
     }
 }

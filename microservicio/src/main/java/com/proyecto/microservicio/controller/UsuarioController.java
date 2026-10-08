@@ -1,6 +1,10 @@
 package com.proyecto.microservicio.controller;
 
+import com.proyecto.microservicio.dto.CambioEstadoRequest;
+import com.proyecto.microservicio.dto.PaginaResponse;
+import com.proyecto.microservicio.dto.PerfilResponse;
 import com.proyecto.microservicio.dto.UsuarioActualizacionRequest;
+import com.proyecto.microservicio.dto.UsuarioOpcion;
 import com.proyecto.microservicio.dto.UsuarioRegistroRequest;
 import com.proyecto.microservicio.dto.UsuarioResponse;
 import com.proyecto.microservicio.service.UsuarioService;
@@ -23,14 +27,38 @@ public class UsuarioController {
         this.service = service;
     }
 
+    /** HU-30: listado con búsqueda, filtros y paginación en el servidor. */
     @GetMapping
-    public List<UsuarioResponse> listar() {
-        return service.listar();
+    public PaginaResponse<UsuarioResponse> buscar(
+            @RequestParam(required = false) String texto,
+            @RequestParam(required = false) Long rolId,
+            @RequestParam(required = false) String estado,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int tamano,
+            @RequestParam(defaultValue = "nombre") String orden,
+            @RequestParam(defaultValue = "false") boolean descendente) {
+        return PaginaResponse.de(service.buscar(texto, rolId, estado, pagina, tamano, orden, descendente),
+                UsuarioResponse::from);
     }
 
+    /** Lista corta para filtros; la pueden consultar quienes ven la bitácora. */
+    @GetMapping("/opciones")
+    public List<UsuarioOpcion> opciones() {
+        return service.opciones();
+    }
+
+    /** HU-34: perfil propio con el último acceso. */
     @GetMapping("/me")
-    public UsuarioResponse miPerfil(@AuthenticationPrincipal Jwt jwt) {
-        return service.obtener(idDe(jwt));
+    public PerfilResponse miPerfil(@AuthenticationPrincipal Jwt jwt) {
+        return service.perfil(idDe(jwt));
+    }
+
+    /** HU-31: activa o desactiva una cuenta. */
+    @PatchMapping("/{id}/estado")
+    public UsuarioResponse cambiarEstado(@PathVariable Long id,
+                                         @Valid @RequestBody CambioEstadoRequest solicitud,
+                                         @AuthenticationPrincipal Jwt jwt) {
+        return service.cambiarEstado(id, solicitud, idDe(jwt));
     }
 
     @PatchMapping("/me")

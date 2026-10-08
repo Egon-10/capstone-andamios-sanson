@@ -1,7 +1,11 @@
 package com.proyecto.microservicio.security;
 
 import com.proyecto.microservicio.exception.CredencialesInvalidasException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+
+import java.util.Optional;
 
 /**
  * Lee la identidad del usuario desde el token de la sesión.
@@ -27,5 +31,23 @@ public final class UsuarioAutenticado {
         } catch (NumberFormatException e) {
             throw new CredencialesInvalidasException("La sesión no es válida");
         }
+    }
+
+    /**
+     * Usuario de la solicitud en curso, leído del contexto de seguridad. Lo usan
+     * los servicios que registran auditoría sin recibir el token como
+     * parámetro. Vacío fuera de una solicitud autenticada (por ejemplo, en una
+     * tarea del propio servidor).
+     */
+    public static Optional<Long> actual() {
+        Authentication autenticacion = SecurityContextHolder.getContext().getAuthentication();
+        if (autenticacion != null && autenticacion.getPrincipal() instanceof Jwt jwt) {
+            try {
+                return Optional.of(id(jwt));
+            } catch (CredencialesInvalidasException e) {
+                return Optional.empty();
+            }
+        }
+        return Optional.empty();
     }
 }

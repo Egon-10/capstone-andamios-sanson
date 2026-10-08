@@ -2,8 +2,10 @@ package com.proyecto.microservicio.repository;
 
 import com.proyecto.microservicio.model.Producto;
 import com.proyecto.microservicio.model.ProductoDTO;
+import com.proyecto.microservicio.model.ReporteProductoDTO;
 import com.proyecto.microservicio.model.StockCriticoDTO;
 import com.proyecto.microservicio.model.IndicadoresProductoDTO;
+import com.proyecto.microservicio.model.ValorizacionCorteDTO;
 import com.proyecto.microservicio.model.ValorizacionProductoDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +14,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -77,73 +80,33 @@ ORDER BY p.stock ASC
 """)
 List<Object[]> productosEnStockCritico();
 
-@Query(value = """
-SELECT
-    p.id,
-    p.nombre,
-    c.nombre,
-    pr.nombre,
-    p.stock,
-    p.stock_minimo
-FROM productos p
-INNER JOIN categorias c
-    ON p.categoria_id = c.id
-LEFT JOIN proveedores pr
-    ON p.proveedor_id = pr.id
-ORDER BY p.nombre
-""", nativeQuery = true)
-List<Object[]> obtenerReporteProductos();
-
-@Query(value = """
-SELECT
-    p.id,
-    p.nombre,
-    c.nombre,
-    p.stock,
-    p.stock_minimo
-FROM productos p
-INNER JOIN categorias c
-    ON p.categoria_id = c.id
-WHERE
-p.stock <= p.stock_minimo
-AND
-(
-    :categoria IS NULL
-    OR
-    c.nombre = :categoria
-)
-ORDER BY p.stock ASC
-""", nativeQuery = true)
-List<Object[]> obtenerStockCritico(
-        @Param("categoria")
-        String categoria
-);
-
-@Query(value = """
-SELECT
-    p.id,
-    p.nombre,
-    c.nombre,
-    pr.nombre,
-    p.stock,
-    p.stock_minimo
-FROM productos p
-INNER JOIN categorias c
-    ON p.categoria_id = c.id
-LEFT JOIN proveedores pr
-    ON p.proveedor_id = pr.id
-WHERE
-(
-    :categoria IS NULL
-    OR
-    c.nombre = :categoria
-)
-ORDER BY p.nombre
-""", nativeQuery = true)
-List<Object[]> obtenerReporteProductos(
-        @Param("categoria")
-        String categoria
-);
+    /**
+     * HU-26 y HU-27: catalogo activo para el reporte de productos, con sus
+     * umbrales y su costo. Opcionalmente acotado a una categoria.
+     */
+    @Query(value = """
+    SELECT
+        p.id AS id,
+        p.sku AS sku,
+        p.nombre AS nombre,
+        c.nombre AS categoria,
+        pr.nombre AS proveedor,
+        p.stock AS stock,
+        p.stock_minimo AS stockMinimo,
+        p.punto_reposicion AS puntoReposicion,
+        p.stock_maximo AS stockMaximo,
+        p.costo_promedio AS costoPromedio,
+        p.precio AS precio
+    FROM productos p
+    LEFT JOIN categorias c
+        ON p.categoria_id = c.id
+    LEFT JOIN proveedores pr
+        ON p.proveedor_id = pr.id
+    WHERE p.activo = 1
+      AND (:categoriaId IS NULL OR p.categoria_id = :categoriaId)
+    ORDER BY c.nombre, p.nombre
+    """, nativeQuery = true)
+    List<ReporteProductoDTO> obtenerParaReporte(@Param("categoriaId") Long categoriaId);
 
     /**
      * HU-17: productos con su valorizacion al costo promedio ponderado.
@@ -171,6 +134,55 @@ List<Object[]> obtenerReporteProductos(
     ORDER BY c.nombre, p.nombre
     """, nativeQuery = true)
     List<ValorizacionProductoDTO> obtenerValorizacion();
+
+    /**
+     * HU-28: valorizacion con corte a una fecha.
+     *
+     * El stock al corte se reconstruye como el stock actual menos el neto de
+     * los movimientos posteriores, igual que el saldo inicial del kardex. Se
+     * cuentan todos los asientos, anulados y compensaciones incluidos, porque
+     * cada uno movio el stock en su momento y la compensacion se registra con
+     * su propia fecha. El costo es el que dejo el ultimo movimiento anterior al
+     * corte; el servicio decide que hacer cuando ese movimiento no lo guardo.
+     *
+     * El parametro corte es exclusivo: el primer instante del dia siguiente.
+     */
+    @Query(value = """
+    SELECT
+        p.id AS productoId,
+        p.sku AS sku,
+        p.nombre AS producto,
+        c.nombre AS categoria,
+        CAST(COALESCE(p.stock, 0) - COALESCE((
+            SELECT SUM(m.cantidad * CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE -1 END)
+            FROM movimientos m
+            WHERE m.producto_id = p.id
+              AND m.fecha >= :corte
+        ), 0) AS SIGNED) AS stock,
+        p.stock_minimo AS stockMinimo,
+        p.punto_reposicion AS puntoReposicion,
+        (
+            SELECT m2.costo_promedio_resultante
+            FROM movimientos m2
+            WHERE m2.producto_id = p.id
+              AND m2.fecha < :corte
+            ORDER BY m2.fecha DESC, m2.id DESC
+            LIMIT 1
+        ) AS costoHistorico,
+        p.costo_promedio AS costoVigente,
+        (
+            SELECT COUNT(*)
+            FROM movimientos m3
+            WHERE m3.producto_id = p.id
+              AND m3.fecha >= :corte
+        ) AS movimientosPosteriores
+    FROM productos p
+    LEFT JOIN categorias c
+        ON p.categoria_id = c.id
+    WHERE p.activo = 1
+    ORDER BY c.nombre, p.nombre
+    """, nativeQuery = true)
+    List<ValorizacionCorteDTO> obtenerValorizacionAlCorte(@Param("corte") LocalDateTime corte);
 
     /** HU-20: productos que alcanzaron su umbral de reposicion. */
     @Query(value = """

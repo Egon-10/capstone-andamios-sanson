@@ -48,18 +48,21 @@ public class ProductoService {
     private final MovimientoRepository movimientoRepository;
     private final AjusteInventarioRepository ajusteRepository;
     private final KardexService kardexService;
+    private final AuditoriaService auditoria;
 
     public ProductoService(ProductoRepository repository, CategoriaRepository categoriaRepository,
                            ProveedorRepository proveedorRepository,
                            MovimientoRepository movimientoRepository,
                            AjusteInventarioRepository ajusteRepository,
-                           KardexService kardexService) {
+                           KardexService kardexService,
+                           AuditoriaService auditoria) {
         this.repository = repository;
         this.categoriaRepository = categoriaRepository;
         this.proveedorRepository = proveedorRepository;
         this.movimientoRepository = movimientoRepository;
         this.ajusteRepository = ajusteRepository;
         this.kardexService = kardexService;
+        this.auditoria = auditoria;
     }
 
     public List<Producto> listar() {
@@ -84,7 +87,11 @@ public class ProductoService {
         Producto p = new Producto();
         p.setStock(s.stock());
         aplicar(p, s, sku);
-        return repository.save(p);
+        Producto guardado = repository.save(p);
+        auditoria.registrarComoUsuarioActual("PRODUCTO_CREADO",
+                "Producto " + guardado.getSku() + " - " + guardado.getNombre()
+                        + " con stock inicial " + guardado.getStock());
+        return guardado;
     }
 
     /** La edición no modifica el stock: el stock solo cambia mediante movimientos. */
@@ -96,11 +103,18 @@ public class ProductoService {
             throw new ConflictoException("sku", "El SKU " + sku + " ya está registrado");
         }
         aplicar(p, s, sku);
-        return repository.save(p);
+        Producto guardado = repository.save(p);
+        auditoria.registrarComoUsuarioActual("PRODUCTO_EDITADO",
+                "Producto " + guardado.getSku() + " - " + guardado.getNombre());
+        return guardado;
     }
 
+    @Transactional
     public void eliminar(Long id) {
-        repository.delete(obtener(id));
+        Producto p = obtener(id);
+        repository.delete(p);
+        auditoria.registrarComoUsuarioActual("PRODUCTO_ELIMINADO",
+                "Producto " + p.getSku() + " - " + p.getNombre());
     }
 
     private void aplicar(Producto p, ProductoRequest s, String sku) {
@@ -195,7 +209,11 @@ public class ProductoService {
         p.setPuntoReposicion(reposicion);
         p.setStockMaximo(maximo);
 
-        return repository.save(p);
+        Producto guardado = repository.save(p);
+        auditoria.registrarComoUsuarioActual("PRODUCTO_UMBRALES",
+                "Producto " + guardado.getSku() + ": minimo " + minimo + ", reposicion " + reposicion
+                        + ", maximo " + maximo);
+        return guardado;
     }
 
     /**

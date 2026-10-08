@@ -62,6 +62,12 @@ public class RefreshTokenService {
         return token.getUsuario();
     }
 
+    /** HU-31: revoca todos los tokens de renovación del usuario. Devuelve cuántos había vigentes. */
+    @Transactional
+    public int revocarTodos(Long usuarioId) {
+        return repositorio.revocarTodosDe(usuarioId);
+    }
+
     /** Revoca el token sin emitir otro (cierre de sesión). Ignora tokens inexistentes. */
     @Transactional
     public void revocar(String valor) {

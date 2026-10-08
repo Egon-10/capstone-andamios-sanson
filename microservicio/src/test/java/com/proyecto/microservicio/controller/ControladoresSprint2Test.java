@@ -199,12 +199,14 @@ class ControladoresSprint2Test {
         KardexService kardex = mock(KardexService.class);
         InventarioController c = new InventarioController(valorizacion, kardex);
 
-        c.valorizacion();
+        c.valorizacion(null);
+        c.valorizacion("2026-01-31");
         c.porReponer();
         c.kardex(5L, "2026-01-01", "2026-01-31");
         c.kardex(5L, null, " ");
 
         verify(valorizacion).calcular();
+        verify(valorizacion).calcularAlCorte(java.time.LocalDate.of(2026, 1, 31));
         verify(valorizacion).porReponer();
         verify(kardex).obtener(5L, LocalDateTime.of(2026, 1, 1, 0, 0),
                 LocalDateTime.of(2026, 1, 31, 0, 0).with(LocalTime.MAX));

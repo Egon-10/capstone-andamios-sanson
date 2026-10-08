@@ -131,6 +131,7 @@ public class MovimientoService {
         movimiento.setEstado(EstadosMovimiento.REGISTRADO);
         movimiento.setCostoUnitario(costoUnitario);
         movimiento.setSaldoResultante(stockResultante);
+        movimiento.setCostoPromedioResultante(producto.getCostoPromedio());
         movimiento.setProducto(producto);
         movimiento.setUsuario(usuario);
 
@@ -203,6 +204,7 @@ public class MovimientoService {
         compensatorio.setEstado(EstadosMovimiento.COMPENSACION);
         compensatorio.setCostoUnitario(original.getCostoUnitario());
         compensatorio.setSaldoResultante(stockResultante);
+        compensatorio.setCostoPromedioResultante(producto.getCostoPromedio());
         compensatorio.setMovimientoOrigen(original);
         compensatorio.setProducto(producto);
         compensatorio.setUsuario(usuario);

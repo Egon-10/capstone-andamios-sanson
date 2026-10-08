@@ -148,9 +148,10 @@ export class AuditoriaComponent implements OnInit, OnDestroy {
     const { pagina: _p, tamano: _t, ...filtros } = this.filtro;
     this.reportes.descargar(this.vista === 'acciones' ? 'auditoria' : 'accesos', formato, filtros).subscribe({
       next: () => (this.descargando = null),
-      error: async (e: HttpErrorResponse) => {
+      error: (e: HttpErrorResponse) => {
         this.descargando = null;
-        this.errorFiltro = await mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte.');
+        // El cuerpo del error llega como Blob y se lee de forma asincrona.
+        mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte.').then(m => (this.errorFiltro = m));
       }
     });
   }

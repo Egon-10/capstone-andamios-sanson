@@ -94,9 +94,10 @@ export class ValorizacionComponent implements OnInit {
         this.descargando = null;
         this.mensajeDescarga = `Se descargó ${nombre}.`;
       },
-      error: async (e: HttpErrorResponse) => {
+      error: (e: HttpErrorResponse) => {
         this.descargando = null;
-        this.mensajeError = await mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte');
+        // El cuerpo del error llega como Blob y se lee de forma asincrona.
+        mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte').then(m => (this.mensajeError = m));
       }
     });
   }

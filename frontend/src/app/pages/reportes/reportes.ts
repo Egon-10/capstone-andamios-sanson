@@ -166,9 +166,10 @@ export class ReportesComponent implements OnInit {
         this.descargando = null;
         this.mensaje = `Se descargó ${nombre}.`;
       },
-      error: async (e: HttpErrorResponse) => {
+      error: (e: HttpErrorResponse) => {
         this.descargando = null;
-        this.error = await mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte.');
+        // El cuerpo del error llega como Blob y se lee de forma asincrona.
+        mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte.').then(m => (this.error = m));
       }
     });
   }

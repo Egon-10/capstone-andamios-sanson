@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -179,6 +179,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.errorEstado = '';
   }
 
+  @HostListener('document:keydown.escape')
   cancelarCambioEstado(): void {
     this.usuarioCambiando = null;
   }
@@ -215,9 +216,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     const { texto, rolId, estado } = this.filtro;
     this.reportes.descargar('usuarios', formato, { texto, rolId, estado }).subscribe({
       next: () => (this.descargando = null),
-      error: async (e: HttpErrorResponse) => {
+      error: (e: HttpErrorResponse) => {
         this.descargando = null;
-        this.mensajeError = await mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte.');
+        // El cuerpo del error llega como Blob y se lee de forma asincrona.
+        mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte.').then(m => (this.mensajeError = m));
       }
     });
   }

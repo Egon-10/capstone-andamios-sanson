@@ -107,7 +107,7 @@
         </svg>
 
         <div class="tooltip" *ngIf="grupoActivo as g" [style.left.%]="tooltipIzquierda">
-          <span class="tooltip-fecha">{{ g.dia.fecha | date:'EEE dd/MM' }}</span>
+          <span class="tooltip-fecha">{{ g.dia.fecha | date:'dd/MM/yyyy' }}</span>
           <span class="tooltip-fila"><i class="trazo entrada"></i><strong>{{ valorEntrada(g.dia) }}</strong> entradas</span>
           <span class="tooltip-fila"><i class="trazo salida"></i><strong>{{ valorSalida(g.dia) }}</strong> salidas</span>
         </div>

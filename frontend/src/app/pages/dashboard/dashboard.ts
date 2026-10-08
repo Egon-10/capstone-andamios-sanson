@@ -1,3 +1,4 @@
+import { PanelIndicadoresComponent } from '../../components/panel-indicadores/panel-indicadores';
 import {
   Component,
   OnInit,
@@ -59,7 +60,8 @@ Chart.register(
   standalone: true,
   imports: [
   CommonModule,
-  FormsModule
+  FormsModule,
+  PanelIndicadoresComponent
 ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'

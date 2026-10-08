@@ -2,6 +2,8 @@ package com.proyecto.microservicio.repository;
 
 import com.proyecto.microservicio.model.Producto;
 import com.proyecto.microservicio.model.ProductoDTO;
+import com.proyecto.microservicio.model.StockCriticoDTO;
+import com.proyecto.microservicio.model.IndicadoresProductoDTO;
 import com.proyecto.microservicio.model.ValorizacionProductoDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -224,4 +226,42 @@ List<Object[]> obtenerReporteProductos(
                           @Param("soloActivos") boolean soloActivos,
                           @Param("porReponer") boolean porReponer,
                           Pageable paginacion);
+
+    /**
+     * HU-23: agregados del catalogo activo. Las sumas se convierten a entero
+     * con CAST porque MySQL devuelve DECIMAL al sumar columnas enteras.
+     */
+    @Query(value = """
+    SELECT
+        COUNT(*) AS productosActivos,
+        CAST(COALESCE(SUM(COALESCE(p.stock, 0)), 0) AS SIGNED) AS unidades,
+        COALESCE(ROUND(SUM(COALESCE(p.stock, 0) * COALESCE(p.costo_promedio, 0)), 2), 0) AS valor,
+        CAST(COALESCE(SUM(CASE
+            WHEN COALESCE(p.punto_reposicion, p.stock_minimo) IS NOT NULL
+             AND COALESCE(p.stock, 0) <= COALESCE(p.punto_reposicion, p.stock_minimo)
+            THEN 1 ELSE 0 END), 0) AS SIGNED) AS porReponer,
+        CAST(COALESCE(SUM(CASE WHEN COALESCE(p.stock, 0) <= 0 THEN 1 ELSE 0 END), 0) AS SIGNED) AS sinStock
+    FROM productos p
+    WHERE p.activo = 1
+    """, nativeQuery = true)
+    IndicadoresProductoDTO obtenerIndicadores();
+
+    /** HU-25: productos activos que alcanzaron su umbral de reposicion. */
+    @Query(value = """
+    SELECT
+        p.id AS productoId,
+        p.sku AS sku,
+        p.nombre AS producto,
+        c.nombre AS categoria,
+        COALESCE(p.stock, 0) AS stock,
+        COALESCE(p.punto_reposicion, p.stock_minimo) AS umbral,
+        p.stock_maximo AS stockMaximo
+    FROM productos p
+    LEFT JOIN categorias c
+        ON p.categoria_id = c.id
+    WHERE p.activo = 1
+      AND COALESCE(p.punto_reposicion, p.stock_minimo) IS NOT NULL
+      AND COALESCE(p.stock, 0) <= COALESCE(p.punto_reposicion, p.stock_minimo)
+    """, nativeQuery = true)
+    List<StockCriticoDTO> obtenerStockCritico();
 }

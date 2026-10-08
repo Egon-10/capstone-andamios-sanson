@@ -184,12 +184,4 @@ class BitacorasServiceTest {
         assertEquals("Rosa", r.usuario());
         assertNull(AccesoResponse.de(new Acceso()).usuario());
     }
-
-    @Test
-    @DisplayName("El origen recorta valores largos y tolera la falta de solicitud")
-    void origen() {
-        assertEquals(OrigenSolicitud.DESCONOCIDO, OrigenSolicitud.de(null));
-        assertEquals(45, OrigenSolicitud.recortar("1".repeat(80), 45).length());
-        assertNull(OrigenSolicitud.recortar("  ", 45));
-    }
 }

@@ -210,7 +210,7 @@ export class PanelIndicadoresComponent implements OnInit {
     if (maximo <= 4) {
       return 4;
     }
-    const potencia = Math.pow(10, Math.floor(Math.log10(maximo)));
+    const potencia = 10 ** Math.floor(Math.log10(maximo));
     for (const paso of [1, 2, 2.5, 5, 10]) {
       const tope = paso * potencia;
       if (tope >= maximo) {

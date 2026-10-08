@@ -138,6 +138,9 @@ class ValorizacionServiceTest {
         when(f.getCategoria()).thenReturn("Andamios");
         when(f.getStock()).thenReturn(stock);
         when(f.getStockMinimo()).thenReturn(10);
+        // Mockito devuelve 0 para un Integer sin configurar: se fija null a
+        // proposito para que mande el stock minimo, como en un producto real.
+        when(f.getPuntoReposicion()).thenReturn(null);
         when(f.getCostoHistorico()).thenReturn(historico == null ? null : new BigDecimal(historico));
         when(f.getCostoVigente()).thenReturn(new BigDecimal(vigente));
         when(f.getMovimientosPosteriores()).thenReturn(posteriores);

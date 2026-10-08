@@ -463,3 +463,11 @@ div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, texta
         animation: none !important;
     }
 }
+
+/* El diálogo nativo (<dialog open>) se dibuja con el estilo del sistema, sin los márgenes del navegador. */
+dialog.ui-dialogo {
+    position: static;
+    margin: 0;
+    border: none;
+    color: var(--texto);
+}

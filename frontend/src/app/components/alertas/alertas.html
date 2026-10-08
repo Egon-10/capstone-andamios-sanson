@@ -15,7 +15,7 @@
   <p class="ui-visualmente-oculto" aria-live="polite">{{ alertas.anuncio() }}</p>
 
   @if (abierto) {
-    <div class="panel" id="lista-alertas" role="region" aria-label="Alertas de reposición">
+    <section class="panel" id="lista-alertas" aria-label="Alertas de reposición">
       <header>
         <strong>Alertas de reposición</strong>
         <span class="tenue">{{ alertas.cantidad() }} producto(s)</span>
@@ -46,6 +46,6 @@
           Ver el panel de stock crítico
         </a>
       }
-    </div>
+    </section>
   }
 </div>

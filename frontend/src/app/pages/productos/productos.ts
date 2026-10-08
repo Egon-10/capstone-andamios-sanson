@@ -375,8 +375,6 @@ if (this.producto.stockMinimo < 0) {
 
   if (this.editando) {
 
-  const nombreProducto = this.producto.nombre;
-
   this.productoService
     .actualizar(
       this.producto.id!,
@@ -394,8 +392,6 @@ if (this.producto.stockMinimo < 0) {
     });
 
 } else {
-
-    const nombreProducto = this.producto.nombre;
 
 this.productoService
   .crear(this.producto)
@@ -448,11 +444,6 @@ this.productoService
 
     return;
   }
-
-  const productoEliminar =
-    this.pagina?.contenido.find(
-      p => p.id === id
-    );
 
   if (confirm('¿Desea eliminar el producto?')) {
 

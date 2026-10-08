@@ -87,7 +87,7 @@ public final class RenderizadorPdf {
         List<Reporte.Columna> columnas = r.columnas();
         float[] anchos = new float[columnas.size()];
         for (int i = 0; i < anchos.length; i++) {
-            anchos[i] = columnas.get(i).ancho();
+            anchos[i] = (float) columnas.get(i).ancho();
         }
 
         PdfPTable tabla = new PdfPTable(anchos);

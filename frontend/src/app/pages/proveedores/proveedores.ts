@@ -193,11 +193,6 @@ mensajeError = '';
 
   eliminar(id: number): void {
 
-  const proveedorEliminar =
-    this.proveedores.find(
-      p => p.id === id
-    );
-
   if (confirm(
     '¿Desea eliminar este proveedor?'
   )) {

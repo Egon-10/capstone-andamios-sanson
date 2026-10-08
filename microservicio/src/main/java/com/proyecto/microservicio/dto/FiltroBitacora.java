@@ -9,7 +9,7 @@ import java.util.Locale;
 /**
  * HU-32 y HU-33: filtros comunes de las bitácoras de auditoría y de accesos.
  *
- * Las fechas son días completos: "hasta" incluye todo el día indicado, por
+ * Las fechas son días completos: "hasta" incluye el día indicado completo, por
  * eso se convierte en el primer instante del día siguiente y se compara con
  * menor estricto.
  */

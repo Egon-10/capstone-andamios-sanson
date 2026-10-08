@@ -104,6 +104,8 @@ export class AlertaService {
   }
 }
 
+const ETIQUETAS: Record<StockCritico['nivel'], string> = { AGOTADO: 'agotado', CRITICO: 'crítico', BAJO: 'bajo' };
+
 export function etiqueta(nivel: StockCritico['nivel']): string {
-  return nivel === 'AGOTADO' ? 'agotado' : nivel === 'CRITICO' ? 'crítico' : 'bajo';
+  return ETIQUETAS[nivel];
 }

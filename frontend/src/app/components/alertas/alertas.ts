@@ -4,6 +4,11 @@ import { RouterLink } from '@angular/router';
 import { AlertaService } from '../../services/alerta.service';
 import { StockCritico } from '../../models/indicadores';
 
+const ICONOS: Record<StockCritico['nivel'], string> = {
+  AGOTADO: 'fa-circle-xmark', CRITICO: 'fa-triangle-exclamation', BAJO: 'fa-circle-exclamation'
+};
+const ETIQUETAS: Record<StockCritico['nivel'], string> = { AGOTADO: 'Agotado', CRITICO: 'Crítico', BAJO: 'Bajo' };
+
 /**
  * HU-29: campana de alertas de reposición en la barra superior.
  *
@@ -55,11 +60,11 @@ export class AlertasComponent {
   }
 
   icono(nivel: StockCritico['nivel']): string {
-    return nivel === 'AGOTADO' ? 'fa-circle-xmark' : nivel === 'CRITICO' ? 'fa-triangle-exclamation' : 'fa-circle-exclamation';
+    return ICONOS[nivel];
   }
 
   etiqueta(nivel: StockCritico['nivel']): string {
-    return nivel === 'AGOTADO' ? 'Agotado' : nivel === 'CRITICO' ? 'Crítico' : 'Bajo';
+    return ETIQUETAS[nivel];
   }
 
   textoBoton(): string {

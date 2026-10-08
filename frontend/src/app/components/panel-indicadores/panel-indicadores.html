@@ -46,20 +46,22 @@
       <h3>Tendencia de movimientos</h3>
 
       <div class="controles">
-        <div class="segmentado" role="group" aria-label="Periodo">
+        <fieldset class="segmentado">
+          <legend class="ui-visualmente-oculto">Periodo</legend>
           <button type="button" *ngFor="let p of [7, 30, 90]"
                   [class.activo]="periodo === p"
                   [attr.aria-pressed]="periodo === p"
                   (click)="cambiarPeriodo(p)">{{ p }} días</button>
-        </div>
-        <div class="segmentado" role="group" aria-label="Medida">
+        </fieldset>
+        <fieldset class="segmentado">
+          <legend class="ui-visualmente-oculto">Medida</legend>
           <button type="button" [class.activo]="medida === 'movimientos'"
                   [attr.aria-pressed]="medida === 'movimientos'"
                   (click)="cambiarMedida('movimientos')">Movimientos</button>
           <button type="button" [class.activo]="medida === 'unidades'"
                   [attr.aria-pressed]="medida === 'unidades'"
                   (click)="cambiarMedida('unidades')">Unidades</button>
-        </div>
+        </fieldset>
         <button type="button" class="enlace" (click)="verTabla = !verTabla">
           {{ verTabla ? 'Ver gráfico' : 'Ver tabla' }}
         </button>

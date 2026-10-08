@@ -111,6 +111,10 @@ h3 {
 }
 
 .segmentado {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
   display: inline-flex;
   border: 1px solid #cbd5e1;
   border-radius: 6px;

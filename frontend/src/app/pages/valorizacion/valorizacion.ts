@@ -1,13 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { Valorizacion, ValorizacionProducto } from '../../models/valorizacion';
 import { InventarioService } from '../../services/inventario.service';
+import { FormatoReporte, ReporteService } from '../../services/reporte.service';
+import { mensajeDeError, mensajeDeErrorEnBlob } from '../../core/errores';
+import { hoyEnLima } from '../reportes/reportes';
 
 /**
  * HU-17 y HU-20: valorizacion del inventario y productos por reponer.
+ * HU-28: valorizacion con corte a una fecha pasada.
  *
  * El inventario se valoriza al costo promedio ponderado y no al precio de
  * venta. La diferencia no es menor: valorizar al precio sobreestimaria el
@@ -36,26 +40,64 @@ export class ValorizacionComponent implements OnInit {
   cargando = false;
   mensajeError = '';
 
+  /** HU-28: dia de corte elegido (AAAA-MM-DD); vacio es la valorizacion de hoy. */
+  fechaCorte = '';
+  readonly hoy = hoyEnLima();
+
+  descargando: FormatoReporte | null = null;
+  mensajeDescarga = '';
+
+  private readonly reportes = inject(ReporteService);
+
   constructor(private readonly inventarioService: InventarioService) {}
 
   ngOnInit(): void {
-    this.cargando = true;
+    this.cargar();
 
-    this.inventarioService.valorizacion().subscribe({
+    this.inventarioService.porReponer().subscribe({
+      next: p => (this.porReponer = p),
+      error: () => (this.porReponer = [])
+    });
+  }
+
+  /** HU-28: carga la valorizacion de hoy o la del dia de corte elegido. */
+  cargar(): void {
+    if (this.fechaCorte && this.fechaCorte > this.hoy) {
+      this.mensajeError = 'La fecha de corte no puede ser posterior a hoy.';
+      return;
+    }
+    this.cargando = true;
+    this.mensajeError = '';
+    this.inventarioService.valorizacion(this.fechaCorte || null).subscribe({
       next: v => {
         this.cargando = false;
         this.valorizacion = v;
       },
       error: (e: HttpErrorResponse) => {
         this.cargando = false;
-        this.mensajeError = e.error?.mensaje
-          || 'No se pudo cargar la valorizacion del inventario';
+        this.mensajeError = mensajeDeError(e, 'No se pudo cargar la valorizacion del inventario');
       }
     });
+  }
 
-    this.inventarioService.porReponer().subscribe({
-      next: p => (this.porReponer = p),
-      error: () => (this.porReponer = [])
+  verHoy(): void {
+    this.fechaCorte = '';
+    this.cargar();
+  }
+
+  /** HU-26 y HU-27: el mismo calculo, exportado por el servidor. */
+  exportar(formato: FormatoReporte): void {
+    this.descargando = formato;
+    this.mensajeDescarga = '';
+    this.reportes.descargar('valorizacion', formato, { fecha: this.valorizacion?.fechaCorte ?? '' }).subscribe({
+      next: nombre => {
+        this.descargando = null;
+        this.mensajeDescarga = `Se descargó ${nombre}.`;
+      },
+      error: async (e: HttpErrorResponse) => {
+        this.descargando = null;
+        this.mensajeError = await mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte');
+      }
     });
   }
 
@@ -70,46 +112,5 @@ export class ValorizacionComponent implements OnInit {
   /** Valor acumulado de lo que hay que reponer, para dimensionar la compra. */
   get valorPorReponer(): number {
     return this.porReponer.reduce((suma, p) => suma + (p.valor ?? 0), 0);
-  }
-
-  /**
-   * Exporta el detalle a CSV desde el navegador. Se genera aqui y no en el
-   * servidor porque son los mismos datos que la pantalla ya tiene: pedir otro
-   * endpoint para lo mismo solo agregaria una ruta que mantener.
-   */
-  descargarDetalle(): void {
-    const filas = this.valorizacion?.detalle ?? [];
-    if (filas.length === 0) {
-      return;
-    }
-
-    const cabecera = ['SKU', 'Producto', 'Categoria', 'Stock',
-      'Costo promedio', 'Valorizado', 'Necesita reposicion'];
-
-    const lineas = filas.map(p => [
-      p.sku ?? '',
-      p.producto ?? '',
-      p.categoria ?? '',
-      String(p.stock ?? 0),
-      String(p.costoPromedio ?? 0),
-      String(p.valor ?? 0),
-      p.necesitaReposicion ? 'Si' : 'No'
-    ]);
-
-    const csv = [cabecera, ...lineas]
-      .map(f => f.map(c => `"${c.replaceAll('"', '""')}"`).join(';'))
-      .join('\n');
-
-    // La marca de orden de bytes hace que Excel reconozca el UTF-8 y no
-    // muestre las tildes partidas.
-    const contenido = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(contenido);
-
-    const enlace = document.createElement('a');
-    enlace.href = url;
-    enlace.download = `valorizacion-inventario-${new Date().toISOString().slice(0, 10)}.csv`;
-    enlace.click();
-
-    URL.revokeObjectURL(url);
   }
 }

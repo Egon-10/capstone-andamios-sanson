@@ -6,6 +6,7 @@ import { AjustesComponent } from './ajustes';
 import { ProductoService } from '../../services/producto.service';
 import { AjusteService } from '../../services/ajuste.service';
 import { Producto } from '../../models/producto';
+import { AlertaService } from '../../services/alerta.service';
 
 /** CP-17: pantalla de ajustes por conteo físico (HU-16). */
 describe('AjustesComponent', () => {
@@ -36,6 +37,7 @@ describe('AjustesComponent', () => {
     TestBed.configureTestingModule({
       imports: [AjustesComponent],
       providers: [
+        { provide: AlertaService, useValue: jasmine.createSpyObj('AlertaService', ['actualizar']) },
         { provide: ProductoService, useValue: productos },
         { provide: AjusteService, useValue: ajustes }
       ]

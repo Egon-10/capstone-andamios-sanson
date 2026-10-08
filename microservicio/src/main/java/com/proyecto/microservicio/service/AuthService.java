@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * HU-03: inicio de sesión con token y sesión en servidor.
@@ -39,11 +40,13 @@ public class AuthService {
     private final AccesoService accesos;
 
     /**
-     * Hash BCrypt de una contraseña que nadie usa. Se compara contra él cuando
-     * la cuenta no existe, para que esa respuesta tarde lo mismo que la de una
-     * contraseña incorrecta y el tiempo no delate qué cuentas existen.
+     * Hash de una contraseña aleatoria que nadie conoce. Se compara contra él
+     * cuando la cuenta no existe, para que esa respuesta tarde lo mismo que la
+     * de una contraseña incorrecta y el tiempo no delate qué cuentas existen.
+     * Se genera al arrancar en lugar de escribirse en el código, para que no
+     * haya ningún hash fijo en el repositorio.
      */
-    private static final String HASH_SENUELO = "$2a$10$YpbjJfmOnbW8jzkLP2T.uuoMFDTzdDUwesqB6UNhgaffjCyS7wz86";
+    private final String hashSenuelo;
 
     public AuthService(UsuarioRepository usuarios, PasswordEncoder encoder, JwtService jwtService,
                        RefreshTokenService refreshTokens, TokenRevocadoRepository revocados,
@@ -56,6 +59,7 @@ public class AuthService {
         this.auditoria = auditoria;
         this.propiedades = propiedades;
         this.accesos = accesos;
+        this.hashSenuelo = encoder.encode(UUID.randomUUID().toString());
     }
 
     @Transactional
@@ -76,7 +80,7 @@ public class AuthService {
                 : usuarios.findByNombreUsuario(identificador);
 
         if (encontrado.isEmpty()) {
-            encoder.matches(solicitud.password(), HASH_SENUELO);
+            encoder.matches(solicitud.password(), hashSenuelo);
             throw rechazo(identificador, null, "Cuenta inexistente", origen);
         }
 

@@ -114,13 +114,6 @@
         </select>
       </div>
 
-      <div class="campo">
-        <h5>Estado</h5>
-        <select [(ngModel)]="estado" [disabled]="!editando">
-          <option value="ACTIVO">Activo</option>
-          <option value="INACTIVO">Inactivo</option>
-        </select>
-      </div>
     </div>
 
     <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
@@ -134,37 +127,127 @@
     </div>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Usuario</th>
-        <th>Nombres y apellidos</th>
-        <th>Documento</th>
-        <th>Correo</th>
-        <th>Área</th>
-        <th>Rol</th>
-        <th>Estado</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let u of usuarios">
-        <td>{{ u.nombreUsuario || '—' }}</td>
-        <td>{{ u.nombre }} {{ u.apellidos }}</td>
-        <td>{{ u.tipoDocumento ? u.tipoDocumento + ' ' + u.numeroDocumento : '—' }}</td>
-        <td>{{ u.correo }}</td>
-        <td>{{ u.area || '—' }}</td>
-        <td>{{ u.rol?.nombre }}</td>
-        <td>
-          <span [class.estado-activo]="u.estado === 'ACTIVO'" [class.estado-inactivo]="u.estado !== 'ACTIVO'">
-            {{ u.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
-          </span>
-        </td>
-        <td>
-          <button class="editar" (click)="editar(u)">Editar</button>
-          <button class="eliminar" (click)="eliminar(u)">Eliminar</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- HU-30: listado con búsqueda, filtros y paginación -->
+  <section class="ui-tarjeta listado" aria-labelledby="titulo-listado">
+    <div class="ui-cabecera">
+      <h2 id="titulo-listado" class="ui-tarjeta-titulo">Usuarios registrados</h2>
+      <div class="ui-acciones">
+        <button type="button" class="ui-boton secundario chico" [disabled]="descargando !== null" (click)="exportar('pdf')">
+          <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> PDF
+        </button>
+        <button type="button" class="ui-boton secundario chico" [disabled]="descargando !== null" (click)="exportar('xlsx')">
+          <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Excel
+        </button>
+      </div>
+    </div>
+
+    <div class="ui-filtros">
+      <label class="ui-campo">Buscar
+        <input type="search" placeholder="Nombre, usuario, correo o documento"
+               [(ngModel)]="filtro.texto" (ngModelChange)="buscarTexto($event)">
+      </label>
+      <label class="ui-campo">Rol
+        <select [(ngModel)]="filtro.rolId" (ngModelChange)="aplicarFiltros()">
+          <option [ngValue]="null">Todos</option>
+          <option *ngFor="let r of roles" [ngValue]="r.id">{{ r.nombre }}</option>
+        </select>
+      </label>
+      <label class="ui-campo">Estado
+        <select [(ngModel)]="filtro.estado" (ngModelChange)="aplicarFiltros()">
+          <option value="">Todos</option>
+          <option value="ACTIVO">Activos</option>
+          <option value="INACTIVO">Inactivos</option>
+        </select>
+      </label>
+      <div>
+        <button type="button" class="ui-boton fantasma" *ngIf="hayFiltros()" (click)="limpiarFiltros()">
+          Quitar filtros
+        </button>
+      </div>
+    </div>
+
+    <app-estado-vista [estado]="estadoLista" textoCargando="Cargando usuarios…"
+                      textoError="No se pudo cargar la lista de usuarios." [detalle]="estadoLista === 'error' ? errorLista : (hayFiltros() ? 'Ningún usuario coincide con los filtros.' : '')"
+                      textoVacio="No hay usuarios para mostrar." (reintentar)="listarUsuarios()"></app-estado-vista>
+
+    <div class="ui-tabla-contenedor" *ngIf="estadoLista === 'listo'">
+      <table class="ui-tabla">
+        <caption class="ui-visualmente-oculto">Usuarios registrados</caption>
+        <thead>
+          <tr>
+            <th scope="col" [attr.aria-sort]="ordenAria('nombreUsuario')">
+              <button type="button" class="ordenar" (click)="ordenar('nombreUsuario')">Usuario <i class="fa-solid fa-sort" aria-hidden="true"></i></button>
+            </th>
+            <th scope="col" [attr.aria-sort]="ordenAria('nombre')">
+              <button type="button" class="ordenar" (click)="ordenar('nombre')">Nombres y apellidos <i class="fa-solid fa-sort" aria-hidden="true"></i></button>
+            </th>
+            <th scope="col">Documento</th>
+            <th scope="col">Correo</th>
+            <th scope="col">Área</th>
+            <th scope="col">Rol</th>
+            <th scope="col" [attr.aria-sort]="ordenAria('estado')">
+              <button type="button" class="ordenar" (click)="ordenar('estado')">Estado <i class="fa-solid fa-sort" aria-hidden="true"></i></button>
+            </th>
+            <th scope="col" [attr.aria-sort]="ordenAria('fechaCreacion')">
+              <button type="button" class="ordenar" (click)="ordenar('fechaCreacion')">Alta <i class="fa-solid fa-sort" aria-hidden="true"></i></button>
+            </th>
+            <th scope="col"><span class="ui-visualmente-oculto">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of usuarios" [class.inactivo]="u.estado !== 'ACTIVO'">
+            <td><strong>{{ u.nombreUsuario || '—' }}</strong></td>
+            <td>{{ u.nombre }} {{ u.apellidos }}</td>
+            <td class="tenue">{{ u.tipoDocumento ? u.tipoDocumento + ' ' + u.numeroDocumento : '—' }}</td>
+            <td>{{ u.correo }}</td>
+            <td>{{ u.area || '—' }}</td>
+            <td>{{ u.rol?.nombre }}</td>
+            <td>
+              <span class="ui-insignia" [class.exito]="u.estado === 'ACTIVO'" [class.peligro]="u.estado !== 'ACTIVO'">
+                <i class="fa-solid" [class.fa-circle-check]="u.estado === 'ACTIVO'" [class.fa-ban]="u.estado !== 'ACTIVO'" aria-hidden="true"></i>
+                {{ u.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="tenue">{{ u.fechaCreacion ? (u.fechaCreacion | date:'dd/MM/yyyy') : '—' }}</td>
+            <td class="acciones-fila">
+              <button type="button" class="ui-boton secundario chico" (click)="editar(u)"
+                      [attr.aria-label]="'Editar a ' + (u.nombreUsuario || u.correo)">Editar</button>
+              <button type="button" class="ui-boton chico" *ngIf="!esUsuarioActual(u)"
+                      [class.peligro]="u.estado === 'ACTIVO'" [class.secundario]="u.estado !== 'ACTIVO'"
+                      (click)="pedirCambioEstado(u)"
+                      [attr.aria-label]="(u.estado === 'ACTIVO' ? 'Desactivar a ' : 'Reactivar a ') + (u.nombreUsuario || u.correo)">
+                {{ u.estado === 'ACTIVO' ? 'Desactivar' : 'Reactivar' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginacion [pagina]="pagina" unidad="usuarios" (cambiar)="irAPagina($event)"
+                    (cambiarTamanoPagina)="cambiarTamano($event)"></app-paginacion>
+  </section>
+
+  <!-- HU-31: confirmación del cambio de estado -->
+  <div class="ui-velo" *ngIf="usuarioCambiando as u" (click)="cancelarCambioEstado()">
+    <div class="ui-dialogo" role="dialog" aria-modal="true" aria-labelledby="titulo-estado" (click)="$event.stopPropagation()">
+      <h2 id="titulo-estado">{{ u.estado === 'ACTIVO' ? 'Desactivar' : 'Reactivar' }} la cuenta de {{ u.nombreUsuario || u.correo }}</h2>
+      <p *ngIf="u.estado === 'ACTIVO'">
+        La persona no podrá iniciar sesión y <strong>sus sesiones abiertas se cerrarán de inmediato</strong>.
+        Su historial de movimientos y auditoría se conserva.
+      </p>
+      <p *ngIf="u.estado !== 'ACTIVO'">La persona podrá volver a iniciar sesión con su contraseña actual.</p>
+      <label class="ui-campo" *ngIf="u.estado === 'ACTIVO'">Motivo (queda en la auditoría) *
+        <textarea [(ngModel)]="motivo" maxlength="200" placeholder="Ej.: cese laboral, cambio de puesto"></textarea>
+      </label>
+      <p class="ui-mensaje peligro" role="alert" *ngIf="errorEstado">{{ errorEstado }}</p>
+      <div class="ui-acciones">
+        <button type="button" class="ui-boton secundario" (click)="cancelarCambioEstado()">Cancelar</button>
+        <button type="button" class="ui-boton" [class.peligro]="u.estado === 'ACTIVO'" [class.primario]="u.estado !== 'ACTIVO'"
+                [disabled]="cambiandoEstado" (click)="confirmarCambioEstado()">
+          {{ cambiandoEstado ? 'Guardando…' : (u.estado === 'ACTIVO' ? 'Desactivar cuenta' : 'Reactivar cuenta') }}
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

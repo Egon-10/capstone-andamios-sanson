@@ -3,8 +3,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ErrorApi } from '../../models/respuesta-login';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuditoriaService }
-from '../../services/auditoria.service';
 import { Producto } from '../../models/producto';
 import { Categoria } from '../../models/categoria';
 import { Proveedor } from '../../models/proveedor';
@@ -80,8 +78,7 @@ export class ProductosComponent implements OnInit {
   constructor(
   private readonly productoService: ProductoService,
   private readonly categoriaService: CategoriaService,
-  private readonly proveedorService: ProveedorService,
-  private readonly auditoriaService: AuditoriaService
+  private readonly proveedorService: ProveedorService
 ) {}
 
   ngOnInit(): void {
@@ -388,10 +385,6 @@ if (this.producto.stockMinimo < 0) {
     .subscribe({
       next: () => {
 
-        this.registrarAuditoria(
-          'Editó el producto: ' +
-          nombreProducto
-        );
 
         this.listarProductos();
 
@@ -409,10 +402,6 @@ this.productoService
   .subscribe({
     next: () => {
 
-      this.registrarAuditoria(
-        'Creó el producto: ' +
-        nombreProducto
-      );
 
       this.listarProductos();
 
@@ -471,10 +460,6 @@ this.productoService
       .eliminar(id)
       .subscribe(() => {
 
-        this.registrarAuditoria(
-          'Eliminó el producto: ' +
-          productoEliminar?.nombre
-        );
 
         this.listarProductos();
 
@@ -500,32 +485,8 @@ this.productoService
   this.mensajeError = '';
 }
 
-registrarAuditoria(
-  accion: string
-): void {
+// La auditoria del catalogo la registra el servidor (correccion DEF-01).
 
-  const usuarioGuardado =
-    localStorage.getItem('usuario');
-
-  if (!usuarioGuardado) return;
-
-  const usuario =
-    JSON.parse(usuarioGuardado);
-
-  const auditoria: any = {
-
-    accion: accion,
-
-    usuario: {
-      id: usuario.id
-    }
-
-  };
-
-  this.auditoriaService
-  .crear(auditoria)
-  .subscribe();
-}
   /** Muestra el mensaje de validación que devuelve el servidor (HU-10). */
   private mostrarErrorServidor(error: HttpErrorResponse): void {
 

@@ -1,148 +1,110 @@
-<div class="perfil-container">
-
-    <div class="perfil-card">
-
-        <div class="avatar">
-
-            <i class="fas fa-user-circle"></i>
-
-        </div>
-
-        <h2>Mi Perfil</h2>
-
-        <div
-            class="mensaje error"
-            *ngIf="mensajeError">
-
-            {{mensajeError}}
-
-        </div>
-
-        <div
-            class="mensaje exito"
-            *ngIf="mensajeExito">
-
-            {{mensajeExito}}
-
-        </div>
-
-        <div class="campo">
-
-            <label>Nombres</label>
-
-            <input
-                type="text"
-                [(ngModel)]="usuario.nombre">
-
-        </div>
-
-        <div class="campo">
-
-            <label>Apellidos</label>
-
-            <input
-                type="text"
-                [(ngModel)]="usuario.apellidos">
-
-        </div>
-
-        <div class="campo">
-
-            <label>Teléfono</label>
-
-            <input
-                type="text"
-                inputmode="numeric"
-                maxlength="15"
-                [(ngModel)]="usuario.telefono">
-
-        </div>
-
-        <div class="campo">
-
-            <label>Correo</label>
-
-            <input
-                type="email"
-                [(ngModel)]="usuario.correo">
-
-        </div>
-
-        <div class="campo">
-
-            <label>Rol</label>
-
-            <input
-                type="text"
-                [value]="usuario.rol?.nombre"
-                readonly>
-
-        </div>
-
-        <div class="campo">
-
-    <label>Nueva contraseña</label>
-
-    <div class="input-password">
-
-        <input
-            [type]="mostrarPassword ? 'text' : 'password'"
-            [(ngModel)]="password"
-            placeholder="Déjela vacía para no cambiarla">
-
-        <button
-            type="button"
-            class="toggle-password"
-            (click)="mostrarPassword = !mostrarPassword">
-
-            <i
-                class="fas"
-                [class.fa-eye]="!mostrarPassword"
-                [class.fa-eye-slash]="mostrarPassword">
-            </i>
-
-        </button>
-
+<section class="ui-pagina perfil">
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-id-card" aria-hidden="true"></i> Mi perfil</h1>
+      <p class="ui-subtitulo">Sus datos de cuenta y su actividad de acceso.</p>
     </div>
+  </header>
 
-</div>
+  <app-estado-vista [estado]="estado === 'listo' ? 'listo' : estado" textoCargando="Cargando su perfil…"
+                    textoError="No se pudo cargar su perfil." [detalle]="errorCarga" (reintentar)="cargar()"></app-estado-vista>
 
-       <div class="campo">
+  @if (estado === 'listo' && usuario; as u) {
+    <div class="rejilla">
+      <aside class="ui-tarjeta identidad">
+        <div class="avatar" aria-hidden="true">{{ iniciales() }}</div>
+        <h2>{{ u.nombre }} {{ u.apellidos }}</h2>
+        <p class="usuario">{{ u.nombreUsuario }}</p>
+        <span class="ui-insignia info">{{ u.rol?.nombre }}</span>
 
-    <label>Confirmar contraseña</label>
+        <dl>
+          <div><dt>Área</dt><dd>{{ u.area || 'Sin asignar' }}</dd></div>
+          <div><dt>Turno</dt><dd>{{ u.turno || 'Sin asignar' }}</dd></div>
+          <div><dt>Documento</dt><dd>{{ u.tipoDocumento }} {{ u.numeroDocumento }}</dd></div>
+          <div><dt>Cuenta creada</dt><dd>{{ u.fechaCreacion ? (u.fechaCreacion | date:'dd/MM/yyyy') : '—' }}</dd></div>
+        </dl>
+        <p class="nota">El rol, el área y el turno los asigna el administrador.</p>
+      </aside>
 
-    <div class="input-password">
+      <div class="columna">
+        <!-- Actividad de acceso -->
+        <section class="ui-tarjeta" aria-labelledby="titulo-actividad">
+          <h2 id="titulo-actividad" class="ui-tarjeta-titulo">Actividad de acceso</h2>
+          @if (perfil?.accesoAnterior) {
+            <p>Su inicio de sesión anterior fue el <strong>{{ perfil?.accesoAnterior | date:"dd/MM/yyyy 'a las' HH:mm" }}</strong>.</p>
+          } @else {
+            <p>Este es su primer inicio de sesión registrado.</p>
+          }
+          @if ((perfil?.fallidosDesdeAnterior ?? 0) > 0) {
+            <p class="ui-mensaje aviso" role="status">
+              <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+              Desde entonces hubo {{ perfil?.fallidosDesdeAnterior }} intento(s) fallido(s) de ingresar con su cuenta.
+              Si no fue usted, cambie su contraseña y avise al administrador.
+            </p>
+          } @else if (perfil?.accesoAnterior) {
+            <p class="ui-mensaje exito">
+              <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+              No hubo intentos fallidos con su cuenta desde su acceso anterior.
+            </p>
+          }
+        </section>
 
-        <input
-            [type]="mostrarConfirmarPassword ? 'text' : 'password'"
-            [(ngModel)]="confirmarPassword"
-            placeholder="Confirme la contraseña">
+        <!-- Datos de contacto -->
+        <section class="ui-tarjeta" aria-labelledby="titulo-contacto">
+          <h2 id="titulo-contacto" class="ui-tarjeta-titulo">Datos de contacto</h2>
+          <form class="formulario" (ngSubmit)="guardar()" novalidate>
+            <label class="ui-campo">Nombres *
+              <input name="nombres" [(ngModel)]="nombres" maxlength="60" autocomplete="given-name"
+                     [attr.aria-invalid]="!!errores['nombres']" aria-describedby="error-nombres">
+              @if (errores['nombres']) { <span class="ui-error-campo" id="error-nombres">{{ errores['nombres'] }}</span> }
+            </label>
+            <label class="ui-campo">Apellidos
+              <input name="apellidos" [(ngModel)]="apellidos" maxlength="60" autocomplete="family-name"
+                     [attr.aria-invalid]="!!errores['apellidos']">
+              @if (errores['apellidos']) { <span class="ui-error-campo">{{ errores['apellidos'] }}</span> }
+            </label>
+            <label class="ui-campo">Correo *
+              <input type="email" name="correo" [(ngModel)]="correo" maxlength="100" autocomplete="email"
+                     [attr.aria-invalid]="!!errores['correo']">
+              @if (errores['correo']) { <span class="ui-error-campo">{{ errores['correo'] }}</span> }
+            </label>
+            <label class="ui-campo">Teléfono
+              <input name="telefono" [(ngModel)]="telefono" maxlength="15" inputmode="numeric" autocomplete="tel"
+                     [attr.aria-invalid]="!!errores['telefono']">
+              @if (errores['telefono']) { <span class="ui-error-campo">{{ errores['telefono'] }}</span> }
+            </label>
 
-        <button
-            type="button"
-            class="toggle-password"
-            (click)="mostrarConfirmarPassword = !mostrarConfirmarPassword">
+            <fieldset class="clave">
+              <legend>Cambiar contraseña <span class="ui-ayuda">(opcional)</span></legend>
+              <label class="ui-campo">Nueva contraseña
+                <input [type]="mostrarPassword ? 'text' : 'password'" name="password" [(ngModel)]="password"
+                       autocomplete="new-password" [attr.aria-invalid]="!!errores['password']">
+                @if (errores['password']) { <span class="ui-error-campo">{{ errores['password'] }}</span> }
+              </label>
+              <label class="ui-campo">Confirmar contraseña
+                <input [type]="mostrarPassword ? 'text' : 'password'" name="confirmarPassword" [(ngModel)]="confirmarPassword"
+                       autocomplete="new-password" [attr.aria-invalid]="!!errores['confirmarPassword']">
+                @if (errores['confirmarPassword']) { <span class="ui-error-campo">{{ errores['confirmarPassword'] }}</span> }
+              </label>
+              <label class="mostrar">
+                <input type="checkbox" name="mostrar" [(ngModel)]="mostrarPassword"> Mostrar contraseña
+              </label>
+            </fieldset>
 
-            <i
-                class="fas"
-                [class.fa-eye]="!mostrarConfirmarPassword"
-                [class.fa-eye-slash]="mostrarConfirmarPassword">
-            </i>
+            <div aria-live="polite" class="mensajes">
+              @if (mensajeError) { <p class="ui-mensaje peligro" role="alert">{{ mensajeError }}</p> }
+              @if (mensajeExito) { <p class="ui-mensaje exito">{{ mensajeExito }}</p> }
+            </div>
 
-        </button>
-
+            <div class="ui-acciones">
+              <button type="submit" class="ui-boton primario" [disabled]="guardando">
+                {{ guardando ? 'Guardando…' : 'Guardar cambios' }}
+              </button>
+              <button type="button" class="ui-boton secundario" (click)="descartar()">Descartar</button>
+            </div>
+          </form>
+        </section>
+      </div>
     </div>
-
-</div>
-
-        <button
-            class="btn-guardar"
-            (click)="guardar()">
-
-            Guardar Cambios
-
-        </button>
-
-    </div>
-
-</div>
+  }
+</section>

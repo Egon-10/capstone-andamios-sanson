@@ -1,0 +1,51 @@
+<div class="alertas">
+  <button type="button" class="campana" [class.activa]="alertas.cantidad() > 0"
+          [attr.aria-expanded]="abierto" aria-haspopup="true" aria-controls="lista-alertas"
+          [attr.aria-label]="textoBoton()" (click)="alternar()">
+    <i class="fa-solid fa-bell" aria-hidden="true"></i>
+    @if (alertas.cantidad() > 0) {
+      <span class="contador" aria-hidden="true">{{ alertas.cantidad() }}</span>
+    }
+    @if (alertas.nuevas().length > 0) {
+      <span class="punto" aria-hidden="true"></span>
+    }
+  </button>
+
+  <!-- Anuncio para lectores de pantalla cuando aparece una alerta nueva -->
+  <p class="ui-visualmente-oculto" aria-live="polite">{{ alertas.anuncio() }}</p>
+
+  @if (abierto) {
+    <div class="panel" id="lista-alertas" role="region" aria-label="Alertas de reposición">
+      <header>
+        <strong>Alertas de reposición</strong>
+        <span class="tenue">{{ alertas.cantidad() }} producto(s)</span>
+      </header>
+
+      @if (alertas.cantidad() === 0) {
+        <p class="vacio">
+          <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+          Ningún producto alcanzó su punto de reposición.
+        </p>
+      } @else {
+        <ul>
+          @for (a of alertas.alertas(); track a.productoId) {
+            <li [class.nueva]="alertas.esNueva(a)">
+              <span class="nivel" [class]="'nivel ' + a.nivel.toLowerCase()">
+                <i class="fa-solid" [class]="'fa-solid ' + icono(a.nivel)" aria-hidden="true"></i>
+                {{ etiqueta(a.nivel) }}
+              </span>
+              <span class="producto">
+                {{ a.producto }}
+                <small>Stock {{ a.stock }} · umbral {{ a.umbral }}</small>
+              </span>
+              @if (alertas.esNueva(a)) { <span class="ui-insignia info">Nueva</span> }
+            </li>
+          }
+        </ul>
+        <a class="ui-boton secundario chico ver-todo" routerLink="/dashboard" (click)="cerrar()">
+          Ver el panel de stock crítico
+        </a>
+      }
+    </div>
+  }
+</div>

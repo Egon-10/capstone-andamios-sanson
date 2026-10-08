@@ -45,6 +45,7 @@ class AuthServiceTest {
     void preparar() {
         usuarios = mock(UsuarioRepository.class);
         encoder = mock(PasswordEncoder.class);
+        when(encoder.encode(anyString())).thenReturn("hash-senuelo");
         jwtService = mock(JwtService.class);
         refreshTokens = mock(RefreshTokenService.class);
         revocados = mock(TokenRevocadoRepository.class);
@@ -115,7 +116,7 @@ class AuthServiceTest {
         assertEquals("Credenciales inválidas", ex.getMessage());
         // Se compara contra un hash señuelo para que el tiempo de respuesta no
         // revele que la cuenta no existe.
-        verify(encoder).matches(eq("x"), anyString());
+        verify(encoder).matches("x", "hash-senuelo");
         verify(accesos).registrar("nadie@andamios.pe", null, Acceso.FALLIDO, "Cuenta inexistente",
                 OrigenSolicitud.DESCONOCIDO);
     }

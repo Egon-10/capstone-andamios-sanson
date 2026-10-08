@@ -1,127 +1,175 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Subject, Subscription, debounceTime } from 'rxjs';
 
-import { Auditoria } from '../../models/auditoria';
 import { AuditoriaService } from '../../services/auditoria.service';
+import { AuthService } from '../../services/auth.service';
+import { UsuarioService } from '../../services/usuario.service';
+import { FormatoReporte, ReporteService } from '../../services/reporte.service';
+import { mensajeDeError, mensajeDeErrorEnBlob } from '../../core/errores';
+import { FiltroBitacora, RegistroAcceso, RegistroAuditoria, UsuarioOpcion } from '../../models/auditoria';
+import { Pagina } from '../../models/pagina';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+import { PaginacionComponent } from '../../components/paginacion/paginacion';
+import { hoyEnLima } from '../reportes/reportes';
 
+type Vista = 'acciones' | 'accesos';
+type Estado = 'cargando' | 'error' | 'vacio' | 'listo';
+
+/**
+ * HU-33: consulta de la bitácora de auditoría con filtros combinados.
+ * HU-32: bitácora de accesos exitosos y fallidos (solo administrador).
+ *
+ * Los filtros se aplican en el servidor y el resultado llega paginado: la
+ * bitácora crece todos los días y traerla completa al navegador dejaría de
+ * funcionar a los pocos meses.
+ */
 @Component({
   selector: 'app-auditoria',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule
-  ],
+  imports: [DatePipe, FormsModule, EstadoVistaComponent, PaginacionComponent],
   templateUrl: './auditoria.html',
   styleUrl: './auditoria.css'
 })
-export class AuditoriaComponent
-implements OnInit {
+export class AuditoriaComponent implements OnInit, OnDestroy {
 
-  auditorias: Auditoria[] = [];
+  private readonly auditoria = inject(AuditoriaService);
+  private readonly auth = inject(AuthService);
+  private readonly usuarioService = inject(UsuarioService);
+  private readonly reportes = inject(ReporteService);
 
-  auditoriasFiltradas: Auditoria[] = [];
+  vista: Vista = 'acciones';
+  readonly hoy = hoyEnLima();
 
-  fechaInicio: string = '';
+  filtro: FiltroBitacora = { texto: '', usuarioId: null, resultado: '', desde: '', hasta: '', pagina: 0, tamano: 20 };
+  usuarios: UsuarioOpcion[] = [];
 
-  fechaFin: string = '';
+  acciones?: Pagina<RegistroAuditoria>;
+  accesos?: Pagina<RegistroAcceso>;
+  estado: Estado = 'cargando';
+  error = '';
+  errorFiltro = '';
+  descargando: FormatoReporte | null = null;
 
-  textoBusqueda: string = '';
-  tipoAccionFiltro: string = '';
-  ordenFecha: string = 'ASC';
+  /** Registro cuyo detalle completo se está mostrando. */
+  expandido: number | null = null;
 
-  constructor(
-    private auditoriaService: AuditoriaService
-  ) {}
+  private readonly escritura = new Subject<void>();
+  private suscripcion?: Subscription;
+
+  get esAdministrador(): boolean {
+    return this.auth.rol === 'ADMINISTRADOR';
+  }
 
   ngOnInit(): void {
-
-    this.listarAuditorias();
+    this.usuarioService.opciones().subscribe({ next: u => (this.usuarios = u), error: () => {} });
+    this.suscripcion = this.escritura.pipe(debounceTime(300)).subscribe(() => this.buscar());
+    this.consultar();
   }
 
-  listarAuditorias(): void {
+  ngOnDestroy(): void {
+    this.suscripcion?.unsubscribe();
+  }
 
-    this.auditoriaService
-      .listar()
-      .subscribe(data => {
+  cambiarVista(vista: Vista): void {
+    if (vista === this.vista) {
+      return;
+    }
+    this.vista = vista;
+    this.filtro = { ...this.filtro, resultado: '', pagina: 0 };
+    this.expandido = null;
+    this.consultar();
+  }
 
-        this.auditorias = data;
+  escribir(): void {
+    this.escritura.next();
+  }
 
-        this.aplicarFiltros();
+  buscar(): void {
+    this.filtro = { ...this.filtro, pagina: 0 };
+    this.consultar();
+  }
 
+  irAPagina(n: number): void {
+    this.filtro = { ...this.filtro, pagina: n };
+    this.consultar();
+  }
+
+  cambiarTamano(t: number): void {
+    this.filtro = { ...this.filtro, tamano: t, pagina: 0 };
+    this.consultar();
+  }
+
+  limpiar(): void {
+    this.filtro = { texto: '', usuarioId: null, resultado: '', desde: '', hasta: '', pagina: 0, tamano: this.filtro.tamano };
+    this.consultar();
+  }
+
+  hayFiltros(): boolean {
+    const f = this.filtro;
+    return !!(f.texto || f.usuarioId || f.resultado || f.desde || f.hasta);
+  }
+
+  consultar(): void {
+    this.errorFiltro = '';
+    if (this.filtro.desde && this.filtro.hasta && this.filtro.desde > this.filtro.hasta) {
+      this.errorFiltro = 'La fecha inicial no puede ser posterior a la final.';
+      return;
+    }
+    this.estado = 'cargando';
+    const alTerminar = (total: number) => (this.estado = total === 0 ? 'vacio' : 'listo');
+    const alFallar = (e: HttpErrorResponse) => {
+      this.estado = 'error';
+      this.error = mensajeDeError(e, 'Revise la conexión e intente de nuevo.');
+    };
+
+    if (this.vista === 'acciones') {
+      const { resultado: _resultado, ...filtro } = this.filtro;
+      this.auditoria.buscar(filtro).subscribe({
+        next: p => { this.acciones = p; alTerminar(p.contenido.length); },
+        error: alFallar
       });
-  }
-
-  aplicarFiltros(): void {
-
-    const texto =
-      this.textoBusqueda
-      .toLowerCase()
-      .trim();
-
-    let resultado =
-      this.auditorias.filter(a => {
-
-        const fechaAuditoria =
-          new Date(a.fecha!);
-
-        const cumpleInicio =
-          !this.fechaInicio ||
-
-          fechaAuditoria >=
-          new Date(this.fechaInicio);
-
-        const cumpleFin =
-          !this.fechaFin ||
-
-          fechaAuditoria <=
-          new Date(
-            this.fechaFin +
-            'T23:59:59'
-          );
-
-        const cumpleTexto =
-          !texto ||
-
-          a.accion
-            ?.toLowerCase()
-            .includes(texto);
-
-            const cumpleTipoAccion =
-
-  !this.tipoAccionFiltro ||
-
-  a.accion
-    ?.toUpperCase()
-    .includes(
-      this.tipoAccionFiltro
-    );
-        return cumpleInicio &&
-       cumpleFin &&
-       cumpleTexto &&
-       cumpleTipoAccion;
-               
+    } else {
+      this.auditoria.accesos(this.filtro).subscribe({
+        next: p => { this.accesos = p; alTerminar(p.contenido.length); },
+        error: alFallar
       });
-      if(this.ordenFecha === 'DESC'){
-
-    resultado.sort(
-      (a,b) =>
-      new Date(b.fecha!).getTime() -
-      new Date(a.fecha!).getTime()
-    );
-
-}else{
-
-    resultado.sort(
-      (a,b) =>
-      new Date(a.fecha!).getTime() -
-      new Date(b.fecha!).getTime()
-    );
-
-}
-
-this.auditoriasFiltradas =
-    resultado;
+    }
   }
 
+  alternarDetalle(id: number): void {
+    this.expandido = this.expandido === id ? null : id;
+  }
+
+  exportar(formato: FormatoReporte): void {
+    this.descargando = formato;
+    const { pagina: _p, tamano: _t, ...filtros } = this.filtro;
+    this.reportes.descargar(this.vista === 'acciones' ? 'auditoria' : 'accesos', formato, filtros).subscribe({
+      next: () => (this.descargando = null),
+      error: async (e: HttpErrorResponse) => {
+        this.descargando = null;
+        this.errorFiltro = await mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte.');
+      }
+    });
+  }
+
+  claseResultado(r: RegistroAcceso['resultado']): string {
+    return r === 'EXITOSO' ? 'exito' : r === 'BLOQUEADO' ? 'aviso' : 'peligro';
+  }
+
+  iconoResultado(r: RegistroAcceso['resultado']): string {
+    return r === 'EXITOSO' ? 'fa-circle-check' : r === 'BLOQUEADO' ? 'fa-lock' : 'fa-circle-xmark';
+  }
+
+  textoResultado(r: RegistroAcceso['resultado']): string {
+    return r === 'EXITOSO' ? 'Exitoso' : r === 'BLOQUEADO' ? 'Bloqueado' : 'Fallido';
+  }
+
+  /** Las acciones se guardan como CÓDIGO_EN_MAYÚSCULAS; se muestran legibles. */
+  accionLegible(accion: string): string {
+    const texto = accion.replaceAll('_', ' ').toLowerCase();
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
 }

@@ -16,6 +16,13 @@ import { PaginacionComponent } from '../../components/paginacion/paginacion';
 import { hoyEnLima } from '../reportes/reportes';
 
 type Vista = 'acciones' | 'accesos';
+
+/** Presentación de cada resultado de acceso: color, icono y texto, nunca solo color. */
+const RESULTADOS: Record<RegistroAcceso['resultado'], { clase: string; icono: string; texto: string }> = {
+  EXITOSO: { clase: 'exito', icono: 'fa-circle-check', texto: 'Exitoso' },
+  FALLIDO: { clase: 'peligro', icono: 'fa-circle-xmark', texto: 'Fallido' },
+  BLOQUEADO: { clase: 'aviso', icono: 'fa-lock', texto: 'Bloqueado' }
+};
 type Estado = 'cargando' | 'error' | 'vacio' | 'listo';
 
 /**
@@ -157,15 +164,15 @@ export class AuditoriaComponent implements OnInit, OnDestroy {
   }
 
   claseResultado(r: RegistroAcceso['resultado']): string {
-    return r === 'EXITOSO' ? 'exito' : r === 'BLOQUEADO' ? 'aviso' : 'peligro';
+    return RESULTADOS[r].clase;
   }
 
   iconoResultado(r: RegistroAcceso['resultado']): string {
-    return r === 'EXITOSO' ? 'fa-circle-check' : r === 'BLOQUEADO' ? 'fa-lock' : 'fa-circle-xmark';
+    return RESULTADOS[r].icono;
   }
 
   textoResultado(r: RegistroAcceso['resultado']): string {
-    return r === 'EXITOSO' ? 'Exitoso' : r === 'BLOQUEADO' ? 'Bloqueado' : 'Fallido';
+    return RESULTADOS[r].texto;
   }
 
   /** Las acciones se guardan como CÓDIGO_EN_MAYÚSCULAS; se muestran legibles. */

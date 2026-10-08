@@ -8,9 +8,11 @@ import com.proyecto.microservicio.dto.ValorizacionResponse;
 import com.proyecto.microservicio.exception.ReglaNegocioException;
 import com.proyecto.microservicio.model.Acceso;
 import com.proyecto.microservicio.model.Auditoria;
+import com.proyecto.microservicio.model.Categoria;
 import com.proyecto.microservicio.model.EstadosMovimiento;
 import com.proyecto.microservicio.model.MovimientoDTO;
 import com.proyecto.microservicio.model.ReporteProductoDTO;
+import com.proyecto.microservicio.model.Rol;
 import com.proyecto.microservicio.model.TiposMovimiento;
 import com.proyecto.microservicio.model.Usuario;
 import com.proyecto.microservicio.reporte.Reporte;
@@ -45,6 +47,17 @@ public class ReporteService {
 
     /** Tope de filas por reporte: protege al servidor de una exportación sin filtros. */
     public static final int MAXIMO_FILAS = 5000;
+
+    // Títulos de columna y textos que se repiten entre reportes.
+    private static final String FECHA = "Fecha";
+    private static final String MOTIVO = "Motivo";
+    private static final String PRODUCTO = "Producto";
+    private static final String ESTADO = "Estado";
+    private static final String USUARIO = "Usuario";
+    private static final String CATEGORIA = "Categoría";
+    private static final String STOCK = "Stock";
+    private static final String PERIODO = "Periodo: ";
+    private static final String NO_EXISTE = "(no existe)";
 
     private final MovimientoRepository movimientos;
     private final ProductoRepository productos;
@@ -120,11 +133,11 @@ public class ReporteService {
 
         return new Reporte("Movimientos de inventario",
                 List.of("Tipo: " + (filtroTipo == null ? "entradas y salidas" : filtroTipo.toLowerCase(Locale.ROOT)),
-                        "Periodo: " + periodo(desde, hasta)),
-                List.of(Reporte.fechaHora("Fecha"), Reporte.texto("Tipo", 9), Reporte.texto("Motivo", 16),
-                        Reporte.texto("SKU", 10), Reporte.texto("Producto", 24), Reporte.entero("Cantidad"),
-                        Reporte.decimal("Costo unit."), Reporte.moneda("Importe"), Reporte.texto("Estado", 12),
-                        Reporte.texto("Usuario", 16)),
+                        PERIODO + periodo(desde, hasta)),
+                List.of(Reporte.fechaHora(FECHA), Reporte.texto("Tipo", 9), Reporte.texto(MOTIVO, 16),
+                        Reporte.texto("SKU", 10), Reporte.texto(PRODUCTO, 24), Reporte.entero("Cantidad"),
+                        Reporte.decimal("Costo unit."), Reporte.moneda("Importe"), Reporte.texto(ESTADO, 12),
+                        Reporte.texto(USUARIO, 16)),
                 datos,
                 datos.isEmpty() ? null : fila("Total registrado", null, null, null, null, null, null, importe, null, null),
                 notas, emisor(emisorId), ZonaHoraria.ahora());
@@ -147,11 +160,11 @@ public class ReporteService {
         }
 
         String categoria = categoriaId == null ? "todas"
-                : categorias.findById(categoriaId).map(c -> c.getNombre()).orElse("(no existe)");
+                : categorias.findById(categoriaId).map(Categoria::getNombre).orElse(NO_EXISTE);
         return new Reporte("Catálogo de productos",
                 List.of("Categoría: " + categoria, "Solo productos activos"),
-                List.of(Reporte.texto("SKU", 10), Reporte.texto("Producto", 26), Reporte.texto("Categoría", 14),
-                        Reporte.texto("Proveedor", 16), Reporte.entero("Stock"), Reporte.entero("Mínimo"),
+                List.of(Reporte.texto("SKU", 10), Reporte.texto(PRODUCTO, 26), Reporte.texto(CATEGORIA, 14),
+                        Reporte.texto("Proveedor", 16), Reporte.entero(STOCK), Reporte.entero("Mínimo"),
                         Reporte.entero("Reposición"), Reporte.entero("Máximo"), Reporte.moneda("Costo prom."),
                         Reporte.moneda("Precio")),
                 datos,
@@ -164,15 +177,14 @@ public class ReporteService {
     @Transactional(readOnly = true)
     public Reporte stockCritico(Long emisorId) {
         List<StockCriticoResponse> filas = indicadores.stockCritico();
-        List<List<Object>> datos = new ArrayList<>(filas.size());
-        for (StockCriticoResponse s : filas) {
-            datos.add(fila(nivel(s.nivel()), s.sku(), s.producto(), s.categoria(), s.stock(), s.umbral(),
-                    s.faltanteHastaUmbral(), s.reponerHastaMaximo()));
-        }
+        List<List<Object>> datos = filas.stream()
+                .map(s -> fila(nivel(s.nivel()), s.sku(), s.producto(), s.categoria(), s.stock(), s.umbral(),
+                        s.faltanteHastaUmbral(), s.reponerHastaMaximo()))
+                .toList();
         return new Reporte("Productos en stock crítico",
                 List.of("Productos activos que alcanzaron su punto de reposición"),
-                List.of(Reporte.texto("Nivel", 9), Reporte.texto("SKU", 10), Reporte.texto("Producto", 26),
-                        Reporte.texto("Categoría", 14), Reporte.entero("Stock"), Reporte.entero("Umbral"),
+                List.of(Reporte.texto("Nivel", 9), Reporte.texto("SKU", 10), Reporte.texto(PRODUCTO, 26),
+                        Reporte.texto(CATEGORIA, 14), Reporte.entero(STOCK), Reporte.entero("Umbral"),
                         Reporte.entero("Faltante"), Reporte.entero("Pedir hasta máx.")),
                 datos, null,
                 List.of("Agotado: sin stock. Crítico: la mitad del umbral o menos. Bajo: en el umbral o por debajo.",
@@ -186,11 +198,10 @@ public class ReporteService {
         ValorizacionResponse v = corte == null ? valorizacion.calcular() : valorizacion.calcularAlCorte(corte);
         boolean conCorte = v.fechaCorte() != null;
 
-        List<List<Object>> datos = new ArrayList<>(v.detalle().size());
-        for (ValorizacionResponse.PorProducto p : v.detalle()) {
-            datos.add(fila(p.sku(), p.producto(), p.categoria(), p.stock(), p.costoPromedio(), p.valor(),
-                    p.costoEstimado() ? "Estimado" : "Exacto"));
-        }
+        List<List<Object>> datos = v.detalle().stream()
+                .map(p -> fila(p.sku(), p.producto(), p.categoria(), p.stock(), p.costoPromedio(), p.valor(),
+                        p.costoEstimado() ? "Estimado" : "Exacto"))
+                .toList();
 
         List<String> notas = new ArrayList<>();
         notas.add("Valorización al costo promedio ponderado. No se usa el precio de venta.");
@@ -207,8 +218,8 @@ public class ReporteService {
                         : "Valorización del inventario",
                 List.of(conCorte ? "Corte: cierre del " + Valores.fecha(v.fechaCorte())
                         : "Corte: existencias vigentes al momento de la emisión"),
-                List.of(Reporte.texto("SKU", 10), Reporte.texto("Producto", 28), Reporte.texto("Categoría", 16),
-                        Reporte.entero("Stock"), Reporte.decimal("Costo prom."), Reporte.moneda("Valor"),
+                List.of(Reporte.texto("SKU", 10), Reporte.texto(PRODUCTO, 28), Reporte.texto(CATEGORIA, 16),
+                        Reporte.entero(STOCK), Reporte.decimal("Costo prom."), Reporte.moneda("Valor"),
                         Reporte.texto("Costo", 9)),
                 datos,
                 datos.isEmpty() ? null : fila("Total", null, null, v.unidadesTotales(), null, v.valorTotal(), null),
@@ -234,11 +245,11 @@ public class ReporteService {
                 + Valores.moneda(k.valorizado()) + ".");
 
         return new Reporte("Kardex de " + k.sku() + " - " + k.producto(),
-                List.of("Periodo: " + periodo(desde, hasta),
+                List.of(PERIODO + periodo(desde, hasta),
                         "Saldo al inicio del periodo: " + Valores.entero(k.saldoInicial()) + " unidades"),
-                List.of(Reporte.fechaHora("Fecha"), Reporte.texto("Motivo", 18), Reporte.entero("Entrada"),
+                List.of(Reporte.fechaHora(FECHA), Reporte.texto(MOTIVO, 18), Reporte.entero("Entrada"),
                         Reporte.entero("Salida"), Reporte.decimal("Costo unit."), Reporte.moneda("Importe"),
-                        Reporte.entero("Saldo"), Reporte.texto("Estado", 12), Reporte.texto("Usuario", 16)),
+                        Reporte.entero("Saldo"), Reporte.texto(ESTADO, 12), Reporte.texto(USUARIO, 16)),
                 datos, null, notas, emisor(emisorId), ZonaHoraria.ahora());
     }
 
@@ -250,14 +261,12 @@ public class ReporteService {
     @Transactional(readOnly = true)
     public Reporte auditoria(FiltroBitacora filtro, Long emisorId) {
         Page<Auditoria> pagina = auditoria.buscarParaReporte(filtro, MAXIMO_FILAS);
-        List<List<Object>> datos = new ArrayList<>(pagina.getNumberOfElements());
-        for (Auditoria a : pagina.getContent()) {
-            Usuario u = a.getUsuario();
-            datos.add(fila(a.getFecha(), u == null ? "Sistema" : u.getNombreCompleto(), a.getAccion(),
-                    a.getDetalle()));
-        }
+        List<List<Object>> datos = pagina.getContent().stream()
+                .map(a -> fila(a.getFecha(), a.getUsuario() == null ? "Sistema" : a.getUsuario().getNombreCompleto(),
+                        a.getAccion(), a.getDetalle()))
+                .toList();
         return new Reporte("Bitácora de auditoría", filtrosBitacora(filtro),
-                List.of(Reporte.fechaHora("Fecha"), Reporte.texto("Usuario", 18), Reporte.texto("Acción", 20),
+                List.of(Reporte.fechaHora(FECHA), Reporte.texto(USUARIO, 18), Reporte.texto("Acción", 20),
                         Reporte.texto("Detalle", 60)),
                 datos, null, notaTope(pagina.getTotalElements()), emisor(emisorId), ZonaHoraria.ahora());
     }
@@ -266,18 +275,17 @@ public class ReporteService {
     @Transactional(readOnly = true)
     public Reporte accesos(FiltroBitacora filtro, Long emisorId) {
         Page<Acceso> pagina = accesos.buscarParaReporte(filtro, MAXIMO_FILAS);
-        List<List<Object>> datos = new ArrayList<>(pagina.getNumberOfElements());
-        for (Acceso a : pagina.getContent()) {
-            datos.add(fila(a.getFecha(), a.getIdentificador(), resultado(a.getResultado()), a.getMotivo(),
-                    a.getIp()));
-        }
+        List<List<Object>> datos = pagina.getContent().stream()
+                .map(a -> fila(a.getFecha(), a.getIdentificador(), resultado(a.getResultado()), a.getMotivo(),
+                        a.getIp()))
+                .toList();
         List<String> filtros = new ArrayList<>(filtrosBitacora(filtro));
         if (filtro.resultado() != null && !filtro.resultado().isBlank()) {
             filtros.add("Resultado: " + resultado(filtro.resultado().trim().toUpperCase(Locale.ROOT)));
         }
         return new Reporte("Bitácora de accesos", filtros,
-                List.of(Reporte.fechaHora("Fecha"), Reporte.texto("Usuario escrito", 22),
-                        Reporte.texto("Resultado", 10), Reporte.texto("Motivo", 22), Reporte.texto("IP", 16)),
+                List.of(Reporte.fechaHora(FECHA), Reporte.texto("Usuario escrito", 22),
+                        Reporte.texto("Resultado", 10), Reporte.texto(MOTIVO, 22), Reporte.texto("IP", 16)),
                 datos, null, notaTope(pagina.getTotalElements()), emisor(emisorId), ZonaHoraria.ahora());
     }
 
@@ -285,20 +293,20 @@ public class ReporteService {
     @Transactional(readOnly = true)
     public Reporte usuarios(String texto, Long rolId, String estado, Long emisorId) {
         Page<Usuario> pagina = usuarioService.buscarParaReporte(texto, rolId, estado, MAXIMO_FILAS);
-        List<List<Object>> datos = new ArrayList<>(pagina.getNumberOfElements());
-        for (Usuario u : pagina.getContent()) {
-            datos.add(fila(u.getNombreUsuario(), u.getNombreCompleto(), u.getRol() == null ? null : u.getRol().getNombre(),
-                    u.getArea(), u.getTurno(), u.estaActivo() ? "Activo" : "Inactivo", u.getFechaCreacion()));
-        }
+        List<List<Object>> datos = pagina.getContent().stream()
+                .map(u -> fila(u.getNombreUsuario(), u.getNombreCompleto(),
+                        u.getRol() == null ? null : u.getRol().getNombre(),
+                        u.getArea(), u.getTurno(), u.estaActivo() ? "Activo" : "Inactivo", u.getFechaCreacion()))
+                .toList();
         List<String> filtros = new ArrayList<>();
-        filtros.add("Rol: " + (rolId == null ? "todos" : roles.findById(rolId).map(r -> r.getNombre()).orElse("(no existe)")));
+        filtros.add("Rol: " + (rolId == null ? "todos" : roles.findById(rolId).map(Rol::getNombre).orElse(NO_EXISTE)));
         filtros.add("Estado: " + (estado == null || estado.isBlank() ? "todos" : estado.toLowerCase(Locale.ROOT)));
         if (texto != null && !texto.isBlank()) {
             filtros.add("Búsqueda: \"" + texto.trim() + "\"");
         }
         return new Reporte("Usuarios del sistema", filtros,
-                List.of(Reporte.texto("Usuario", 14), Reporte.texto("Nombre", 26), Reporte.texto("Rol", 14),
-                        Reporte.texto("Área", 12), Reporte.texto("Turno", 9), Reporte.texto("Estado", 9),
+                List.of(Reporte.texto(USUARIO, 14), Reporte.texto("Nombre", 26), Reporte.texto("Rol", 14),
+                        Reporte.texto("Área", 12), Reporte.texto("Turno", 9), Reporte.texto(ESTADO, 9),
                         Reporte.fecha("Alta")),
                 datos, null,
                 List.of("Por protección de datos personales, el reporte no incluye documento, correo ni teléfono."),
@@ -337,9 +345,9 @@ public class ReporteService {
 
     private List<String> filtrosBitacora(FiltroBitacora f) {
         List<String> filtros = new ArrayList<>();
-        filtros.add("Periodo: " + periodo(f.desde(), f.hasta()));
+        filtros.add(PERIODO + periodo(f.desde(), f.hasta()));
         if (f.usuarioId() != null) {
-            filtros.add("Usuario: " + usuarios.findById(f.usuarioId()).map(Usuario::getNombreCompleto).orElse("(no existe)"));
+            filtros.add("Usuario: " + usuarios.findById(f.usuarioId()).map(Usuario::getNombreCompleto).orElse(NO_EXISTE));
         }
         if (f.texto() != null && !f.texto().isBlank()) {
             filtros.add("Búsqueda: \"" + f.texto().trim() + "\"");

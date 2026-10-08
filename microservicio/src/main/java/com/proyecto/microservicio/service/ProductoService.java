@@ -41,6 +41,7 @@ public class ProductoService {
             Set.of("nombre", "sku", "stock", "precio", "costoPromedio", "id");
 
     private static final int TAMANO_MAXIMO_PAGINA = 100;
+    private static final String PRODUCTO = "Producto ";
 
     private final ProductoRepository repository;
     private final CategoriaRepository categoriaRepository;
@@ -89,7 +90,7 @@ public class ProductoService {
         aplicar(p, s, sku);
         Producto guardado = repository.save(p);
         auditoria.registrarComoUsuarioActual("PRODUCTO_CREADO",
-                "Producto " + guardado.getSku() + " - " + guardado.getNombre()
+                PRODUCTO + guardado.getSku() + " - " + guardado.getNombre()
                         + " con stock inicial " + guardado.getStock());
         return guardado;
     }
@@ -105,7 +106,7 @@ public class ProductoService {
         aplicar(p, s, sku);
         Producto guardado = repository.save(p);
         auditoria.registrarComoUsuarioActual("PRODUCTO_EDITADO",
-                "Producto " + guardado.getSku() + " - " + guardado.getNombre());
+                PRODUCTO + guardado.getSku() + " - " + guardado.getNombre());
         return guardado;
     }
 
@@ -114,7 +115,7 @@ public class ProductoService {
         Producto p = obtener(id);
         repository.delete(p);
         auditoria.registrarComoUsuarioActual("PRODUCTO_ELIMINADO",
-                "Producto " + p.getSku() + " - " + p.getNombre());
+                PRODUCTO + p.getSku() + " - " + p.getNombre());
     }
 
     private void aplicar(Producto p, ProductoRequest s, String sku) {
@@ -211,7 +212,7 @@ public class ProductoService {
 
         Producto guardado = repository.save(p);
         auditoria.registrarComoUsuarioActual("PRODUCTO_UMBRALES",
-                "Producto " + guardado.getSku() + ": minimo " + minimo + ", reposicion " + reposicion
+                PRODUCTO + guardado.getSku() + ": minimo " + minimo + ", reposicion " + reposicion
                         + ", maximo " + maximo);
         return guardado;
     }

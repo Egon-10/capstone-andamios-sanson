@@ -36,11 +36,11 @@
             <p>Este es su primer inicio de sesión registrado.</p>
           }
           @if ((perfil?.fallidosDesdeAnterior ?? 0) > 0) {
-            <p class="ui-mensaje aviso" role="status">
+            <output class="ui-mensaje aviso">
               <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
               Desde entonces hubo {{ perfil?.fallidosDesdeAnterior }} intento(s) fallido(s) de ingresar con su cuenta.
               Si no fue usted, cambie su contraseña y avise al administrador.
-            </p>
+            </output>
           } @else if (perfil?.accesoAnterior) {
             <p class="ui-mensaje exito">
               <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>

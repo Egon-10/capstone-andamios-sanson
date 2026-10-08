@@ -94,10 +94,7 @@ export class CategoriasComponent implements OnInit {
   }
 
   eliminar(id: number): void {
-    const categoriaEliminar =
-  this.categorias.find(
-    c => c.id === id
-  );
+
 
     if (confirm('¿Desea eliminar esta categoría?')) {
 

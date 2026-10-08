@@ -52,6 +52,10 @@ public final class RenderizadorExcel {
     private static final int ESTILO_TOTAL_MONEDA = 12;
     private static final int ESTILO_NOTA = 13;
 
+    private static final String INICIO_CELDA = "<c r=\"";
+    private static final String ESTILO = "\" s=\"";
+    private static final String FIN_FILA = "</row>";
+
     public byte[] dibujar(Reporte reporte) {
         ByteArrayOutputStream salida = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(salida, StandardCharsets.UTF_8)) {
@@ -108,31 +112,31 @@ public final class RenderizadorExcel {
         }
         fila++;
 
-        x.append("<row r=\"").append(fila).append("\">");
+        abrirFila(x, fila);
         for (int c = 0; c < columnas.size(); c++) {
             celdaTexto(x, ref(c, fila), columnas.get(c).titulo(), ESTILO_ENCABEZADO);
         }
-        x.append("</row>");
+        x.append(FIN_FILA);
         fila++;
 
         if (r.filas().isEmpty()) {
             celdaUnica(x, fila++, "No hay registros para los filtros indicados.", ESTILO_NOTA);
         }
         for (List<Object> valores : r.filas()) {
-            x.append("<row r=\"").append(fila).append("\">");
+            abrirFila(x, fila);
             for (int c = 0; c < columnas.size(); c++) {
                 celda(x, ref(c, fila), valores.get(c), columnas.get(c).tipo(), false);
             }
-            x.append("</row>");
+            x.append(FIN_FILA);
             fila++;
         }
 
         if (r.totales() != null && !r.filas().isEmpty()) {
-            x.append("<row r=\"").append(fila).append("\">");
+            abrirFila(x, fila);
             for (int c = 0; c < columnas.size(); c++) {
                 celda(x, ref(c, fila), r.totales().get(c), columnas.get(c).tipo(), true);
             }
-            x.append("</row>");
+            x.append(FIN_FILA);
             fila++;
         }
 
@@ -153,42 +157,58 @@ public final class RenderizadorExcel {
     }
 
     private static void celdaUnica(StringBuilder x, int fila, String valor, int estilo) {
-        x.append("<row r=\"").append(fila).append("\">");
+        abrirFila(x, fila);
         celdaTexto(x, ref(0, fila), valor, estilo);
-        x.append("</row>");
+        x.append(FIN_FILA);
+    }
+
+    private static void abrirFila(StringBuilder x, int fila) {
+        x.append("<row r=\"").append(fila).append("\">");
     }
 
     private static void celda(StringBuilder x, String ref, Object valor, Reporte.Tipo tipo, boolean total) {
         if (valor == null) {
             if (total) {
                 // La fila de totales lleva fondo en todas sus celdas.
-                x.append("<c r=\"").append(ref).append("\" s=\"").append(ESTILO_TOTAL_TEXTO).append("\"/>");
+                x.append(INICIO_CELDA).append(ref).append(ESTILO).append(ESTILO_TOTAL_TEXTO).append("\"/>");
             }
             return;
         }
         if (valor instanceof Number n && tipo.esNumero()) {
-            int estilo = switch (tipo) {
-                case ENTERO -> total ? ESTILO_TOTAL_ENTERO : ESTILO_ENTERO;
-                case MONEDA -> total ? ESTILO_TOTAL_MONEDA : ESTILO_MONEDA;
-                default -> total ? ESTILO_TOTAL_DECIMAL : ESTILO_DECIMAL;
-            };
-            x.append("<c r=\"").append(ref).append("\" s=\"").append(estilo).append("\"><v>")
-             .append(numero(n)).append("</v></c>");
+            celdaValor(x, ref, estiloNumero(tipo, total), numero(n));
         } else if (valor instanceof LocalDateTime f) {
-            x.append("<c r=\"").append(ref).append("\" s=\"").append(ESTILO_FECHA_HORA).append("\"><v>")
-             .append(serial(f)).append("</v></c>");
+            celdaValor(x, ref, ESTILO_FECHA_HORA, serial(f));
         } else if (valor instanceof LocalDate f) {
-            x.append("<c r=\"").append(ref).append("\" s=\"").append(ESTILO_FECHA).append("\"><v>")
-             .append(ChronoUnit.DAYS.between(ORIGEN_EXCEL, f)).append("</v></c>");
+            celdaValor(x, ref, ESTILO_FECHA, String.valueOf(ChronoUnit.DAYS.between(ORIGEN_EXCEL, f)));
         } else {
             celdaTexto(x, ref, String.valueOf(valor), total ? ESTILO_TOTAL_TEXTO : ESTILO_TEXTO);
         }
     }
 
+    private static int estiloNumero(Reporte.Tipo tipo, boolean total) {
+        return switch (tipo) {
+            case ENTERO -> total ? ESTILO_TOTAL_ENTERO : ESTILO_ENTERO;
+            case MONEDA -> total ? ESTILO_TOTAL_MONEDA : ESTILO_MONEDA;
+            default -> total ? ESTILO_TOTAL_DECIMAL : ESTILO_DECIMAL;
+        };
+    }
+
+    private static void celdaValor(StringBuilder x, String ref, int estilo, String valor) {
+        x.append(INICIO_CELDA).append(ref).append(ESTILO).append(estilo).append("\"><v>")
+         .append(valor).append("</v></c>");
+    }
+
     private static void celdaTexto(StringBuilder x, String ref, String valor, int estilo) {
-        x.append("<c r=\"").append(ref).append("\" s=\"").append(estilo)
+        x.append(INICIO_CELDA).append(ref).append(ESTILO).append(estilo)
          .append("\" t=\"inlineStr\"><is><t xml:space=\"preserve\">").append(xml(valor))
          .append("</t></is></c>");
+    }
+
+    /** Referencia absoluta ($A$1), la que exige el nombre definido del autofiltro. */
+    static String refAbsoluta(int columna, int fila) {
+        String relativa = ref(columna, fila);
+        String letras = relativa.substring(0, relativa.length() - String.valueOf(fila).length());
+        return "$" + letras + "$" + fila;
     }
 
     /** Referencia A1 de una celda; la columna es base 0 y la fila base 1. */
@@ -273,9 +293,8 @@ public final class RenderizadorExcel {
             .append(" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">")
             .append("<sheets><sheet name=\"").append(xml(hoja)).append("\" sheetId=\"1\" r:id=\"rId1\"/></sheets>");
         if (!r.filas().isEmpty()) {
-            String desde = ref(0, encabezado).replaceAll("([A-Z]+)(\\d+)", "\\$$1\\$$2");
-            String hasta = ref(r.columnas().size() - 1, encabezado + r.filas().size())
-                    .replaceAll("([A-Z]+)(\\d+)", "\\$$1\\$$2");
+            String desde = refAbsoluta(0, encabezado);
+            String hasta = refAbsoluta(r.columnas().size() - 1, encabezado + r.filas().size());
             x.append("<definedNames><definedName name=\"_xlnm._FilterDatabase\" localSheetId=\"0\" hidden=\"1\">'")
              .append(xml(hoja.replace("'", "''"))).append("'!").append(desde).append(':').append(hasta)
              .append("</definedName></definedNames>");

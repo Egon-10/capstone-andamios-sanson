@@ -76,7 +76,7 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest solicitud) {
-        return login(solicitud, OrigenSolicitud.DESCONOCIDO);
+        return iniciarSesion(solicitud, OrigenSolicitud.DESCONOCIDO);
     }
 
     /**
@@ -86,6 +86,10 @@ public class AuthService {
      */
     @Transactional
     public LoginResponse login(LoginRequest solicitud, OrigenSolicitud origen) {
+        return iniciarSesion(solicitud, origen);
+    }
+
+    private LoginResponse iniciarSesion(LoginRequest solicitud, OrigenSolicitud origen) {
         String identificador = solicitud.correo().trim();
         Optional<Usuario> encontrado = identificador.contains("@")
                 ? usuarios.findByCorreoIgnoreCase(identificador)

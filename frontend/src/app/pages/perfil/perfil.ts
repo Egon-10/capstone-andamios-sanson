@@ -10,7 +10,16 @@ import { mensajeDeError } from '../../core/errores';
 import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
 
 const SOLO_LETRAS = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$/;
-const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Correo con una sola @, sin espacios y con un punto en el dominio; sin expresiones con retroceso. */
+export function esCorreo(valor: string): boolean {
+  const partes = valor.split('@');
+  if (partes.length !== 2 || /\s/.test(valor)) {
+    return false;
+  }
+  const [usuario, dominio] = partes;
+  const punto = dominio.lastIndexOf('.');
+  return usuario.length > 0 && punto > 0 && punto < dominio.length - 1;
+}
 const PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
 
 /**
@@ -83,7 +92,7 @@ export class PerfilComponent implements OnInit {
     if (this.apellidos.trim() && (this.apellidos.trim().length < 2 || !SOLO_LETRAS.test(this.apellidos.trim()))) {
       e['apellidos'] = 'Solo letras y espacios; mínimo 2 caracteres.';
     }
-    if (!CORREO.test(this.correo.trim())) {
+    if (!esCorreo(this.correo.trim())) {
       e['correo'] = 'Ingrese un correo válido.';
     }
     if (this.telefono && !/^\d{1,15}$/.test(this.telefono)) {

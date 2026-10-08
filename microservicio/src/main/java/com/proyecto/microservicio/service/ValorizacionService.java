@@ -4,7 +4,6 @@ import com.proyecto.microservicio.config.ZonaHoraria;
 import com.proyecto.microservicio.dto.ValorizacionResponse;
 import com.proyecto.microservicio.exception.ReglaNegocioException;
 import com.proyecto.microservicio.model.ValorizacionCorteDTO;
-import com.proyecto.microservicio.model.ValorizacionProductoDTO;
 import com.proyecto.microservicio.repository.ProductoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +40,10 @@ public class ValorizacionService {
     /** Valorización con el stock y el costo vigentes. */
     @Transactional(readOnly = true)
     public ValorizacionResponse calcular() {
+        return vigente();
+    }
+
+    private ValorizacionResponse vigente() {
         List<Fila> filas = repository.obtenerValorizacion().stream()
                 .map(f -> new Fila(f.getProductoId(), f.getSku(), f.getProducto(), f.getCategoria(),
                         entero(f.getStock()), f.getCostoPromedio(), false,
@@ -67,7 +70,7 @@ public class ValorizacionService {
             if (fecha != null && fecha.isAfter(hoy)) {
                 throw new ReglaNegocioException("fecha", "La fecha de corte no puede ser posterior a hoy");
             }
-            return calcular();
+            return vigente();
         }
 
         List<Fila> filas = new ArrayList<>();

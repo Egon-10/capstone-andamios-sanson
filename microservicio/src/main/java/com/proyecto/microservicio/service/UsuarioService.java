@@ -34,7 +34,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * HU-43: registro de usuarios con validación de duplicados.
@@ -58,13 +58,10 @@ public class UsuarioService {
     private final RefreshTokenService refreshTokens;
     private final SecureRandom aleatorio = new SecureRandom();
 
-    /** Campos por los que se puede ordenar el listado, con su ruta en la entidad. */
-    private static final Map<String, String> ORDENABLES = Map.of(
-            "nombre", "nombre",
-            "apellidos", "apellidos",
-            "nombreUsuario", "nombreUsuario",
-            "fechaCreacion", "fechaCreacion",
-            "estado", "estado");
+    /** Campos de la entidad por los que se puede ordenar el listado. */
+    private static final String ORDEN_POR_OMISION = "nombre";
+    private static final Set<String> ORDENABLES =
+            Set.of(ORDEN_POR_OMISION, "apellidos", "nombreUsuario", "fechaCreacion", "estado");
 
     public UsuarioService(UsuarioRepository repository, RolRepository rolRepository,
                           PasswordEncoder encoder, AuditoriaService auditoria,
@@ -82,7 +79,7 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public Page<Usuario> buscar(String texto, Long rolId, String estado, int pagina, int tamano,
                                 String orden, boolean descendente) {
-        String campo = ORDENABLES.getOrDefault(orden == null ? "" : orden, "nombre");
+        String campo = orden != null && ORDENABLES.contains(orden) ? orden : ORDEN_POR_OMISION;
         Sort sort = Sort.by(descendente ? Sort.Direction.DESC : Sort.Direction.ASC, campo)
                 .and(Sort.by("id"));
         return consultar(texto, rolId, estado,
@@ -97,7 +94,7 @@ public class UsuarioService {
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE')")
     @Transactional(readOnly = true)
     public Page<Usuario> buscarParaReporte(String texto, Long rolId, String estado, int tope) {
-        return consultar(texto, rolId, estado, PageRequest.of(0, tope, Sort.by("nombre", "apellidos", "id")));
+        return consultar(texto, rolId, estado, PageRequest.of(0, tope, Sort.by(ORDEN_POR_OMISION, "apellidos", "id")));
     }
 
     private Page<Usuario> consultar(String texto, Long rolId, String estado, PageRequest pagina) {
@@ -187,7 +184,7 @@ public class UsuarioService {
         Usuario guardado = repository.save(u);
         auditoria.registrar("EDITAR USUARIO: " + etiqueta(guardado), actorId);
         if (s.estado() != null) {
-            return cambiarEstado(id, new CambioEstadoRequest(s.estado(), null), actorId);
+            return aplicarCambioEstado(id, new CambioEstadoRequest(s.estado(), null), actorId);
         }
         return UsuarioResponse.from(guardado);
     }
@@ -207,6 +204,10 @@ public class UsuarioService {
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Transactional
     public UsuarioResponse cambiarEstado(Long id, CambioEstadoRequest s, Long actorId) {
+        return aplicarCambioEstado(id, s, actorId);
+    }
+
+    private UsuarioResponse aplicarCambioEstado(Long id, CambioEstadoRequest s, Long actorId) {
         Usuario u = buscar(id);
         boolean desactivar = Usuario.ESTADO_INACTIVO.equals(s.estado());
 

@@ -32,9 +32,9 @@
   </form>
 
   @if (mensajeDescarga) {
-    <p class="ui-mensaje exito" role="status">
+    <output class="ui-mensaje exito">
       <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ mensajeDescarga }}
-    </p>
+    </output>
   }
   @if (valorizacion?.fechaCorte) {
     <p class="ui-mensaje info">

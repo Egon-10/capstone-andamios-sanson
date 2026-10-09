@@ -65,11 +65,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly destruir = inject(DestroyRef);
 
   // Los lienzos están siempre en la plantilla (fuera de @if), así que existen desde ngOnInit.
-  @ViewChild('lienzoCategorias', { static: true }) private lienzoCategorias!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('lienzoMovimientos', { static: true }) private lienzoMovimientos!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('lienzoStock', { static: true }) private lienzoStock!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('lienzoCritico', { static: true }) private lienzoCritico!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('lienzoSemana', { static: true }) private lienzoSemana!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('lienzoCategorias', { static: true }) private readonly lienzoCategorias!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('lienzoMovimientos', { static: true }) private readonly lienzoMovimientos!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('lienzoStock', { static: true }) private readonly lienzoStock!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('lienzoCritico', { static: true }) private readonly lienzoCritico!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('lienzoSemana', { static: true }) private readonly lienzoSemana!: ElementRef<HTMLCanvasElement>;
 
   readonly nombreUsuario = inject(AuthService).usuario?.nombre || 'Usuario';
   readonly hoy = new Date();
@@ -228,8 +228,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Si se cambia de semana rápido, la respuesta anterior ya no interesa.
     this.consultaSemana?.unsubscribe();
     this.consultaSemana = this.consultar('semana', this.servicio.obtenerMovimientosSemana(this.semana), filas => {
-      const entradas = Array(7).fill(0);
-      const salidas = Array(7).fill(0);
+      const entradas = new Array<number>(7).fill(0);
+      const salidas = new Array<number>(7).fill(0);
       for (const [diaSql, tipo, total] of filas as FilaSemana[]) {
         // DAYOFWEEK: 1 = domingo … 7 = sábado. Se pasa a 0 = lunes … 6 = domingo.
         const dia = (Number(diaSql) + 5) % 7;

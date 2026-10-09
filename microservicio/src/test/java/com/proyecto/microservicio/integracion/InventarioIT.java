@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class InventarioIT extends IntegracionBase {
 
-    private Long productoConStock(String token) {
+    private Long productoConStock() {
         return jdbc().queryForObject("SELECT MIN(id) FROM productos WHERE activo = 1 AND stock > 10", Long.class);
     }
 
@@ -26,7 +26,7 @@ class InventarioIT extends IntegracionBase {
     @DisplayName("PI-07: una entrada actualiza stock, costo promedio y deja el costo resultante en el movimiento (HU-12, HU-28)")
     void entradaGuardaCostoResultante() throws Exception {
         String admin = token(crearCuenta(ROL_ADMINISTRADOR));
-        Long producto = productoConStock(admin);
+        Long producto = productoConStock();
         Integer stockAntes = jdbc().queryForObject("SELECT stock FROM productos WHERE id = ?", Integer.class, producto);
 
         HttpResponse<String> r = post("/api/movimientos/entrada", admin,

@@ -76,7 +76,7 @@ public class BloqueoCuentaService {
 
     /** Minutos que faltan para que se levante el bloqueo, redondeado hacia arriba. */
     public static long minutosRestantes(LocalDateTime hasta, LocalDateTime ahora) {
-        long segundos = Math.max(Duration.between(ahora, hasta).getSeconds(), 0);
+        long segundos = Math.max(Duration.between(ahora.atZone(ZonaHoraria.NEGOCIO), hasta.atZone(ZonaHoraria.NEGOCIO)).getSeconds(), 0);
         return Math.max((segundos + 59) / 60, 1);
     }
 }

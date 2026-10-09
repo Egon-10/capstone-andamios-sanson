@@ -84,7 +84,7 @@
         {{ informe.simulacion ? 'Resultado de la simulación' : 'Resultado de la carga' }}
       </h2>
 
-      <div class="ui-mensaje resultado" role="status"
+      <output class="ui-mensaje resultado"
            [class.exito]="informe.seGuardo" [class.info]="informe.simulacion"
            [class.peligro]="!informe.seGuardo && !informe.simulacion">
         <i class="fa-solid" aria-hidden="true" [class.fa-circle-check]="informe.seGuardo"
@@ -105,7 +105,7 @@
             }
           }
         </div>
-      </div>
+      </output>
 
       <div class="resumen">
         <div class="indicador">

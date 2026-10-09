@@ -110,9 +110,9 @@
     <p class="ui-mensaje peligro" role="alert" *ngIf="mensajeError">
       <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
     </p>
-    <p class="ui-mensaje exito" role="status" *ngIf="mensajeExito">
+    <output class="ui-mensaje exito" *ngIf="mensajeExito">
       <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ mensajeExito }}
-    </p>
+    </output>
 
     <div class="ui-acciones">
       <button type="button" class="ui-boton primario guardar" (click)="guardar()" [disabled]="guardando">
@@ -259,7 +259,7 @@
   </div>
   <!-- HU-36: restablecimiento de contraseña -->
   <div class="ui-velo" *ngIf="usuarioRestableciendo as u">
-    <dialog class="ui-dialogo" open aria-modal="true" aria-labelledby="titulo-restablecer">
+    <dialog class="ui-dialogo" open aria-modal="true" [attr.aria-labelledby]="restablecimiento ? 'titulo-temporal' : 'titulo-restablecer'">
       <ng-container *ngIf="!restablecimiento; else temporalGenerada">
         <h2 id="titulo-restablecer">Restablecer la contraseña de {{ u.nombreUsuario || u.correo }}</h2>
         <p>
@@ -275,7 +275,7 @@
         </div>
       </ng-container>
       <ng-template #temporalGenerada>
-        <h2 id="titulo-restablecer">Contraseña temporal de {{ restablecimiento?.nombreUsuario }}</h2>
+        <h2 id="titulo-temporal">Contraseña temporal de {{ restablecimiento?.nombreUsuario }}</h2>
         <p>Entréguela a la persona por un medio seguro. <strong>No se volverá a mostrar.</strong></p>
         <div class="temporal">
           <code>{{ restablecimiento?.passwordTemporal }}</code>

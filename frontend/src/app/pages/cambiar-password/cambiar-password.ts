@@ -71,7 +71,7 @@ export class CambiarPasswordComponent {
     this.auth.cambiarPassword(this.actual, this.nueva, this.confirmacion).subscribe({
       next: () => {
         this.enviando = false;
-        this.router.navigate(['/dashboard']);
+        void this.router.navigate(['/dashboard']);
       },
       error: (e: HttpErrorResponse) => {
         this.enviando = false;

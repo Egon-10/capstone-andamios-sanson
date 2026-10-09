@@ -84,13 +84,13 @@ export class AuthService {
         .subscribe({ error: () => undefined });
     }
     this.limpiarSesion();
-    this.router.navigate(['/login'], motivo ? { queryParams: { motivo } } : {});
+    void this.router.navigate(['/login'], motivo ? { queryParams: { motivo } } : {});
   }
 
   /** Cierra la sesión solo en el cliente (cuando el servidor ya la rechazó). */
   cerrarSesionLocal(motivo: 'inactividad' | 'expirada'): void {
     this.limpiarSesion();
-    this.router.navigate(['/login'], { queryParams: { motivo } });
+    void this.router.navigate(['/login'], { queryParams: { motivo } });
   }
 
   estaAutenticado(): boolean {

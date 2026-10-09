@@ -408,6 +408,46 @@ jobs:
           path: pruebas-sistema/resultados/
           if-no-files-found: ignore
 
+      - name: Despliegue preliminar - privilegios minimos de la cuenta de la aplicacion
+        if: success() || failure()
+        run: |
+          [ -f .env ] || exit 0
+          set -a; . ./.env; set +a
+          app() { docker compose exec -T db mysql -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -N inventario_andamios -e "$1" 2>&1; }
+          fallos=""
+          app "SELECT COUNT(*) FROM productos;" | grep -qE '^[0-9]+$' || fallos="${fallos}La aplicacion no puede consultar productos. "
+          app "DELETE FROM auditoria WHERE id < 0;" | grep -q "ERROR 1142" || fallos="${fallos}La aplicacion puede borrar en auditoria. "
+          app "UPDATE accesos SET motivo = motivo WHERE id < 0;" | grep -q "ERROR 1142" || fallos="${fallos}La aplicacion puede modificar accesos. "
+          app "DROP TABLE tokens_revocados;" | grep -q "ERROR 1142" || fallos="${fallos}La aplicacion puede borrar tablas. "
+          if [ -n "$fallos" ]; then
+            echo "::error title=Privilegios de la base (SEG-BD-02, SEG-BD-03)::${fallos}"
+            exit 1
+          fi
+          echo "::notice title=Privilegios de la base (SEG-BD-02, SEG-BD-03)::La cuenta de la aplicacion consulta e inserta; no puede alterar auditoria ni accesos ni ejecutar DDL"
+
+      - name: Despliegue preliminar - respaldo y restauracion
+        if: success() || failure()
+        run: |
+          [ -f .env ] || exit 0
+          set -a; . ./.env; set +a
+          ./respaldo.sh
+          archivo=$(ls -1t respaldos/*.sql.gz | head -1)
+          raiz() { docker compose exec -T db mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -N "$@" 2>/dev/null; }
+          raiz -e "DROP DATABASE IF EXISTS restauracion; CREATE DATABASE restauracion;"
+          gunzip -c "$archivo" | docker compose exec -T db mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" restauracion 2>/dev/null
+          diferencias=""
+          for tabla in usuarios productos movimientos auditoria accesos ajustes_inventario; do
+            original=$(raiz -e "SELECT COUNT(*) FROM inventario_andamios.${tabla};")
+            restaurada=$(raiz -e "SELECT COUNT(*) FROM restauracion.${tabla};")
+            [ "$original" = "$restaurada" ] || diferencias="${diferencias}${tabla}: ${original} frente a ${restaurada}. "
+            resumen="${resumen:-}${tabla}=${restaurada} "
+          done
+          if [ -n "$diferencias" ]; then
+            echo "::error title=Respaldo y restauracion (SEG-BD-04)::${diferencias}"
+            exit 1
+          fi
+          echo "::notice title=Respaldo y restauracion (SEG-BD-04)::$(du -h "$archivo" | cut -f1) comprimido; restaurado en una base aparte con los mismos registros: ${resumen}"
+
       - name: Despliegue preliminar - registro de los contenedores
         if: failure()
         run: |

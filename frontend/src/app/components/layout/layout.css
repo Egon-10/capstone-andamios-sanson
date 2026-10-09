@@ -48,14 +48,16 @@ nav a {
 
 nav a i { width: 20px; text-align: center; }
 
+/* Colores sólidos (mezcla del primario con blanco al 10 % y al 18 %) para
+   que el contraste del texto se pueda verificar. */
 nav a:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background-color: #35507f;
   color: #fff;
 }
 
 /* Activo: fondo, borde y peso (no solo color). */
 nav a.active {
-  background: rgba(255, 255, 255, 0.18);
+  background-color: #465c8b;
   border-left-color: #fff;
   color: #fff;
   font-weight: 700;

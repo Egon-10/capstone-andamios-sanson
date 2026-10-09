@@ -40,25 +40,25 @@
     <section class="ui-tarjeta grafica" aria-labelledby="g-categorias">
       <h2 id="g-categorias" class="ui-tarjeta-titulo">Distribución de productos por categoría</h2>
       @if (erroresGrafica.categorias) { <p class="ui-mensaje peligro" role="alert">No se pudo cargar esta gráfica.</p> }
-      <div class="lienzo"><canvas #lienzoCategorias role="img" aria-label="Gráfica de productos por categoría"></canvas></div>
+      <div class="lienzo"><canvas #lienzoCategorias>Gráfica de productos por categoría.</canvas></div>
     </section>
 
     <section class="ui-tarjeta grafica" aria-labelledby="g-movimientos">
       <h2 id="g-movimientos" class="ui-tarjeta-titulo">Entradas vs. salidas</h2>
       @if (erroresGrafica.movimientos) { <p class="ui-mensaje peligro" role="alert">No se pudo cargar esta gráfica.</p> }
-      <div class="lienzo"><canvas #lienzoMovimientos role="img" aria-label="Gráfica de entradas frente a salidas"></canvas></div>
+      <div class="lienzo"><canvas #lienzoMovimientos>Gráfica de entradas frente a salidas.</canvas></div>
     </section>
 
     <section class="ui-tarjeta grafica" aria-labelledby="g-stock">
       <h2 id="g-stock" class="ui-tarjeta-titulo">Productos con mayor stock</h2>
       @if (erroresGrafica.stock) { <p class="ui-mensaje peligro" role="alert">No se pudo cargar esta gráfica.</p> }
-      <div class="lienzo"><canvas #lienzoStock role="img" aria-label="Gráfica de los cinco productos con mayor stock"></canvas></div>
+      <div class="lienzo"><canvas #lienzoStock>Gráfica de los cinco productos con mayor stock.</canvas></div>
     </section>
 
     <section class="ui-tarjeta grafica" aria-labelledby="g-critico">
       <h2 id="g-critico" class="ui-tarjeta-titulo">Productos en stock crítico</h2>
       @if (erroresGrafica.critico) { <p class="ui-mensaje peligro" role="alert">No se pudo cargar esta gráfica.</p> }
-      <div class="lienzo"><canvas #lienzoCritico role="img" aria-label="Gráfica de stock actual frente a stock mínimo"></canvas></div>
+      <div class="lienzo"><canvas #lienzoCritico>Gráfica de stock actual frente a stock mínimo.</canvas></div>
     </section>
 
     <section class="ui-tarjeta grafica ancha" aria-labelledby="g-semana">
@@ -82,7 +82,7 @@
         </div>
       </div>
       @if (erroresGrafica.semana) { <p class="ui-mensaje peligro" role="alert">No se pudo cargar esta gráfica.</p> }
-      <div class="lienzo"><canvas #lienzoSemana role="img" aria-label="Gráfica de entradas y salidas por día de la semana"></canvas></div>
+      <div class="lienzo"><canvas #lienzoSemana>Gráfica de entradas y salidas por día de la semana.</canvas></div>
     </section>
   </div>
 

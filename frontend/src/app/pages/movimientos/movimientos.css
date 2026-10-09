@@ -15,6 +15,10 @@
 /* Elegir entre entrada y salida antes de llenar el resto evita ofrecer
    motivos que no aplican al tipo de movimiento (HU-14). */
 .selector-tipo {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--espacio-2);

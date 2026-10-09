@@ -14,7 +14,8 @@
 
     <h2 class="ui-tarjeta-titulo" id="titulo-registro">Registrar movimiento</h2>
 
-    <div class="selector-tipo" role="group" aria-label="Tipo de movimiento">
+    <fieldset class="selector-tipo">
+      <legend class="ui-visualmente-oculto">Tipo de movimiento</legend>
       <button type="button" class="ui-boton secundario" [attr.aria-pressed]="tipo === 'ENTRADA'"
               (click)="cambiarTipo('ENTRADA')">
         <i class="fa-solid fa-arrow-down" aria-hidden="true"></i> Entrada
@@ -23,7 +24,7 @@
               (click)="cambiarTipo('SALIDA')">
         <i class="fa-solid fa-arrow-up" aria-hidden="true"></i> Salida
       </button>
-    </div>
+    </fieldset>
 
     <div class="campos">
       <label class="ui-campo" for="producto">Producto
@@ -100,9 +101,9 @@
       </p>
     }
     @if (mensajeExito) {
-      <p class="ui-mensaje exito" role="status">
+      <output class="ui-mensaje exito">
         <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ mensajeExito }}
-      </p>
+      </output>
     }
 
     <div class="ui-acciones">

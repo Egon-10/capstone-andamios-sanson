@@ -64,7 +64,7 @@ class PoliticaContrasenaTest {
             String t = PoliticaContrasena.generarTemporal(aleatorio);
             assertEquals(14, t.length());
             assertTrue(PoliticaContrasena.incumplimientos(t, null, null).isEmpty(), t);
-            assertFalse(t.matches(".*[0O1lI].*"), "evita caracteres que se confunden: " + t);
+            assertFalse(t.chars().anyMatch(c -> "0O1lI".indexOf(c) >= 0), "evita caracteres que se confunden: " + t);
             assertNotEquals(anterior, t);
             anterior = t;
         }

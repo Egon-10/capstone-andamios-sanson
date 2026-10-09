@@ -279,9 +279,9 @@
         </p>
 
         @if (mensajeFicha) {
-          <p class="ui-mensaje exito" role="status">
+          <output class="ui-mensaje exito">
             <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ mensajeFicha }}
-          </p>
+          </output>
         }
         @if (errorFicha) {
           <p class="ui-mensaje peligro" role="alert">

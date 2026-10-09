@@ -56,7 +56,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain cadenaDeFiltros(
             HttpSecurity http, JwtAuthenticationConverter convertidor,
-            @Value("${app.seguridad.limite-intentos-por-minuto:10}") int limitePorMinuto) throws Exception {
+            @Value("${app.seguridad.limite-intentos-por-minuto:10}") int limitePorMinuto) {
         http
             .csrf(csrf -> csrf.disable())
             // HU-38: cabeceras de seguridad. La API solo devuelve JSON y

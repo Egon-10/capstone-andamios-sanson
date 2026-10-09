@@ -60,7 +60,7 @@ export class LoginComponent implements OnInit {
         next: respuesta => {
           this.enviando = false;
           // HU-36: con contraseña temporal, lo primero es cambiarla.
-          this.router.navigate([respuesta.usuario?.debeCambiarPassword ? '/cambiar-password' : '/dashboard']);
+          void this.router.navigate([respuesta.usuario?.debeCambiarPassword ? '/cambiar-password' : '/dashboard']);
         },
         error: (error: HttpErrorResponse) => {
           this.enviando = false;

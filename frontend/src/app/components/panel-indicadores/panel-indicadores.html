@@ -120,7 +120,8 @@
         </div>
       </div>
 
-      <table class="tabla-tendencia" *ngIf="verTabla">
+      <div class="desplaza" *ngIf="verTabla">
+      <table class="tabla-tendencia">
         <thead>
           <tr>
             <th>Fecha</th>
@@ -140,6 +141,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
 
     </ng-container>
   </div>
@@ -153,7 +155,8 @@
 
     <p class="vacio" *ngIf="stockCritico.length === 0">Ningún producto alcanzó su umbral de reposición.</p>
 
-    <table class="tabla-critico" *ngIf="stockCritico.length > 0">
+    <div class="desplaza" *ngIf="stockCritico.length > 0">
+      <table class="tabla-critico">
       <thead>
         <tr>
           <th>Nivel</th>
@@ -180,6 +183,7 @@
         </tr>
       </tbody>
     </table>
+      </div>
   </div>
 
 </section>

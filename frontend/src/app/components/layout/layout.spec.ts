@@ -57,6 +57,24 @@ describe('LayoutComponent', () => {
     expect(enlaces(el)).toContain('Movimientos');
   });
 
+  it('en el celular abre el menú lateral con un botón y lo cierra con el velo', () => {
+    const f = crear();
+    const el: HTMLElement = f.nativeElement;
+    const boton = el.querySelector('button.abrir-menu') as HTMLButtonElement;
+    expect(boton.getAttribute('aria-expanded')).toBe('false');
+    expect(boton.getAttribute('aria-controls')).toBe('menu-lateral');
+
+    boton.click();
+    f.detectChanges();
+    expect(el.querySelector('#menu-lateral')?.classList).toContain('abierta');
+    expect(boton.getAttribute('aria-label')).toBe('Cerrar el menú');
+
+    (el.querySelector('button.velo-menu') as HTMLButtonElement).click();
+    f.detectChanges();
+    expect(el.querySelector('#menu-lateral')?.classList).not.toContain('abierta');
+    expect(el.querySelector('button.velo-menu')).toBeNull();
+  });
+
   it('abre el menú del usuario con un botón que informa si está desplegado', () => {
     const f = crear();
     const el: HTMLElement = f.nativeElement;

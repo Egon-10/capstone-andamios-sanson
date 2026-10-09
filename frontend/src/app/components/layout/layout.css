@@ -87,7 +87,9 @@ nav a:focus-visible {
   z-index: 999;
 }
 
-.topbar-left { font-size: 1.1rem; font-weight: 700; color: var(--color-primario); }
+.topbar-left { display: flex; align-items: center; gap: var(--espacio-2); font-size: 1.1rem; font-weight: 700; color: var(--color-primario); }
+
+.abrir-menu, .velo-menu { display: none; }
 
 .topbar-right { display: flex; align-items: center; gap: var(--espacio-4); }
 
@@ -169,4 +171,18 @@ nav a:focus-visible {
   align-items: center;
   justify-content: space-between;
   box-shadow: var(--sombra-elevada);
+}
+
+/* Pantallas angostas: el menú lateral se abre sobre el contenido. */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); transition: transform 0.2s; }
+  .sidebar.abierta { transform: none; box-shadow: var(--sombra-elevada); }
+  .velo-menu { display: block; position: fixed; inset: 0; z-index: 999; border: 0; background: rgba(15, 23, 42, 0.45); }
+  .abrir-menu { display: inline-flex; padding: var(--espacio-2); border: 0; background: none; color: var(--color-primario); font-size: 1.25rem; cursor: pointer; }
+  .main-container { margin-left: 0; width: 100%; }
+  .topbar, .aviso-inactividad { left: 0; }
+  .topbar { padding: 0 var(--espacio-3); }
+  .user-info, .flecha { display: none; }
+  .content { padding: var(--espacio-4); }
+  .aviso-inactividad { left: var(--espacio-3); right: var(--espacio-3); }
 }

@@ -272,6 +272,9 @@ div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, texta
    --------------------------------------------------------------------- */
 
 .ui-tabla-contenedor {
+    /* relative: los textos ocultos (ui-visualmente-oculto) de la tabla quedan
+       dentro del desplazamiento y no ensanchan la página. */
+    position: relative;
     overflow-x: auto;
     border: 1px solid var(--borde);
     border-radius: var(--radio);

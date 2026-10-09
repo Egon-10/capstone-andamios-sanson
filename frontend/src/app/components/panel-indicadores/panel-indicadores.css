@@ -10,7 +10,6 @@
   margin-bottom: var(--espacio-5);
 }
 
-.panel { color: var(--texto); }
 h2 { color: var(--color-primario); margin: 0 0 var(--espacio-3); font-size: 1.25rem; }
 h3 { margin: 0; font-size: var(--texto-base); }
 
@@ -39,7 +38,7 @@ h3 { margin: 0; font-size: var(--texto-base); }
 .tile.principal .tile-etiqueta, .tile.principal .tile-nota { color: #c7d2fe; }
 .tile.principal .tile-valor { color: #fff; }
 .tile.atencion { border-left-color: var(--estado-alerta); }
-.tile-etiqueta, th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; font-weight: 700; color: var(--texto-tenue); }
+.tile-etiqueta, th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; font-weight: 700; color: var(--texto-tenue) }
 .tile-valor { font-size: 24px; }
 .tile-nota, .contador, .enlace, .leyenda, .tooltip { font-size: 12px; }
 .tile-nota, .contador, .vacio, .tooltip-fecha, td small, .rejilla text, .eje-x { color: var(--texto-tenue); }
@@ -116,11 +115,12 @@ svg { width: 100%; height: auto; display: block; }
 .tooltip-fila strong { color: var(--texto); }
 .leyenda { gap: var(--espacio-4); margin-top: var(--espacio-1); }
 
+.desplaza { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: var(--texto-chico); }
 th, td { padding: 8px 10px; border-bottom: 1px solid var(--fondo); }
 th { text-align: left; border-bottom-color: var(--borde); }
-.numero { text-align: right; }
-td small { margin-left: 4px; }
+.numero { text-align: right }
+td small { margin-left: 4px }
 
 /* HU-25: el nivel lleva ícono y etiqueta; el color no carga el significado solo. */
 .nivel { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; }

@@ -31,7 +31,7 @@
 .ui-boton.eliminar:hover:not(:disabled) { background: var(--peligro-fondo); }
 
 @media (max-width: 900px) {
-  .distribucion { grid-template-columns: 1fr; }
+  .distribucion { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 640px) {

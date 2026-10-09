@@ -1,5 +1,7 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Component, DestroyRef, OnDestroy, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { filter } from 'rxjs';
 
 import { AuthService } from '../../services/auth.service';
 import { SesionInactividadService } from '../../core/sesion-inactividad.service';
@@ -18,11 +20,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   readonly inactividad = inject(SesionInactividadService);
   private readonly alertas = inject(AlertaService);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   rol = '';
   usuarioNombre = '';
   usuarioRol = '';
   menuAbierto = false;
+  /** Menú lateral desplegado en pantallas angostas. */
+  menuLateralAbierto = false;
 
   ngOnInit(): void {
     const usuario = this.auth.usuario;
@@ -33,6 +39,13 @@ export class LayoutComponent implements OnInit, OnDestroy {
     }
     this.inactividad.iniciar();
     this.alertas.iniciar();
+    // Al elegir una opción del menú en el celular, el menú se cierra solo.
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.menuLateralAbierto = false;
+        this.menuAbierto = false;
+      });
   }
 
   ngOnDestroy(): void {

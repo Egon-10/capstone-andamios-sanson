@@ -1,7 +1,7 @@
-<div class="layout">
+<div class="layout" (keydown.escape)="menuLateralAbierto = false">
 
   <!-- Barra lateral -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="menu-lateral" [class.abierta]="menuLateralAbierto">
     <div class="logo">
       <img src="images/logoempresa.png" alt="Andamios Sansón" class="logo-img">
       <p class="logo-titulo">INVENTARIO</p>
@@ -58,11 +58,23 @@
     </nav>
   </aside>
 
+  @if (menuLateralAbierto) {
+    <button type="button" class="velo-menu" aria-label="Cerrar el menú" (click)="menuLateralAbierto = false"></button>
+  }
+
   <!-- Contenido -->
   <div class="main-container">
 
     <header class="topbar">
-      <div class="topbar-left">Sistema de Inventario</div>
+      <div class="topbar-left">
+        <!-- En pantallas angostas el menú lateral se abre con este botón. -->
+        <button type="button" class="abrir-menu" (click)="menuLateralAbierto = !menuLateralAbierto"
+                [attr.aria-expanded]="menuLateralAbierto" aria-controls="menu-lateral"
+                [attr.aria-label]="menuLateralAbierto ? 'Cerrar el menú' : 'Abrir el menú'">
+          <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
+        Sistema de Inventario
+      </div>
 
       <div class="topbar-right">
         <!-- HU-29: alertas de reposición -->

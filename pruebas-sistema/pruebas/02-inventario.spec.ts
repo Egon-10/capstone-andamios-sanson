@@ -20,7 +20,7 @@ test.describe('Operación del inventario', () => {
     await page.getByRole('navigation', { name: 'Menú principal' }).getByRole('link', { name: 'Movimientos' }).click();
     await expect(page.getByRole('heading', { name: 'Movimientos de inventario' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Entrada' }).click();
+    await page.getByRole('button', { name: 'Entrada', exact: true }).click();
     await elegirProducto(page, 'marco andamios acrow');
     await page.locator('#cantidad').fill('7');
     await page.locator('#motivo').selectOption('COMPRA');
@@ -38,12 +38,14 @@ test.describe('Operación del inventario', () => {
   test('PS-04 una salida mayor que el stock se rechaza y el stock no cambia (HU-12)', async ({ page }) => {
     await entrar(page, cuentas.encargado);
     await page.goto('/movimientos');
-    await page.getByRole('button', { name: 'Salida' }).click();
+    await page.getByRole('button', { name: 'Salida', exact: true }).click();
     await page.locator('#producto').selectOption({ index: 1 });
     await page.locator('#cantidad').fill('999999');
     await page.locator('#motivo').selectOption({ index: 1 });
     await page.getByRole('button', { name: 'Registrar salida' }).click();
-    await expect(page.getByRole('alert').first()).toBeVisible();
+    // El rechazo puede mostrarse junto al campo (validación del formulario) o
+    // como mensaje del servidor; en ningún caso se registra la salida.
+    await expect(page.locator('.ui-error-campo, [role="alert"]').first()).toBeVisible();
     await expect(page.getByRole('status').filter({ hasText: 'registrada correctamente' })).toHaveCount(0);
   });
 

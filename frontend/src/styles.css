@@ -16,7 +16,7 @@
     /* Texto y superficies */
     --texto: #0f172a;
     --texto-suave: #475569;
-    --texto-tenue: #64748b;
+    --texto-tenue: #576476; /* 4.5:1 o más también sobre --fondo y --color-primario-suave */
     --borde: #e2e8f0;
     --borde-fuerte: #cbd5e1;
     --fondo: #f1f5f9;
@@ -407,7 +407,7 @@ div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, texta
     align-items: center;
     justify-content: center;
     padding: var(--espacio-4);
-    z-index: 1000;
+    z-index: 2000;
 }
 
 .ui-dialogo {

@@ -15,12 +15,18 @@ async function descargar(page: Page, boton: string): Promise<{ nombre: string; b
   return { nombre: descarga.suggestedFilename(), bytes: await readFile(ruta!) };
 }
 
+/** Las opciones son tarjetas: se elige con un clic sobre la tarjeta, como la persona. */
+async function elegirReporte(page: Page, titulo: string): Promise<void> {
+  await page.locator('label.opcion', { has: page.getByText(titulo, { exact: true }) }).click();
+  await expect(page.getByRole('radio', { name: new RegExp('^' + titulo) })).toBeChecked();
+}
+
 test.describe('Reportes', () => {
 
   test('PA-05 el gerente descarga el reporte de movimientos en PDF (HU-26)', async ({ page }) => {
     await entrar(page, cuentas.gerente);
     await page.goto('/reportes');
-    await page.getByRole('radio', { name: /^Movimientos/ }).check();
+    await elegirReporte(page, 'Movimientos');
     const { nombre, bytes } = await descargar(page, 'Descargar PDF');
     expect(nombre).toMatch(/\.pdf$/);
     expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
@@ -30,7 +36,7 @@ test.describe('Reportes', () => {
   test('PA-06 el gerente descarga el stock crítico en Excel (HU-27)', async ({ page }) => {
     await entrar(page, cuentas.gerente);
     await page.goto('/reportes');
-    await page.getByRole('radio', { name: /^Stock crítico/ }).check();
+    await elegirReporte(page, 'Stock crítico');
     const { nombre, bytes } = await descargar(page, 'Descargar Excel');
     expect(nombre).toMatch(/\.xlsx$/);
     // Un .xlsx es un ZIP: empieza con la firma "PK".

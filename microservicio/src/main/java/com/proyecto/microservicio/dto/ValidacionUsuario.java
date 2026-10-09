@@ -12,7 +12,8 @@ public final class ValidacionUsuario {
     public static final String MENSAJE_CLAVE =
             "La contraseña debe tener entre 10 y 72 caracteres, con mayúscula, minúscula, número y símbolo";
     public static final String AREAS = "LOGISTICA|PRODUCCION|COMERCIAL|ADMINISTRACION";
-    public static final String TURNOS = "MANANA|TARDE|NOCHE";
+    /** Vacío = sin turno asignado (CAM-02: el turno es opcional). */
+    public static final String TURNOS = "MANANA|TARDE|NOCHE|";
 
     private ValidacionUsuario() {
     }

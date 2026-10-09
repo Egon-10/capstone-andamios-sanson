@@ -99,7 +99,7 @@
             <path class="barra salida" *ngIf="g.salida.alto > 0" [attr.d]="g.salida.trazo"></path>
             <text *ngIf="g.etiqueta" class="eje-x" [attr.x]="g.etiquetaX" [attr.y]="alto - 8" text-anchor="middle">{{ g.etiqueta }}</text>
             <!-- Zona de contacto: el día entero, más grande que la barra -->
-            <rect class="zona" tabindex="0"
+            <rect class="zona" tabindex="0" role="img"
                   [attr.x]="g.hitX" [attr.y]="margenSup" [attr.width]="g.hitAncho"
                   [attr.height]="alto - margenSup - margenInf"
                   [attr.aria-label]="g.dia.fecha + ': ' + valorEntrada(g.dia) + ' entradas, ' + valorSalida(g.dia) + ' salidas'"

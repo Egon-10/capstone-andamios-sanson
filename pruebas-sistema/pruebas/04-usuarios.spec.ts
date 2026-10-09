@@ -16,6 +16,17 @@ async function buscar(page: Page, texto: string): Promise<void> {
   await expect(page.locator('tbody tr').filter({ hasText: texto }).first()).toBeVisible();
 }
 
+/** Guarda el formulario y, si el sistema lo rechaza, muestra por qué. */
+async function guardarUsuario(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  const exito = page.getByRole('status').filter({ hasText: 'Usuario registrado correctamente' });
+  const error = page.locator('[role="alert"], .ui-error-campo');
+  await expect(exito.or(error).first()).toBeVisible();
+  if (await error.count() > 0) {
+    throw new Error('El alta fue rechazada: ' + (await error.allTextContents()).join(' | '));
+  }
+}
+
 async function nuevaPagina(browser: Browser): Promise<Page> {
   const contexto = await browser.newContext();
   return contexto.newPage();
@@ -44,8 +55,7 @@ test.describe('Usuarios y seguridad de cuentas', () => {
     const clave = `Robusta#${id}Q7`;
     await page.locator('#u-password').fill(clave);
     await page.locator('#u-confirmarPassword').fill(clave);
-    await page.getByRole('button', { name: 'Guardar', exact: true }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Usuario registrado correctamente' })).toBeVisible();
+    await guardarUsuario(page);
     await buscar(page, usuario);
 
     // La cuenta nueva puede entrar con la clave elegida.
@@ -70,8 +80,7 @@ test.describe('Usuarios y seguridad de cuentas', () => {
     await page.locator('#u-confirmarPassword').fill(clave);
     await page.locator('#u-rolId').selectOption({ label: 'ENCARGADO' });
     await page.locator('#u-area').selectOption('LOGISTICA');
-    await page.getByRole('button', { name: 'Guardar', exact: true }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Usuario registrado correctamente' })).toBeVisible();
+    await guardarUsuario(page);
 
     await buscar(page, usuario);
     await page.getByRole('button', { name: `Restablecer la contraseña de ${usuario}` }).click();

@@ -63,6 +63,10 @@ test.describe('Calidad del producto', () => {
     expect(h['referrer-policy']).toBe('no-referrer');
     expect(h['server'] ?? '').not.toMatch(/\d/);
 
+    // DEF-20: con la CSP del sitio no se ejecutan manejadores en línea; una
+    // hoja de estilos cargada con onload nunca se aplicaría.
+    expect(await r.text()).not.toMatch(/\son\w+=/);
+
     // El estado del backend solo se consulta desde la red interna.
     expect((await request.get('/actuator/health')).status()).toBe(404);
 

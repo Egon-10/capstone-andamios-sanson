@@ -27,6 +27,27 @@ async function guardarUsuario(page: Page): Promise<void> {
   }
 }
 
+/** Clic en un botón de un diálogo; si algo lo tapa, informa qué y dónde. */
+async function clicEnDialogo(page: Page, nombre: string): Promise<void> {
+  const boton = page.getByRole('button', { name: nombre });
+  try {
+    await boton.click({ timeout: 8000 });
+  } catch (e) {
+    const diagnostico = await boton.evaluate(b => {
+      const r = b.getBoundingClientRect();
+      const encima = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+      const velo = b.closest('.ui-velo') as HTMLElement | null;
+      const cadena: string[] = [];
+      for (let n: HTMLElement | null = velo; n; n = n.parentElement) {
+        const c = getComputedStyle(n);
+        cadena.push(`${n.tagName}.${n.className}[pos=${c.position} z=${c.zIndex} tr=${c.transform} cont=${c.contain}]`);
+      }
+      return JSON.stringify({ boton: r, encima: encima?.tagName + '.' + encima?.className, vista: [innerWidth, innerHeight, scrollX, scrollY], cadena });
+    });
+    throw new Error(`No se pudo pulsar "${nombre}": ${diagnostico}\n${(e as Error).message.slice(0, 300)}`);
+  }
+}
+
 async function nuevaPagina(browser: Browser): Promise<Page> {
   const contexto = await browser.newContext();
   return contexto.newPage();
@@ -84,7 +105,7 @@ test.describe('Usuarios y seguridad de cuentas', () => {
 
     await buscar(page, usuario);
     await page.getByRole('button', { name: `Restablecer la contraseña de ${usuario}` }).click();
-    await page.getByRole('button', { name: 'Generar contraseña temporal' }).click();
+    await clicEnDialogo(page, 'Generar contraseña temporal');
     const temporal = (await page.locator('.temporal code').textContent())!.trim();
     expect(temporal.length).toBeGreaterThanOrEqual(12);
     await page.getByRole('button', { name: 'Listo' }).click();
@@ -121,7 +142,7 @@ test.describe('Usuarios y seguridad de cuentas', () => {
     await buscar(page, c.usuario);
     await page.getByRole('button', { name: `Desactivar a ${c.usuario}` }).click();
     await page.getByLabel(/Motivo/).fill('Prueba de sistema PA-10: cese laboral');
-    await page.getByRole('button', { name: 'Desactivar cuenta' }).click();
+    await clicEnDialogo(page, 'Desactivar cuenta');
     await expect(page.getByText(`Se desactivó la cuenta ${c.usuario}`)).toBeVisible();
 
     // La sesión que la persona tenía abierta deja de servir en la siguiente acción.

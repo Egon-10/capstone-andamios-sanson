@@ -1,5 +1,6 @@
 package com.proyecto.microservicio.service;
 
+import com.proyecto.microservicio.config.ZonaHoraria;
 import com.proyecto.microservicio.model.Usuario;
 import com.proyecto.microservicio.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +52,7 @@ class BloqueoCuentaServiceTest {
     @DisplayName("CP-36: al quinto fallo bloquea 15 minutos, reinicia el contador y lo audita")
     void bloqueaAlQuinto() {
         luis.setIntentosFallidos(4);
-        LocalDateTime antes = LocalDateTime.now().plusMinutes(14);
+        LocalDateTime antes = ZonaHoraria.ahora().plusMinutes(14);
 
         BloqueoCuentaService.Fallo f = servicio.registrarFallo(2L);
 
@@ -66,7 +67,7 @@ class BloqueoCuentaServiceTest {
     @DisplayName("CP-36: un acceso correcto reinicia el contador y levanta el bloqueo vencido")
     void reinicia() {
         luis.setIntentosFallidos(3);
-        luis.setBloqueadoHasta(LocalDateTime.now().minusMinutes(1));
+        luis.setBloqueadoHasta(ZonaHoraria.ahora().minusMinutes(1));
 
         servicio.reiniciar(luis);
 
@@ -89,6 +90,6 @@ class BloqueoCuentaServiceTest {
         assertEquals(15, BloqueoCuentaService.minutosRestantes(ahora.plusMinutes(15), ahora));
         assertEquals(1, BloqueoCuentaService.minutosRestantes(ahora.plusSeconds(5), ahora));
         assertEquals(1, BloqueoCuentaService.minutosRestantes(ahora.minusSeconds(5), ahora));
-        assertFalse(luis.estaBloqueado(LocalDateTime.now()));
+        assertFalse(luis.estaBloqueado(ZonaHoraria.ahora()));
     }
 }

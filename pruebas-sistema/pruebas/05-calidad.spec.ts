@@ -101,6 +101,23 @@ test.describe('Calidad del producto', () => {
     }
     mediciones['apiMs'] = resultado;
 
+    // Indicador "tiempo de obtención del reporte de stock": lo que tarda el
+    // sistema en generar el archivo (la medición de campo incluye además el
+    // tiempo de la persona y se registra aparte).
+    const reportes: Record<string, number[]> = { pdf: [], xlsx: [] };
+    for (const formato of ['pdf', 'xlsx'] as const) {
+      for (let i = 0; i < 10; i++) {
+        const inicio = performance.now();
+        const r = await request.get(`/api/reportes/stock-critico?formato=${formato}`, { headers: { Authorization: `Bearer ${t}` } });
+        reportes[formato].push(performance.now() - inicio);
+        expect(r.status()).toBe(200);
+      }
+    }
+    mediciones['reporteStockMs'] = {
+      pdf: { p50: Math.round(percentil(reportes.pdf, 50)), p95: Math.round(percentil(reportes.pdf, 95)) },
+      xlsx: { p50: Math.round(percentil(reportes.xlsx, 50)), p95: Math.round(percentil(reportes.xlsx, 95)) }
+    };
+
     for (const [ruta, r] of Object.entries(resultado)) {
       expect(r.p95, `${ruta}: p95 ${r.p95} ms`).toBeLessThan(1000);
     }

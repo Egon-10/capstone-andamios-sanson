@@ -1,5 +1,6 @@
 package com.proyecto.microservicio.service;
 
+import com.proyecto.microservicio.config.ZonaHoraria;
 import com.proyecto.microservicio.dto.RestablecimientoResponse;
 import com.proyecto.microservicio.dto.UsuarioActualizacionRequest;
 import com.proyecto.microservicio.dto.UsuarioResponse;
@@ -18,7 +19,6 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,7 +47,7 @@ class UsuarioServiceSprint4Test {
         luis.setNombreUsuario("luis.torres");
         luis.setNumeroDocumento("45678912");
         luis.setIntentosFallidos(4);
-        luis.setBloqueadoHasta(LocalDateTime.now().plusMinutes(10));
+        luis.setBloqueadoHasta(ZonaHoraria.ahora().plusMinutes(10));
         when(repositorio.findById(2L)).thenReturn(Optional.of(luis));
         when(repositorio.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
     }
@@ -106,7 +106,7 @@ class UsuarioServiceSprint4Test {
         assertTrue(r.bloqueado());
         assertEquals(luis.getBloqueadoHasta(), r.bloqueadoHasta());
 
-        luis.setBloqueadoHasta(LocalDateTime.now().minusMinutes(1));
+        luis.setBloqueadoHasta(ZonaHoraria.ahora().minusMinutes(1));
         UsuarioResponse vencido = UsuarioResponse.from(luis);
         assertFalse(vencido.bloqueado());
         assertNull(vencido.bloqueadoHasta());

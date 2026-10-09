@@ -282,3 +282,44 @@ tr.inactivo td {
   gap: var(--espacio-2);
   white-space: nowrap;
 }
+
+/* HU-35 a HU-37 */
+.politica,
+.nota-edicion {
+  grid-column: 1 / -1;
+}
+
+.nota-edicion {
+  font-size: var(--texto-chico);
+  color: var(--texto-suave);
+  background: var(--info-fondo);
+  padding: var(--espacio-3);
+  border-radius: var(--radio-chico);
+}
+
+td .ui-insignia + .ui-insignia {
+  margin-top: 4px;
+}
+
+td .ui-insignia {
+  display: flex;
+  width: fit-content;
+}
+
+.temporal {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: var(--espacio-3);
+  background: var(--superficie-alterna);
+  border: 1px dashed var(--borde-fuerte);
+  border-radius: var(--radio-chico);
+}
+
+.temporal code {
+  flex: 1;
+  font-family: ui-monospace, Consolas, monospace !important;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  user-select: all;
+}

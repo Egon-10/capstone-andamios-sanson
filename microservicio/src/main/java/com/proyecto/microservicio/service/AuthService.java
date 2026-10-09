@@ -140,7 +140,8 @@ public class AuthService {
      * ingresar. Si la contraseña era temporal (HU-36), deja de serlo.
      */
     @Transactional
-    public LoginResponse cambiarPassword(Long usuarioId, CambioPasswordRequest s) {
+    public LoginResponse cambiarPassword(Long usuarioId, CambioPasswordRequest s,
+                                         String jtiActual, Instant expiraActual) {
         Usuario u = usuarios.findById(usuarioId).orElseThrow(CredencialesInvalidasException::new);
         if (u.getPassword() == null || !encoder.matches(s.actual(), u.getPassword())) {
             throw new ReglaNegocioException("actual", "La contraseña actual no es correcta");
@@ -160,6 +161,12 @@ public class AuthService {
         u.setSesionesValidasDesde(ahora);
         usuarios.save(u);
         int cerradas = refreshTokens.revocarTodos(u.getId());
+        // El token con el que se pidió el cambio también queda invalidado de
+        // forma explícita: la marca de tiempo tiene resolución de segundos y
+        // no alcanza para distinguirlo de uno emitido en el mismo segundo.
+        if (jtiActual != null && expiraActual != null) {
+            revocados.save(new TokenRevocado(jtiActual, expiraActual));
+        }
 
         auditoria.registrar("PASSWORD_CAMBIADA",
                 "El usuario cambió su contraseña y se cerraron " + cerradas + " sesiones abiertas", u.getId());

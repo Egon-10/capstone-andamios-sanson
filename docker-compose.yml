@@ -1,0 +1,73 @@
+# =====================================================================
+# Despliegue del sistema de inventario - Andamios Sansón (HU-42)
+#
+#   cp .env.example .env      # y completar los valores
+#   docker compose up -d --build
+#
+# Levanta tres contenedores en una red privada:
+#   db        MySQL 8 con el volcado de la empresa y las migraciones 02 a 05
+#   backend   API Spring Boot (no se publica fuera de la red)
+#   frontend  Nginx con la aplicación Angular y el proxy hacia /api
+#
+# Solo el frontend expone un puerto. Ver docs/despliegue.md.
+# =====================================================================
+
+name: inventario-andamios
+
+services:
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: inventario_andamios
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Defina MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_USER: ${MYSQL_USER:?Defina MYSQL_USER en .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Defina MYSQL_PASSWORD en .env}
+      TZ: America/Lima
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci"]
+    volumes:
+      # Datos persistentes: sobreviven a la recreación del contenedor.
+      - datos-mysql:/var/lib/mysql
+      # Solo en el primer arranque (volumen vacío) MySQL ejecuta estos
+      # scripts en orden alfabético: el volcado 01 y las migraciones 02 a 05.
+      - ./database:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  backend:
+    build: ./microservicio
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://db:3306/inventario_andamios?useUnicode=true&characterEncoding=utf8
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET en .env (minimo 32 caracteres)}
+      CORS_ORIGENES: ${CORS_ORIGENES:-http://localhost:8080}
+      # El esquema lo crean las migraciones; Hibernate no lo modifica.
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      # Detrás de Nginx la IP real llega en X-Forwarded-For. Es seguro porque
+      # el backend solo es accesible desde la red interna.
+      FORWARD_HEADERS: native
+      TZ: America/Lima
+    expose:
+      - "8081"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${PUERTO_WEB:-8080}:80"
+
+volumes:
+  datos-mysql:

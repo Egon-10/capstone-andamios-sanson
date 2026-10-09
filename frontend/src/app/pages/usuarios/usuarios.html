@@ -64,8 +64,8 @@
         <small class="error-campo" *ngIf="errores['nombreUsuario']">{{ errores['nombreUsuario'] }}</small>
       </div>
 
-      <div class="campo">
-        <h5>{{ editando ? 'Nueva contraseña (opcional)' : 'Contraseña *' }}</h5>
+      <div class="campo" *ngIf="!editando">
+        <h5>Contraseña *</h5>
         <div class="input-password">
           <input [type]="mostrarPassword ? 'text' : 'password'" placeholder="Contraseña"
                  autocomplete="new-password"
@@ -79,14 +79,23 @@
         <small class="error-campo" *ngIf="errores['password']">{{ errores['password'] }}</small>
       </div>
 
-      <div class="campo">
-        <h5>{{ editando ? 'Confirmar nueva contraseña' : 'Confirmar contraseña *' }}</h5>
+      <div class="campo" *ngIf="!editando">
+        <h5>Confirmar contraseña *</h5>
         <input [type]="mostrarPassword ? 'text' : 'password'" placeholder="Confirmar contraseña"
                autocomplete="new-password"
                [class.invalido]="errores['confirmarPassword']"
                [(ngModel)]="form.confirmarPassword" (input)="limpiarError('confirmarPassword')">
         <small class="error-campo" *ngIf="errores['confirmarPassword']">{{ errores['confirmarPassword'] }}</small>
       </div>
+
+      <div class="campo politica" *ngIf="!editando">
+        <app-politica-contrasena [clave]="form.password" [usuario]="form.nombreUsuario" [documento]="form.numeroDocumento"></app-politica-contrasena>
+      </div>
+
+      <p class="nota-edicion" *ngIf="editando">
+        La contraseña no se cambia aquí: use <strong>Restablecer contraseña</strong> en la lista, que genera una temporal
+        y obliga a la persona a cambiarla al ingresar.
+      </p>
 
       <div class="campo">
         <h5>Rol *</h5>
@@ -207,11 +216,23 @@
                 <i class="fa-solid" [class.fa-circle-check]="u.estado === 'ACTIVO'" [class.fa-ban]="u.estado !== 'ACTIVO'" aria-hidden="true"></i>
                 {{ u.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
               </span>
+              <span class="ui-insignia aviso" *ngIf="u.bloqueado" [title]="'Bloqueada por intentos fallidos'">
+                <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                Bloqueada hasta {{ u.bloqueadoHasta | date:'HH:mm' }}
+              </span>
+              <span class="ui-insignia info" *ngIf="u.debeCambiarPassword">
+                <i class="fa-solid fa-key" aria-hidden="true"></i> Clave temporal
+              </span>
             </td>
             <td class="tenue">{{ u.fechaCreacion ? (u.fechaCreacion | date:'dd/MM/yyyy') : '—' }}</td>
             <td class="acciones-fila">
               <button type="button" class="ui-boton secundario chico" (click)="editar(u)"
                       [attr.aria-label]="'Editar a ' + (u.nombreUsuario || u.correo)">Editar</button>
+              <button type="button" class="ui-boton secundario chico" *ngIf="u.bloqueado" (click)="desbloquear(u)"
+                      [attr.aria-label]="'Desbloquear a ' + (u.nombreUsuario || u.correo)">Desbloquear</button>
+              <button type="button" class="ui-boton secundario chico" *ngIf="!esUsuarioActual(u) && u.estado === 'ACTIVO'"
+                      (click)="pedirRestablecimiento(u)"
+                      [attr.aria-label]="'Restablecer la contraseña de ' + (u.nombreUsuario || u.correo)">Restablecer contraseña</button>
               <button type="button" class="ui-boton chico" *ngIf="!esUsuarioActual(u)"
                       [class.peligro]="u.estado === 'ACTIVO'" [class.secundario]="u.estado !== 'ACTIVO'"
                       (click)="pedirCambioEstado(u)"
@@ -248,6 +269,38 @@
           {{ cambiandoEstado ? 'Guardando…' : (u.estado === 'ACTIVO' ? 'Desactivar cuenta' : 'Reactivar cuenta') }}
         </button>
       </div>
+    </dialog>
+  </div>
+  <!-- HU-36: restablecimiento de contraseña -->
+  <div class="ui-velo" *ngIf="usuarioRestableciendo as u">
+    <dialog class="ui-dialogo" open aria-modal="true" aria-labelledby="titulo-restablecer">
+      <ng-container *ngIf="!restablecimiento; else temporalGenerada">
+        <h2 id="titulo-restablecer">Restablecer la contraseña de {{ u.nombreUsuario || u.correo }}</h2>
+        <p>
+          Se generará una <strong>contraseña temporal</strong>. La contraseña actual dejará de funcionar,
+          sus sesiones abiertas se cerrarán y deberá crear una nueva al ingresar.
+        </p>
+        <p class="ui-mensaje peligro" role="alert" *ngIf="errorRestablecer">{{ errorRestablecer }}</p>
+        <div class="ui-acciones">
+          <button type="button" class="ui-boton secundario" (click)="cerrarRestablecimiento()">Cancelar</button>
+          <button type="button" class="ui-boton primario" [disabled]="restableciendo" (click)="confirmarRestablecimiento()">
+            {{ restableciendo ? 'Generando…' : 'Generar contraseña temporal' }}
+          </button>
+        </div>
+      </ng-container>
+      <ng-template #temporalGenerada>
+        <h2 id="titulo-restablecer">Contraseña temporal de {{ restablecimiento?.nombreUsuario }}</h2>
+        <p>Entréguela a la persona por un medio seguro. <strong>No se volverá a mostrar.</strong></p>
+        <div class="temporal">
+          <code>{{ restablecimiento?.passwordTemporal }}</code>
+          <button type="button" class="ui-boton secundario chico" (click)="copiarTemporal()">
+            <i class="fa-regular fa-copy" aria-hidden="true"></i> {{ copiado ? 'Copiada' : 'Copiar' }}
+          </button>
+        </div>
+        <div class="ui-acciones">
+          <button type="button" class="ui-boton primario" (click)="cerrarRestablecimiento()">Listo</button>
+        </div>
+      </ng-template>
     </dialog>
   </div>
 </div>

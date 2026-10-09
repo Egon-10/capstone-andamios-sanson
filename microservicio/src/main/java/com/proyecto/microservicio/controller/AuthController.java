@@ -37,7 +37,7 @@ public class AuthController {
     @PostMapping("/cambio-password")
     public LoginResponse cambiarPassword(@Valid @RequestBody CambioPasswordRequest solicitud,
                                          @AuthenticationPrincipal Jwt jwt) {
-        return service.cambiarPassword(Long.valueOf(jwt.getSubject()), solicitud);
+        return service.cambiarPassword(Long.valueOf(jwt.getSubject()), solicitud, jwt.getId(), jwt.getExpiresAt());
     }
 
     @PostMapping("/logout")

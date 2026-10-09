@@ -56,6 +56,21 @@ export class AuthService {
     return this.renovacionEnCurso$;
   }
 
+  /**
+   * HU-37: cambia la contraseña propia. El servidor cierra las demás sesiones
+   * y devuelve una sesión nueva, que reemplaza a la actual.
+   */
+  cambiarPassword(actual: string, nueva: string, confirmacion: string): Observable<RespuestaLogin> {
+    return this.http
+      .post<RespuestaLogin>(`${this.apiUrl}/cambio-password`, { actual, nueva, confirmacion })
+      .pipe(tap(respuesta => this.guardarSesion(respuesta)));
+  }
+
+  /** HU-36: la sesión se abrió con una contraseña temporal que hay que cambiar. */
+  get debeCambiarPassword(): boolean {
+    return this.usuario?.debeCambiarPassword === true;
+  }
+
   /** Cierra la sesión en el servidor (invalida los tokens) y en el cliente. */
   cerrarSesion(motivo?: 'inactividad' | 'expirada'): void {
     const accessToken = this.accessToken;

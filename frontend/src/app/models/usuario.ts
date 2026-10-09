@@ -15,6 +15,17 @@ export interface Usuario {
   estado?: string;
   fechaCreacion?: string;
   rol?: Rol;
+  /** HU-35: la cuenta está bloqueada por intentos fallidos. */
+  bloqueado?: boolean;
+  bloqueadoHasta?: string | null;
+  /** HU-36: tiene una contraseña temporal que debe cambiar al ingresar. */
+  debeCambiarPassword?: boolean;
+}
+
+/** HU-36: contraseña temporal generada por el administrador. */
+export interface Restablecimiento {
+  nombreUsuario: string;
+  passwordTemporal: string;
 }
 
 /** HU-43: datos del formulario de registro. */

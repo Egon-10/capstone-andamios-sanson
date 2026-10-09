@@ -11,6 +11,12 @@ function verificar(ruta: ActivatedRouteSnapshot) {
     return router.createUrlTree(['/login']);
   }
 
+  // HU-36: con contraseña temporal solo se puede ir a cambiarla. El servidor
+  // aplica la misma regla; aquí se evita mostrar pantallas que fallarían.
+  if (auth.debeCambiarPassword) {
+    return router.createUrlTree(['/cambiar-password']);
+  }
+
   const rolesPermitidos = ruta.data['roles'] as string[] | undefined;
   if (rolesPermitidos && !rolesPermitidos.includes(auth.rol)) {
     return router.createUrlTree(['/dashboard']);
@@ -35,5 +41,18 @@ export const authChildGuard: CanActivateChildFn = (ruta, _estado) => verificar(r
 /** Si ya hay sesión, la pantalla de inicio de sesión redirige al panel. */
 export const loginGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
-  return auth.estaAutenticado() ? inject(Router).createUrlTree(['/dashboard']) : true;
+  if (!auth.estaAutenticado()) {
+    return true;
+  }
+  return inject(Router).createUrlTree([auth.debeCambiarPassword ? '/cambiar-password' : '/dashboard']);
+};
+
+/** HU-36: la pantalla de cambio obligatorio solo tiene sentido con una contraseña temporal. */
+export const cambioObligatorioGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.estaAutenticado()) {
+    return router.createUrlTree(['/login']);
+  }
+  return auth.debeCambiarPassword ? true : router.createUrlTree(['/dashboard']);
 };

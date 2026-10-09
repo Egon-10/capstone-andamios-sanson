@@ -60,17 +60,34 @@ export class LoginComponent implements OnInit {
     this.authService
       .login({ correo: this.loginData.correo.trim(), password: this.loginData.password })
       .subscribe({
-        next: () => {
+        next: respuesta => {
           this.enviando = false;
-          this.router.navigate(['/dashboard']);
+          // HU-36: con contraseña temporal, lo primero es cambiarla.
+          this.router.navigate([respuesta.usuario?.debeCambiarPassword ? '/cambiar-password' : '/dashboard']);
         },
         error: (error: HttpErrorResponse) => {
           this.enviando = false;
-          this.mensajeError = error.status === 401
-            ? 'Usuario o contraseña incorrectos.'
-            : 'No se pudo conectar con el servidor. Intente nuevamente.';
+          this.mensajeError = mensajeDeLogin(error);
         }
       });
+  }
+}
+
+/**
+ * Mensaje para cada rechazo del inicio de sesión. Las credenciales inválidas
+ * reciben siempre el mismo texto, sin decir si falló el usuario o la clave;
+ * el bloqueo (HU-35) y el límite de intentos (HU-38) muestran el mensaje del
+ * servidor, que dice cuánto esperar.
+ */
+export function mensajeDeLogin(error: HttpErrorResponse): string {
+  switch (error.status) {
+    case 401:
+      return 'Usuario o contraseña incorrectos.';
+    case 423:
+    case 429:
+      return error.error?.mensaje ?? 'Demasiados intentos. Espere unos minutos e intente nuevamente.';
+    default:
+      return 'No se pudo conectar con el servidor. Intente nuevamente.';
   }
 
 }

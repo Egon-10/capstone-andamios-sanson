@@ -8,6 +8,8 @@ import { UsuarioService } from '../../services/usuario.service';
 import { AuthService } from '../../services/auth.service';
 import { mensajeDeError } from '../../core/errores';
 import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+import { PoliticaContrasenaComponent } from '../../components/politica-contrasena/politica-contrasena';
+import { faltas } from '../../core/politica-contrasena';
 
 const SOLO_LETRAS = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$/;
 /** Correo con una sola @, sin espacios y con un punto en el dominio; sin expresiones con retroceso. */
@@ -20,19 +22,19 @@ export function esCorreo(valor: string): boolean {
   const punto = dominio.lastIndexOf('.');
   return usuario.length > 0 && punto > 0 && punto < dominio.length - 1;
 }
-const PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
 
 /**
  * HU-34: gestión del perfil propio.
  *
  * El usuario ve sus datos y su actividad de acceso, y edita solo sus datos de
- * contacto. El rol, el área y el turno los asigna el administrador y aquí se
+ * contacto. HU-37: la contraseña se cambia en un formulario aparte que pide la
+ * actual y aplica la política de complejidad. El rol, el área y el turno los asigna el administrador y aquí se
  * muestran como lectura.
  */
 @Component({
   selector: 'app-perfil',
   standalone: true,
-  imports: [DatePipe, FormsModule, EstadoVistaComponent],
+  imports: [DatePipe, FormsModule, EstadoVistaComponent, PoliticaContrasenaComponent],
   templateUrl: './perfil.html',
   styleUrl: './perfil.css'
 })
@@ -52,10 +54,14 @@ export class PerfilComponent implements OnInit {
   telefono = '';
   errores: Record<string, string> = {};
 
-  // Contraseña
-  password = '';
-  confirmarPassword = '';
+  // Contraseña (HU-37)
+  actual = '';
+  nueva = '';
+  confirmacion = '';
   mostrarPassword = false;
+  cambiandoPassword = false;
+  errorPassword = '';
+  mensajePassword = '';
 
   guardando = false;
   mensajeError = '';
@@ -98,12 +104,6 @@ export class PerfilComponent implements OnInit {
     if (this.telefono && !/^\d{1,15}$/.test(this.telefono)) {
       e['telefono'] = 'Solo dígitos (máximo 15).';
     }
-    if (this.password && !PASSWORD.test(this.password)) {
-      e['password'] = 'Mínimo 8 caracteres, con mayúscula, minúscula y número.';
-    }
-    if (this.password !== this.confirmarPassword) {
-      e['confirmarPassword'] = 'La contraseña y su confirmación no coinciden.';
-    }
     return e;
   }
 
@@ -122,11 +122,6 @@ export class PerfilComponent implements OnInit {
       correo: this.correo.trim(),
       telefono: this.telefono
     };
-    if (this.password) {
-      cambios.password = this.password;
-      cambios.confirmarPassword = this.confirmarPassword;
-    }
-
     this.guardando = true;
     this.usuarioService.actualizarMiPerfil(cambios).subscribe({
       next: actualizado => {
@@ -136,8 +131,6 @@ export class PerfilComponent implements OnInit {
         }
         this.auth.actualizarUsuario(actualizado);
         this.copiar(actualizado);
-        this.password = '';
-        this.confirmarPassword = '';
         this.mensajeExito = 'Sus datos se actualizaron.';
       },
       error: (e: HttpErrorResponse) => {
@@ -151,10 +144,47 @@ export class PerfilComponent implements OnInit {
     if (this.usuario) {
       this.copiar(this.usuario);
     }
-    this.password = '';
-    this.confirmarPassword = '';
     this.errores = {};
     this.mensajeError = '';
+  }
+
+  /** HU-37: valida en el cliente lo mismo que el servidor, para avisar antes. */
+  validarPassword(): string {
+    if (!this.actual) {
+      return 'Ingrese su contraseña actual.';
+    }
+    if (faltas(this.nueva, this.usuario?.nombreUsuario, this.usuario?.numeroDocumento).length > 0) {
+      return 'La nueva contraseña no cumple todos los requisitos.';
+    }
+    if (this.nueva !== this.confirmacion) {
+      return 'La nueva contraseña y su confirmación no coinciden.';
+    }
+    if (this.nueva === this.actual) {
+      return 'La nueva contraseña debe ser distinta de la actual.';
+    }
+    return '';
+  }
+
+  cambiarPassword(): void {
+    this.mensajePassword = '';
+    this.errorPassword = this.validarPassword();
+    if (this.errorPassword) {
+      return;
+    }
+    this.cambiandoPassword = true;
+    this.auth.cambiarPassword(this.actual, this.nueva, this.confirmacion).subscribe({
+      next: () => {
+        this.cambiandoPassword = false;
+        this.actual = '';
+        this.nueva = '';
+        this.confirmacion = '';
+        this.mensajePassword = 'Contraseña cambiada. Por seguridad se cerraron sus sesiones en otros equipos.';
+      },
+      error: (e: HttpErrorResponse) => {
+        this.cambiandoPassword = false;
+        this.errorPassword = mensajeDeError(e, 'No se pudo cambiar la contraseña.');
+      }
+    });
   }
 
   iniciales(): string {

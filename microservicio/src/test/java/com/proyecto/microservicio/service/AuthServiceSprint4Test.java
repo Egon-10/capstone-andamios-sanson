@@ -44,6 +44,7 @@ class AuthServiceSprint4Test {
     private AccesoService accesos;
     private BloqueoCuentaService bloqueo;
     private JwtService jwt;
+    private TokenRevocadoRepository revocados;
     private AuthService servicio;
     private Usuario luis;
 
@@ -55,7 +56,8 @@ class AuthServiceSprint4Test {
         accesos = mock(AccesoService.class);
         bloqueo = mock(BloqueoCuentaService.class);
         jwt = mock(JwtService.class);
-        servicio = new AuthService(usuarios, encoder, jwt, refreshTokens, mock(TokenRevocadoRepository.class),
+        revocados = mock(TokenRevocadoRepository.class);
+        servicio = new AuthService(usuarios, encoder, jwt, refreshTokens, revocados,
                 auditoria, new JwtProperties("clave-de-prueba-con-mas-de-treinta-y-dos-caracteres", 15, 30),
                 accesos, bloqueo);
 
@@ -126,7 +128,8 @@ class AuthServiceSprint4Test {
         luis.setDebeCambiarPassword(true);
         when(refreshTokens.revocarTodos(2L)).thenReturn(3);
 
-        LoginResponse r = servicio.cambiarPassword(2L, new CambioPasswordRequest(ACTUAL, "Nueva#Clave2026", "Nueva#Clave2026"));
+        LoginResponse r = servicio.cambiarPassword(2L, new CambioPasswordRequest(ACTUAL, "Nueva#Clave2026", "Nueva#Clave2026"),
+                "jti-actual", java.time.Instant.now().plusSeconds(600));
 
         assertTrue(encoder.matches("Nueva#Clave2026", luis.getPassword()));
         assertFalse(luis.isDebeCambiarPassword());
@@ -136,13 +139,14 @@ class AuthServiceSprint4Test {
         verify(auditoria).registrar(eq("PASSWORD_CAMBIADA"), contains("3 sesiones"), eq(2L));
         assertEquals("acceso-nuevo", r.accessToken());
         assertEquals("renovacion-nueva", r.refreshToken());
+        verify(revocados).save(any());
     }
 
     @Test
     @DisplayName("CP-38: exige la contraseña actual correcta")
     void exigeActual() {
         CambioPasswordRequest s = new CambioPasswordRequest("equivocada", "Nueva#Clave2026", "Nueva#Clave2026");
-        ReglaNegocioException ex = assertThrows(ReglaNegocioException.class, () -> servicio.cambiarPassword(2L, s));
+        ReglaNegocioException ex = assertThrows(ReglaNegocioException.class, () -> servicio.cambiarPassword(2L, s, null, null));
         assertEquals("actual", ex.getCampo());
         verify(usuarios, never()).save(any());
     }
@@ -155,11 +159,11 @@ class AuthServiceSprint4Test {
         CambioPasswordRequest debil = new CambioPasswordRequest(ACTUAL, "debil", "debil");
 
         assertEquals("confirmacion", assertThrows(ReglaNegocioException.class,
-                () -> servicio.cambiarPassword(2L, distinta)).getCampo());
+                () -> servicio.cambiarPassword(2L, distinta, null, null)).getCampo());
         assertEquals("nueva", assertThrows(ReglaNegocioException.class,
-                () -> servicio.cambiarPassword(2L, repetida)).getCampo());
+                () -> servicio.cambiarPassword(2L, repetida, null, null)).getCampo());
         assertEquals("nueva", assertThrows(ReglaNegocioException.class,
-                () -> servicio.cambiarPassword(2L, debil)).getCampo());
+                () -> servicio.cambiarPassword(2L, debil, null, null)).getCampo());
         verify(refreshTokens, never()).revocarTodos(any());
     }
 }

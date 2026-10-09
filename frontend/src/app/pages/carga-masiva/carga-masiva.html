@@ -1,148 +1,164 @@
-<div class="contenedor">
+<section class="ui-pagina">
 
-  <h1>Carga masiva de productos</h1>
-
-  <p class="explicacion">
-    Da de alta varios productos a la vez desde un archivo CSV. Las categorias y
-    los proveedores se referencian por nombre y <strong>deben existir
-    previamente</strong>: no se crean al pasar, porque una categoria creada a
-    partir de un nombre mal escrito ensuciaria el catalogo sin que nadie lo
-    note.
-  </p>
-
-  <div class="formulario">
-
-    <h2>Archivo</h2>
-
-    <div class="campo">
-      <label for="archivo">Archivo CSV</label>
-      <input id="archivo" type="file" accept=".csv,text/csv" (change)="seleccionar($event)">
-      <small class="ayuda" *ngIf="nombreArchivo">
-        Seleccionado: {{ nombreArchivo }}
-      </small>
-      <small class="ayuda" *ngIf="!nombreArchivo">
-        Hasta 2 MB y 2000 filas. Acepta coma, punto y coma o tabulador como
-        separador, y decimales escritos con coma.
-      </small>
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-file-import" aria-hidden="true"></i> Carga masiva de productos</h1>
+      <p class="ui-subtitulo explicacion">
+        Da de alta varios productos a la vez desde un archivo CSV. Las categorías y los proveedores se
+        referencian por nombre y <strong>deben existir previamente</strong>: no se crean al pasar, porque una
+        categoría creada a partir de un nombre mal escrito ensuciaría el catálogo sin que nadie lo note.
+      </p>
     </div>
+  </header>
 
-    <div class="campo">
-      <label for="modo">Si alguna fila tiene errores</label>
-      <select id="modo" [(ngModel)]="modo">
+  <section class="ui-tarjeta formulario" aria-labelledby="titulo-archivo">
+
+    <h2 class="ui-tarjeta-titulo" id="titulo-archivo">Archivo</h2>
+
+    <label class="ui-campo" for="archivo">Archivo CSV
+      <input id="archivo" type="file" accept=".csv,text/csv" (change)="seleccionar($event)"
+             aria-describedby="ayuda-archivo">
+      <small class="ui-ayuda" id="ayuda-archivo">
+        @if (nombreArchivo) {
+          Seleccionado: {{ nombreArchivo }}
+        } @else {
+          Hasta 2 MB y 2000 filas. Acepta coma, punto y coma o tabulador como separador, y decimales
+          escritos con coma.
+        }
+      </small>
+    </label>
+
+    <label class="ui-campo" for="modo">Si alguna fila tiene errores
+      <select id="modo" [(ngModel)]="modo" aria-describedby="ayuda-modo">
         <option value="TODO_O_NADA">No cargar ninguna (recomendado)</option>
-        <option value="PARCIAL">Cargar las filas validas e informar las demas</option>
+        <option value="PARCIAL">Cargar las filas válidas e informar las demás</option>
       </select>
-      <small class="ayuda">
-        La primera opcion es la segura para datos de inventario: una carga a
-        medias deja el catalogo en un estado que nadie pidio y hay que deshacerlo
-        a mano.
+      <small class="ui-ayuda" id="ayuda-modo">
+        La primera opción es la segura para datos de inventario: una carga a medias deja el catálogo en un
+        estado que nadie pidió y hay que deshacerlo a mano.
       </small>
+    </label>
+
+    <!-- Solo lo que falta en el formulario; los errores del servidor van en el estado de la vista. -->
+    @if (mensajeError && !errorCarga) {
+      <p class="ui-mensaje peligro" role="alert">
+        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
+      </p>
+    }
+
+    <div class="ui-acciones">
+      <button type="button" class="ui-boton primario" [disabled]="procesando" (click)="simular()">
+        <i class="fa-solid fa-flask" aria-hidden="true"></i>
+        {{ procesando ? 'Procesando…' : 'Simular sin guardar' }}
+      </button>
+      <button type="button" class="ui-boton secundario" [disabled]="procesando" (click)="cargar()">
+        <i class="fa-solid fa-upload" aria-hidden="true"></i> Cargar de verdad
+      </button>
+      <button type="button" class="ui-boton fantasma" (click)="limpiar()">Limpiar</button>
     </div>
 
-    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
-
-    <div class="botones">
-      <button type="button" class="secundario" [disabled]="procesando" (click)="simular()">
-        {{ procesando ? 'Procesando...' : 'Simular sin guardar' }}
-      </button>
-      <button type="button" class="principal" [disabled]="procesando" (click)="cargar()">
-        Cargar de verdad
-      </button>
-      <button type="button" class="cancelar" (click)="limpiar()">
-        Limpiar
-      </button>
-    </div>
-
-    <p class="nota">
-      Conviene simular primero: el informe es el mismo, pero no se guarda nada.
-    </p>
+    <p class="ui-ayuda nota">Conviene simular primero: el informe es el mismo, pero no se guarda nada.</p>
 
     <hr>
 
-    <button type="button" class="enlace" (click)="descargarPlantilla()">
-      Descargar una planilla de ejemplo
-    </button>
+    <div>
+      <button type="button" class="ui-boton fantasma" (click)="descargarPlantilla()">
+        <i class="fa-solid fa-download" aria-hidden="true"></i> Descargar una planilla de ejemplo
+      </button>
+    </div>
 
-  </div>
+  </section>
+
+  <!-- HU-40: procesando, error con reintento y archivo sin filas -->
+  <app-estado-vista [estado]="estadoVista" textoCargando="Procesando el archivo…"
+                    textoError="No se pudo procesar el archivo."
+                    textoVacio="El archivo no tiene filas de datos."
+                    [detalle]="estadoVista === 'error' ? errorCarga : 'Verifique que tenga la cabecera y al menos una fila de productos.'"
+                    (reintentar)="reintentar()"></app-estado-vista>
 
   <!-- Informe del resultado -->
-  <ng-container *ngIf="informe">
+  @if (estadoVista === 'listo' && informe) {
+    <section class="ui-tarjeta informe" aria-labelledby="titulo-informe">
 
-    <h2>
-      {{ informe.simulacion ? 'Resultado de la simulacion' : 'Resultado de la carga' }}
-    </h2>
+      <h2 class="ui-tarjeta-titulo" id="titulo-informe">
+        {{ informe.simulacion ? 'Resultado de la simulación' : 'Resultado de la carga' }}
+      </h2>
 
-    <div
-      class="resultado"
-      [ngClass]="{
-        'ok': informe.seGuardo,
-        'simulado': informe.simulacion,
-        'sin-guardar': !informe.seGuardo && !informe.simulacion
-      }">
-
-      <strong *ngIf="informe.simulacion">
-        Simulacion: no se guardo nada.
-      </strong>
-      <strong *ngIf="!informe.simulacion && informe.seGuardo">
-        Se cargaron {{ informe.aceptadas }} productos.
-      </strong>
-      <strong *ngIf="!informe.simulacion && !informe.seGuardo">
-        No se cargo ningun producto.
-      </strong>
-
-      <span *ngIf="!informe.simulacion && !informe.seGuardo && informe.rechazadas! > 0">
-        El modo elegido no guarda nada si alguna fila falla. Corrija las filas
-        de abajo, o cambie el modo para cargar solo las validas.
-      </span>
-
-    </div>
-
-    <div class="tarjetas">
-      <div class="tarjeta">
-        <span class="etiqueta">Filas leidas</span>
-        <strong>{{ informe.filasLeidas }}</strong>
+      <div class="ui-mensaje resultado" role="status"
+           [class.exito]="informe.seGuardo" [class.info]="informe.simulacion"
+           [class.peligro]="!informe.seGuardo && !informe.simulacion">
+        <i class="fa-solid" aria-hidden="true" [class.fa-circle-check]="informe.seGuardo"
+           [class.fa-circle-info]="informe.simulacion"
+           [class.fa-circle-xmark]="!informe.seGuardo && !informe.simulacion"></i>
+        <div>
+          @if (informe.simulacion) {
+            <strong>Simulación: no se guardó nada.</strong>
+          } @else if (informe.seGuardo) {
+            <strong>Se cargaron {{ informe.aceptadas }} productos.</strong>
+          } @else {
+            <strong>No se cargó ningún producto.</strong>
+            @if (informe.rechazadas! > 0) {
+              <p>
+                El modo elegido no guarda nada si alguna fila falla. Corrija las filas de abajo, o cambie el
+                modo para cargar solo las válidas.
+              </p>
+            }
+          }
+        </div>
       </div>
-      <div class="tarjeta valida">
-        <span class="etiqueta">Validas</span>
-        <strong>{{ informe.aceptadas }}</strong>
+
+      <div class="resumen">
+        <div class="indicador">
+          <span class="etiqueta">Filas leídas</span>
+          <strong>{{ informe.filasLeidas }}</strong>
+        </div>
+        <div class="indicador valida">
+          <span class="etiqueta">Válidas</span>
+          <strong>{{ informe.aceptadas }}</strong>
+        </div>
+        <div class="indicador" [class.invalida]="informe.rechazadas! > 0">
+          <span class="etiqueta">Rechazadas</span>
+          <strong>{{ informe.rechazadas }}</strong>
+        </div>
       </div>
-      <div class="tarjeta" [class.invalida]="informe.rechazadas! > 0">
-        <span class="etiqueta">Rechazadas</span>
-        <strong>{{ informe.rechazadas }}</strong>
-      </div>
-    </div>
 
-    <!-- El informe nombra la fila tal como se ve en Excel -->
-    <ng-container *ngIf="informe.errores.length > 0">
-      <h3>Filas rechazadas</h3>
-      <table>
-        <thead>
-          <tr>
-            <th class="estrecho">Fila</th>
-            <th>SKU</th>
-            <th>Motivo</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let e of informe.errores">
-            <td class="estrecho"><strong>{{ e.fila }}</strong></td>
-            <td>{{ e.sku || '(vacio)' }}</td>
-            <td>{{ e.motivo }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <p class="nota">
-        El numero de fila es el que se ve en Excel: la fila 1 es la cabecera.
-      </p>
-    </ng-container>
+      <!-- El informe nombra la fila tal como se ve en Excel -->
+      @if (informe.errores.length > 0) {
+        <h3 class="subtitulo">Filas rechazadas</h3>
+        <div class="ui-tabla-contenedor">
+          <table class="ui-tabla">
+            <caption class="ui-visualmente-oculto">Filas rechazadas del archivo</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="numero">Fila</th>
+                <th scope="col">SKU</th>
+                <th scope="col">Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of informe.errores; track $index) {
+                <tr>
+                  <td class="numero"><strong>{{ e.fila }}</strong></td>
+                  <td>{{ e.sku || '(vacío)' }}</td>
+                  <td>{{ e.motivo }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="ui-ayuda nota">El número de fila es el que se ve en Excel: la fila 1 es la cabecera.</p>
+      }
 
-    <ng-container *ngIf="informe.skusCargados.length > 0">
-      <h3>Productos cargados</h3>
-      <p class="skus">
-        <span class="sku" *ngFor="let s of informe.skusCargados">{{ s }}</span>
-      </p>
-    </ng-container>
+      @if (informe.skusCargados.length > 0) {
+        <h3 class="subtitulo">Productos cargados</h3>
+        <ul class="skus" aria-label="SKU cargados">
+          @for (s of informe.skusCargados; track s) {
+            <li class="ui-insignia info">{{ s }}</li>
+          }
+        </ul>
+      }
 
-  </ng-container>
+    </section>
+  }
 
-</div>
+</section>

@@ -1,15 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Proveedor } from '../../models/proveedor';
 import { ProveedorService } from '../../services/proveedor.service';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+
+type EstadoVista = 'cargando' | 'error' | 'vacio' | 'listo';
 
 @Component({
   selector: 'app-proveedores',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    EstadoVistaComponent
   ],
   templateUrl: './proveedores.html',
   styleUrl: './proveedores.css'
@@ -27,7 +32,12 @@ export class ProveedoresComponent implements OnInit {
   };
 
   editando = false;
-mensajeError = '';
+  mensajeError = '';
+
+  /** HU-40: la lista se está consultando, o no se pudo consultar. */
+  cargando = true;
+  errorCarga = '';
+
   constructor(
     
     private proveedorService: ProveedorService
@@ -38,13 +48,35 @@ mensajeError = '';
   }
 
   listar(): void {
+    this.cargando = true;
+    this.errorCarga = '';
 
     this.proveedorService
       .listar()
-      .subscribe(data => {
-
-        this.proveedores = data;
+      .subscribe({
+        next: data => {
+          this.proveedores = data;
+          this.cargando = false;
+        },
+        error: (e: HttpErrorResponse) => {
+          this.cargando = false;
+          this.errorCarga = e.error?.mensaje || 'Revise su conexión e intente de nuevo.';
+        }
       });
+  }
+
+  /**
+   * HU-40: estado de la lista. Al recargar tras guardar o eliminar se mantiene
+   * la tabla visible para que no parpadee ni se pierda el foco.
+   */
+  get estadoLista(): EstadoVista {
+    if (this.errorCarga) {
+      return 'error';
+    }
+    if (this.cargando && this.proveedores.length === 0) {
+      return 'cargando';
+    }
+    return this.proveedores.length === 0 ? 'vacio' : 'listo';
   }
 
   guardar(): void {

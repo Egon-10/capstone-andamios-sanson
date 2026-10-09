@@ -211,4 +211,42 @@ describe('ProductosComponent', () => {
     expect(c.mensajeError).toBe('No encontrado');
     expect(c.editando).toBeFalse();
   });
+
+  it('HU-40: si falla la consulta muestra el error y reintentar vuelve a consultar', () => {
+    productos.buscar.and.returnValue(throwError(() => error({ mensaje: 'Sin conexion' })));
+    c.aplicarFiltros();
+    fixture.detectChanges();
+
+    expect(c.estadoLista).toBe('error');
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('app-estado-vista [role="alert"]');
+    expect(alerta.textContent).toContain('No se pudo cargar el catálogo.');
+    expect(alerta.textContent).toContain('Sin conexion');
+    expect(fixture.nativeElement.querySelector('table')).toBeNull();
+
+    productos.buscar.and.returnValue(of(pagina(0, 1)));
+    productos.buscar.calls.reset();
+    alerta.querySelector('button')!.click();
+    fixture.detectChanges();
+
+    expect(productos.buscar).toHaveBeenCalledTimes(1);
+    expect(c.estadoLista).toBe('listo');
+    expect(c.mensajeError).toBe('');
+    expect(fixture.nativeElement.querySelector('table')).not.toBeNull();
+  });
+
+  it('HU-40: distingue un catalogo vacio de una busqueda sin resultados', () => {
+    const vacia: Pagina<ProductoResumen> = { ...pagina(0, 1), contenido: [], totalElementos: 0 };
+    productos.buscar.and.returnValue(of(vacia));
+    c.aplicarFiltros();
+    fixture.detectChanges();
+
+    expect(c.estadoLista).toBe('vacio');
+    expect(fixture.nativeElement.textContent).toContain('Aún no hay productos registrados.');
+
+    c.textoBusqueda = 'zzz';
+    c.aplicarFiltros();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Ningún producto coincide con los filtros.');
+  });
 });

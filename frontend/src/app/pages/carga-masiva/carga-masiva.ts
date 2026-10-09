@@ -5,6 +5,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { CargaMasiva } from '../../models/carga-masiva';
 import { ProductoService } from '../../services/producto.service';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+
+type EstadoVista = EstadoVistaComponent['estado'];
 
 /**
  * HU-19: carga masiva de productos desde un archivo CSV.
@@ -17,7 +20,7 @@ import { ProductoService } from '../../services/producto.service';
 @Component({
   selector: 'app-carga-masiva',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, EstadoVistaComponent],
   templateUrl: './carga-masiva.html',
   styleUrl: './carga-masiva.css'
 })
@@ -31,6 +34,14 @@ export class CargaMasivaComponent {
   procesando = false;
   mensajeError = '';
 
+  /**
+   * HU-40: error del servidor al procesar el archivo. Se separa de
+   * mensajeError, que tambien cubre lo que falta en el formulario, para
+   * ofrecer reintentar solo cuando hay algo que repetir.
+   */
+  errorCarga = '';
+  private ultimoEnvioFueSimulacion = true;
+
   constructor(private readonly productoService: ProductoService) {}
 
   seleccionar(evento: Event): void {
@@ -39,6 +50,7 @@ export class CargaMasivaComponent {
 
     this.informe = undefined;
     this.mensajeError = '';
+    this.errorCarga = '';
 
     if (!archivos || archivos.length === 0) {
       this.archivo = undefined;
@@ -58,8 +70,29 @@ export class CargaMasivaComponent {
     this.enviar(false);
   }
 
+  /** Repite el ultimo envio (simulacion o carga) tras un error del servidor. */
+  reintentar(): void {
+    this.enviar(this.ultimoEnvioFueSimulacion);
+  }
+
+  /** HU-40: estado del procesamiento del archivo. */
+  get estadoVista(): EstadoVista {
+    if (this.procesando) {
+      return 'cargando';
+    }
+    if (this.errorCarga) {
+      return 'error';
+    }
+    if (this.informe && !this.informe.filasLeidas && this.informe.errores.length === 0) {
+      return 'vacio';
+    }
+    return 'listo';
+  }
+
   private enviar(simulacion: boolean): void {
     this.mensajeError = '';
+    this.errorCarga = '';
+    this.ultimoEnvioFueSimulacion = simulacion;
 
     if (!this.archivo) {
       this.mensajeError = 'Seleccione el archivo CSV con los productos';
@@ -76,6 +109,7 @@ export class CargaMasivaComponent {
         this.procesando = false;
         this.informe = undefined;
         this.mensajeError = e.error?.mensaje || 'No se pudo procesar el archivo';
+        this.errorCarga = this.mensajeError;
       }
     });
   }
@@ -111,5 +145,6 @@ export class CargaMasivaComponent {
     this.nombreArchivo = '';
     this.informe = undefined;
     this.mensajeError = '';
+    this.errorCarga = '';
   }
 }

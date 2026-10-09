@@ -251,6 +251,35 @@ describe('MovimientosComponent', () => {
     expect(c.mensajeError).toBe('Formato de fecha');
   });
 
+  it('HU-40: si el historial no carga muestra el error y reintentar vuelve a consultar', () => {
+    movimientos.listar.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+    crear();
+
+    expect(c.estadoVista).toBe('error');
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('app-estado-vista [role="alert"]');
+    expect(alerta.textContent).toContain('No se pudo cargar el historial');
+
+    movimientos.listar.and.returnValue(of([]));
+    alerta.querySelector('button')!.click();
+    fixture.detectChanges();
+
+    expect(movimientos.listar).toHaveBeenCalledTimes(2);
+    expect(c.estadoVista).toBe('vacio');
+    expect(fixture.nativeElement.textContent).toContain('Todavía no hay movimientos registrados');
+  });
+
+  it('HU-40: distingue el historial sin registros del que no coincide con los filtros', () => {
+    movimientos.filtrar.and.returnValue(of([]));
+    crear();
+    c.tipoFiltro = 'SALIDA';
+
+    c.aplicarFiltros();
+    fixture.detectChanges();
+
+    expect(c.estadoVista).toBe('vacio');
+    expect(fixture.nativeElement.textContent).toContain('Ningún movimiento coincide con los filtros');
+  });
+
   it('distingue los asientos anulados y compensatorios', () => {
     crear();
     expect(c.claseEstado({ estado: 'ANULADO' })).toBe('fila-anulada');

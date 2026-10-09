@@ -1,289 +1,268 @@
-<div class="contenedor">
+<section class="ui-pagina">
 
-  <h1>Movimientos de inventario</h1>
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-right-left" aria-hidden="true"></i> Movimientos de inventario</h1>
+      <p class="ui-subtitulo">
+        Entradas y salidas de stock. Un movimiento no se edita ni se borra: se anula con un asiento que lo compensa.
+      </p>
+    </div>
+  </header>
 
   <!-- Registro de movimiento (HU-12, HU-13, HU-14) -->
-  <div class="formulario">
+  <section class="ui-tarjeta registro" aria-labelledby="titulo-registro">
 
-    <h2>Registrar movimiento</h2>
+    <h2 class="ui-tarjeta-titulo" id="titulo-registro">Registrar movimiento</h2>
 
-    <div class="selector-tipo">
-      <button
-        type="button"
-        class="entrada"
-        [class.activo]="tipo === 'ENTRADA'"
-        (click)="cambiarTipo('ENTRADA')">
-        Entrada
+    <div class="selector-tipo" role="group" aria-label="Tipo de movimiento">
+      <button type="button" class="ui-boton secundario" [attr.aria-pressed]="tipo === 'ENTRADA'"
+              (click)="cambiarTipo('ENTRADA')">
+        <i class="fa-solid fa-arrow-down" aria-hidden="true"></i> Entrada
       </button>
-      <button
-        type="button"
-        class="salida"
-        [class.activo]="tipo === 'SALIDA'"
-        (click)="cambiarTipo('SALIDA')">
-        Salida
+      <button type="button" class="ui-boton secundario" [attr.aria-pressed]="tipo === 'SALIDA'"
+              (click)="cambiarTipo('SALIDA')">
+        <i class="fa-solid fa-arrow-up" aria-hidden="true"></i> Salida
       </button>
     </div>
 
-    <div class="campo">
-      <label for="producto">Producto</label>
-      <select
-        id="producto"
-        [(ngModel)]="productoSeleccionado"
-        (change)="limpiarMensajes()">
-        <option [ngValue]="undefined">Seleccione un producto</option>
-        <option *ngFor="let producto of productos" [ngValue]="producto">
-          {{ producto.nombre }} (stock: {{ producto.stock }})
-        </option>
-      </select>
-      <small class="error" *ngIf="errorCampo['productoId']">
-        {{ errorCampo['productoId'] }}
-      </small>
-    </div>
-
-    <div class="campo">
-      <label for="cantidad">Cantidad</label>
-      <input
-        id="cantidad"
-        type="number"
-        min="1"
-        [(ngModel)]="cantidad"
-        (input)="limpiarMensajes()">
-      <small class="error" *ngIf="errorCampo['cantidad']">
-        {{ errorCampo['cantidad'] }}
-      </small>
-    </div>
-
-    <!-- HU-14: el motivo es obligatorio y proviene del catalogo del servidor -->
-    <div class="campo">
-      <label for="motivo">Motivo</label>
-      <select
-        id="motivo"
-        [(ngModel)]="motivoSeleccionado"
-        (change)="limpiarMensajes()">
-        <option value="">Seleccione el motivo</option>
-        <option *ngFor="let motivo of motivos" [value]="motivo.codigo">
-          {{ motivo.nombre }}
-        </option>
-      </select>
-      <small class="error" *ngIf="errorCampo['motivo']">
-        {{ errorCampo['motivo'] }}
-      </small>
-    </div>
-
-    <div class="campo">
-      <label for="observacion">
-        Observacion
-        <span class="requerido" *ngIf="exigeNota">(obligatoria para este motivo)</span>
+    <div class="campos">
+      <label class="ui-campo" for="producto">Producto
+        <select id="producto" [(ngModel)]="productoSeleccionado" (change)="limpiarMensajes()"
+                [attr.aria-invalid]="!!errorCampo['productoId']"
+                [attr.aria-describedby]="errorCampo['productoId'] ? 'error-producto' : null">
+          <option [ngValue]="undefined">Seleccione un producto</option>
+          @for (producto of productos; track producto.id) {
+            <option [ngValue]="producto">{{ producto.nombre }} (stock: {{ producto.stock }})</option>
+          }
+        </select>
+        @if (errorCampo['productoId']) {
+          <small class="ui-error-campo" id="error-producto">{{ errorCampo['productoId'] }}</small>
+        }
       </label>
-      <textarea
-        id="observacion"
-        rows="2"
-        maxlength="200"
-        [(ngModel)]="observacion"
-        (input)="limpiarMensajes()"
-        [placeholder]="exigeNota
-          ? 'Explique el motivo del movimiento'
-          : 'Opcional'"></textarea>
-      <small class="error" *ngIf="errorCampo['observacion']">
-        {{ errorCampo['observacion'] }}
-      </small>
+
+      <label class="ui-campo" for="cantidad">Cantidad
+        <input id="cantidad" type="number" min="1" [(ngModel)]="cantidad" (input)="limpiarMensajes()"
+               [attr.aria-invalid]="!!errorCampo['cantidad']"
+               [attr.aria-describedby]="errorCampo['cantidad'] ? 'error-cantidad' : null">
+        @if (errorCampo['cantidad']) {
+          <small class="ui-error-campo" id="error-cantidad">{{ errorCampo['cantidad'] }}</small>
+        }
+      </label>
+
+      <!-- HU-14: el motivo es obligatorio y proviene del catalogo del servidor -->
+      <label class="ui-campo" for="motivo">Motivo
+        <select id="motivo" [(ngModel)]="motivoSeleccionado" (change)="limpiarMensajes()"
+                [attr.aria-invalid]="!!errorCampo['motivo']"
+                [attr.aria-describedby]="errorCampo['motivo'] ? 'error-motivo' : null">
+          <option value="">Seleccione el motivo</option>
+          @for (motivo of motivos; track motivo.codigo) {
+            <option [value]="motivo.codigo">{{ motivo.nombre }}</option>
+          }
+        </select>
+        @if (errorCampo['motivo']) {
+          <small class="ui-error-campo" id="error-motivo">{{ errorCampo['motivo'] }}</small>
+        }
+      </label>
+
+      <!-- HU-17: el costo de la entrada alimenta el promedio ponderado -->
+      @if (pideCosto) {
+        <label class="ui-campo" for="costo">Costo unitario (S/)
+          <input id="costo" type="number" min="0" step="0.01" [(ngModel)]="costoUnitario"
+                 (input)="limpiarMensajes()" aria-describedby="ayuda-costo"
+                 placeholder="Vacío: costo promedio vigente">
+          <small class="ui-ayuda" id="ayuda-costo">
+            Solo las compras traen un costo nuevo. Una devolución o un traslado reingresan al costo
+            con el que el producto ya está valorizado.
+          </small>
+          @if (errorCampo['costoUnitario']) {
+            <small class="ui-error-campo">{{ errorCampo['costoUnitario'] }}</small>
+          }
+        </label>
+      }
+
+      <label class="ui-campo ancho" for="observacion">
+        <span>Observación
+          @if (exigeNota) { <span class="requerido">(obligatoria para este motivo)</span> }
+        </span>
+        <textarea id="observacion" rows="2" maxlength="200" [(ngModel)]="observacion" (input)="limpiarMensajes()"
+                  [attr.aria-required]="exigeNota" [attr.aria-invalid]="!!errorCampo['observacion']"
+                  [attr.aria-describedby]="errorCampo['observacion'] ? 'error-observacion' : null"
+                  [placeholder]="exigeNota ? 'Explique el motivo del movimiento' : 'Opcional'"></textarea>
+        @if (errorCampo['observacion']) {
+          <small class="ui-error-campo" id="error-observacion">{{ errorCampo['observacion'] }}</small>
+        }
+      </label>
     </div>
 
-    <!-- HU-17: el costo de la entrada alimenta el promedio ponderado -->
-    <div class="campo" *ngIf="pideCosto">
-      <label for="costo">Costo unitario</label>
-      <input
-        id="costo"
-        type="number"
-        min="0"
-        step="0.01"
-        [(ngModel)]="costoUnitario"
-        (input)="limpiarMensajes()"
-        placeholder="Si se deja vacio, se usa el costo promedio vigente">
-      <small class="ayuda">
-        Solo las compras traen un costo nuevo. Una devolucion o un traslado
-        reingresan al costo con el que el producto ya esta valorizado.
-      </small>
-      <small class="error" *ngIf="errorCampo['costoUnitario']">
-        {{ errorCampo['costoUnitario'] }}
-      </small>
-    </div>
+    @if (mensajeError && mensajeError !== errorCarga && !movimientoAnulando) {
+      <p class="ui-mensaje peligro" role="alert">
+        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
+      </p>
+    }
+    @if (mensajeExito) {
+      <p class="ui-mensaje exito" role="status">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ mensajeExito }}
+      </p>
+    }
 
-    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
-    <p class="mensaje-exito" *ngIf="mensajeExito">{{ mensajeExito }}</p>
-
-    <div class="botones">
-      <button
-        type="button"
-        [class.entrada]="tipo === 'ENTRADA'"
-        [class.salida]="tipo === 'SALIDA'"
-        [disabled]="guardando"
-        (click)="registrar()">
-        {{ guardando
-            ? 'Registrando...'
-            : (tipo === 'ENTRADA' ? 'Registrar entrada' : 'Registrar salida') }}
+    <div class="ui-acciones">
+      <button type="button" class="ui-boton primario" [disabled]="guardando" (click)="registrar()">
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+        {{ guardando ? 'Registrando…' : (tipo === 'ENTRADA' ? 'Registrar entrada' : 'Registrar salida') }}
       </button>
     </div>
 
-  </div>
+  </section>
 
-  <h2>Historial de movimientos</h2>
+  <!-- Historial (HU-40: cargando, error con reintento y vacio explicado) -->
+  <section class="ui-tarjeta historial" aria-labelledby="titulo-historial">
 
-  <div class="filtros">
+    <h2 class="ui-tarjeta-titulo" id="titulo-historial">Historial de movimientos</h2>
 
-    <div class="grupo-filtro">
-      <label for="desde">Desde</label>
-      <input id="desde" type="date" [(ngModel)]="fechaInicio" (change)="aplicarFiltros()">
+    <div class="ui-filtros">
+      <label class="ui-campo" for="desde">Desde
+        <input id="desde" type="date" [(ngModel)]="fechaInicio" (change)="aplicarFiltros()">
+      </label>
+      <label class="ui-campo" for="hasta">Hasta
+        <input id="hasta" type="date" [(ngModel)]="fechaFin" (change)="aplicarFiltros()">
+      </label>
+      <label class="ui-campo" for="tipoFiltro">Tipo
+        <select id="tipoFiltro" [(ngModel)]="tipoFiltro" (change)="aplicarFiltros()">
+          <option value="">Todos</option>
+          <option value="ENTRADA">Entradas</option>
+          <option value="SALIDA">Salidas</option>
+        </select>
+      </label>
+      <div>
+        <button type="button" class="ui-boton fantasma" [disabled]="!hayFiltros" (click)="limpiarFiltros()">
+          <i class="fa-solid fa-filter-circle-xmark" aria-hidden="true"></i> Quitar filtros
+        </button>
+      </div>
     </div>
 
-    <div class="grupo-filtro">
-      <label for="hasta">Hasta</label>
-      <input id="hasta" type="date" [(ngModel)]="fechaFin" (change)="aplicarFiltros()">
-    </div>
+    <app-estado-vista [estado]="estadoVista" textoCargando="Cargando movimientos…"
+                      textoError="No se pudo cargar el historial de movimientos."
+                      [textoVacio]="hayFiltros ? 'Ningún movimiento coincide con los filtros.' : 'Todavía no hay movimientos registrados.'"
+                      [detalle]="estadoVista === 'error' ? errorCarga
+                        : (hayFiltros ? 'Cambie las fechas o el tipo, o quite los filtros.' : 'Registre una entrada o una salida con el formulario de arriba.')"
+                      (reintentar)="recargar()"></app-estado-vista>
 
-    <div class="grupo-filtro">
-      <label for="tipoFiltro">Tipo</label>
-      <select id="tipoFiltro" [(ngModel)]="tipoFiltro" (change)="aplicarFiltros()">
-        <option value="">Todos</option>
-        <option value="ENTRADA">Entradas</option>
-        <option value="SALIDA">Salidas</option>
-      </select>
-    </div>
+    @if (estadoVista === 'listo') {
+      <div class="ui-tabla-contenedor">
+        <table class="ui-tabla">
+          <caption class="ui-visualmente-oculto">Historial de movimientos de inventario</caption>
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Producto</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Motivo</th>
+              <th scope="col" class="numero">Cantidad</th>
+              <th scope="col" class="numero">Saldo</th>
+              <th scope="col">Usuario</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="ui-visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (movimiento of movimientosFiltrados; track movimiento.id) {
+              <tr [ngClass]="claseEstado(movimiento)">
+                <td class="numero">{{ movimiento.id }}</td>
+                <td>
+                  {{ movimiento.producto }}
+                  @if (movimiento.sku) { <small class="tenue">{{ movimiento.sku }}</small> }
+                </td>
+                <td>
+                  <span class="ui-insignia" [class.info]="movimiento.tipo === 'ENTRADA'" [class.aviso]="movimiento.tipo === 'SALIDA'">
+                    <i class="fa-solid" [class.fa-arrow-down]="movimiento.tipo === 'ENTRADA'"
+                       [class.fa-arrow-up]="movimiento.tipo === 'SALIDA'" aria-hidden="true"></i>
+                    {{ movimiento.tipo }}
+                  </span>
+                </td>
+                <td>
+                  {{ movimiento.motivoNombre || movimiento.motivo }}
+                  @if (movimiento.observacion) { <small class="tenue">{{ movimiento.observacion }}</small> }
+                </td>
+                <td class="numero">{{ movimiento.cantidad }}</td>
+                <!-- HU-18: los movimientos heredados no tienen saldo registrado -->
+                <td class="numero">{{ movimiento.saldoResultante ?? '—' }}</td>
+                <td>{{ movimiento.usuario }}</td>
+                <td class="fecha">{{ movimiento.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <span class="ui-insignia" [class.exito]="movimiento.estado === 'REGISTRADO'"
+                        [class.peligro]="movimiento.estado === 'ANULADO'" [class.info]="movimiento.estado === 'COMPENSACION'">
+                    {{ movimiento.estado }}
+                  </span>
+                  @if (movimiento.movimientoOrigenId) {
+                    <small class="tenue">compensa al {{ movimiento.movimientoOrigenId }}</small>
+                  }
+                </td>
+                <td>
+                  <!-- HU-15: un movimiento no se edita ni se borra, se anula -->
+                  @if (sePuedeAnular(movimiento)) {
+                    <button type="button" class="ui-boton peligro chico" (click)="abrirAnulacion(movimiento)"
+                            [attr.aria-label]="'Anular el movimiento ' + movimiento.id">
+                      <i class="fa-solid fa-ban" aria-hidden="true"></i> Anular
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
 
-    <button type="button" class="cancelar" (click)="limpiarFiltros()">
-      Limpiar
-    </button>
-
-  </div>
-
-  <table>
-
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Producto</th>
-        <th>Tipo</th>
-        <th>Motivo</th>
-        <th>Cantidad</th>
-        <th>Saldo</th>
-        <th>Usuario</th>
-        <th>Fecha</th>
-        <th>Estado</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <tr
-        *ngFor="let movimiento of movimientosFiltrados"
-        [ngClass]="claseEstado(movimiento)">
-
-        <td>{{ movimiento.id }}</td>
-
-        <td>
-          {{ movimiento.producto }}
-          <small class="sku" *ngIf="movimiento.sku">{{ movimiento.sku }}</small>
-        </td>
-
-        <td>{{ movimiento.tipo }}</td>
-
-        <td>
-          {{ movimiento.motivoNombre || movimiento.motivo }}
-          <small class="observacion" *ngIf="movimiento.observacion">
-            {{ movimiento.observacion }}
-          </small>
-        </td>
-
-        <td>{{ movimiento.cantidad }}</td>
-
-        <!-- HU-18: los movimientos heredados no tienen saldo registrado -->
-        <td>{{ movimiento.saldoResultante ?? '-' }}</td>
-
-        <td>{{ movimiento.usuario }}</td>
-
-        <td>{{ movimiento.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
-
-        <td>
-          <span class="estado" [ngClass]="'estado-' + (movimiento.estado || '')">
-            {{ movimiento.estado }}
-          </span>
-          <small
-            class="compensa"
-            *ngIf="movimiento.movimientoOrigenId">
-            compensa al {{ movimiento.movimientoOrigenId }}
-          </small>
-        </td>
-
-        <td>
-          <!-- HU-15: un movimiento no se edita ni se borra, se anula -->
-          <button
-            type="button"
-            class="eliminar"
-            *ngIf="sePuedeAnular(movimiento)"
-            (click)="abrirAnulacion(movimiento)">
-            Anular
-          </button>
-        </td>
-
-      </tr>
-
-      <tr *ngIf="movimientosFiltrados.length === 0">
-        <td colspan="10" class="vacio">No hay movimientos que coincidan.</td>
-      </tr>
-    </tbody>
-
-  </table>
+  </section>
 
   <!-- Cuadro de anulacion (HU-15) -->
-  <div class="fondo-modal" *ngIf="movimientoAnulando">
-    <div class="modal">
+  @if (movimientoAnulando) {
+    <div class="ui-velo">
+      <dialog class="ui-dialogo" open aria-modal="true" aria-labelledby="titulo-anulacion">
 
-      <h3>Anular movimiento {{ movimientoAnulando.id }}</h3>
+        <h2 id="titulo-anulacion">Anular movimiento {{ movimientoAnulando.id }}</h2>
 
-      <p>
-        {{ movimientoAnulando.tipo }} de {{ movimientoAnulando.cantidad }}
-        unidades de <strong>{{ movimientoAnulando.producto }}</strong>.
-      </p>
+        <p>
+          {{ movimientoAnulando.tipo }} de {{ movimientoAnulando.cantidad }} unidades de
+          <strong>{{ movimientoAnulando.producto }}</strong>.
+        </p>
 
-      <p class="advertencia">
-        El movimiento no se borra. Se marca como anulado y se registra un
-        asiento que lo compensa, de modo que el historial conserva lo ocurrido
-        y el stock vuelve al valor que tenia antes.
-      </p>
+        <p class="ui-mensaje aviso">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span>
+            El movimiento no se borra. Se marca como anulado y se registra un asiento que lo compensa:
+            el historial conserva lo ocurrido y el stock vuelve al valor que tenía antes.
+          </span>
+        </p>
 
-      <div class="campo">
-        <label for="justificacion">Justificacion</label>
-        <textarea
-          id="justificacion"
-          rows="3"
-          maxlength="200"
-          [(ngModel)]="justificacion"
-          placeholder="Explique por que se anula este movimiento"></textarea>
-        <small class="error" *ngIf="errorCampo['justificacion']">
-          {{ errorCampo['justificacion'] }}
-        </small>
-      </div>
+        <label class="ui-campo" for="justificacion">Justificación
+          <textarea id="justificacion" rows="3" maxlength="200" [(ngModel)]="justificacion"
+                    [attr.aria-invalid]="!!errorCampo['justificacion']"
+                    [attr.aria-describedby]="errorCampo['justificacion'] ? 'error-justificacion' : null"
+                    placeholder="Explique por qué se anula este movimiento"></textarea>
+          @if (errorCampo['justificacion']) {
+            <small class="ui-error-campo" id="error-justificacion">{{ errorCampo['justificacion'] }}</small>
+          }
+        </label>
 
-      <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+        @if (mensajeError) {
+          <p class="ui-mensaje peligro" role="alert">
+            <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
+          </p>
+        }
 
-      <div class="botones">
-        <button
-          type="button"
-          class="eliminar"
-          [disabled]="guardando"
-          (click)="confirmarAnulacion()">
-          {{ guardando ? 'Anulando...' : 'Confirmar anulacion' }}
-        </button>
-        <button
-          type="button"
-          class="cancelar"
-          [disabled]="guardando"
-          (click)="cerrarAnulacion()">
-          Cancelar
-        </button>
-      </div>
+        <div class="ui-acciones">
+          <button type="button" class="ui-boton secundario" [disabled]="guardando" (click)="cerrarAnulacion()">
+            Cancelar
+          </button>
+          <button type="button" class="ui-boton peligro" [disabled]="guardando" (click)="confirmarAnulacion()">
+            {{ guardando ? 'Anulando…' : 'Confirmar anulación' }}
+          </button>
+        </div>
 
+      </dialog>
     </div>
-  </div>
+  }
 
-</div>
+</section>

@@ -1,236 +1,228 @@
-<div class="contenedor">
+<section class="ui-pagina">
 
-  <h1>Ajustes de inventario</h1>
-
-  <p class="explicacion">
-    El conteo fisico no modifica el inventario por si solo. Queda pendiente, y
-    es la aprobacion la que genera el movimiento que corrige el stock, de modo
-    que toda diferencia queda con la constancia de quien la autorizo.
-  </p>
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Ajustes de inventario</h1>
+      <p class="ui-subtitulo explicacion">
+        El conteo físico no modifica el inventario por sí solo. Queda pendiente, y es la aprobación la que
+        genera el movimiento que corrige el stock: toda diferencia queda con la constancia de quién la autorizó.
+      </p>
+    </div>
+  </header>
 
   <!-- Registro del conteo (HU-16) -->
-  <div class="formulario">
+  <section class="ui-tarjeta formulario" aria-labelledby="titulo-conteo">
 
-    <h2>Registrar conteo fisico</h2>
+    <h2 class="ui-tarjeta-titulo" id="titulo-conteo">Registrar conteo físico</h2>
 
-    <div class="campo">
-      <label for="producto">Producto contado</label>
-      <select
-        id="producto"
-        [(ngModel)]="productoSeleccionado"
-        (change)="limpiarMensajes()">
+    <label class="ui-campo" for="producto">Producto contado
+      <select id="producto" [(ngModel)]="productoSeleccionado" (change)="limpiarMensajes()"
+              [attr.aria-invalid]="!!errorCampo['productoId']"
+              [attr.aria-describedby]="errorCampo['productoId'] ? 'error-producto' : null">
         <option [ngValue]="undefined">Seleccione un producto</option>
-        <option *ngFor="let p of productos" [ngValue]="p">
-          {{ p.nombre }} (sistema: {{ p.stock }})
-        </option>
+        @for (p of productos; track p.id) {
+          <option [ngValue]="p">{{ p.nombre }} (sistema: {{ p.stock }})</option>
+        }
       </select>
-      <small class="error" *ngIf="errorCampo['productoId']">
-        {{ errorCampo['productoId'] }}
-      </small>
-    </div>
+      @if (errorCampo['productoId']) {
+        <small class="ui-error-campo" id="error-producto">{{ errorCampo['productoId'] }}</small>
+      }
+    </label>
 
-    <div class="campo" *ngIf="productoSeleccionado">
+    @if (productoSeleccionado) {
       <!-- No es un control editable, asi que no lleva <label>: un label
            tiene que rotular un campo que la persona pueda usar. -->
-      <span class="etiqueta-campo">Stock que el sistema tiene registrado</span>
-      <p class="dato-sistema">{{ productoSeleccionado.stock }} unidades</p>
-      <small class="ayuda">
-        Lo lee el servidor al guardar, no se envia desde esta pantalla.
-      </small>
-    </div>
+      <div class="ui-campo">
+        <span>Stock que el sistema tiene registrado</span>
+        <p class="dato-sistema">{{ productoSeleccionado.stock }} unidades</p>
+        <small class="ui-ayuda">Lo lee el servidor al guardar, no se envía desde esta pantalla.</small>
+      </div>
+    }
 
-    <div class="campo">
-      <label for="contado">Unidades contadas en el almacen</label>
-      <input
-        id="contado"
-        type="number"
-        min="0"
-        [(ngModel)]="stockFisico"
-        (input)="limpiarMensajes()">
-      <small class="error" *ngIf="errorCampo['stockFisico']">
-        {{ errorCampo['stockFisico'] }}
-      </small>
-    </div>
+    <label class="ui-campo" for="contado">Unidades contadas en el almacén
+      <input id="contado" type="number" min="0" [(ngModel)]="stockFisico" (input)="limpiarMensajes()"
+             [attr.aria-invalid]="!!errorCampo['stockFisico']"
+             [attr.aria-describedby]="errorCampo['stockFisico'] ? 'error-contado' : null">
+      @if (errorCampo['stockFisico']) {
+        <small class="ui-error-campo" id="error-contado">{{ errorCampo['stockFisico'] }}</small>
+      }
+    </label>
 
     <!-- La diferencia se muestra en vivo: un cero de mas en el conteo se nota
          al ver la diferencia, no al ver el numero. -->
-    <div
-      class="diferencia"
-      *ngIf="diferencia !== undefined"
-      [ngClass]="{
-        'sobra': diferencia! > 0,
-        'falta': diferencia! < 0,
-        'igual': diferencia === 0
-      }">
-      <strong>Diferencia: {{ diferencia! > 0 ? '+' : '' }}{{ diferencia }}</strong>
-      <span>{{ textoDiferencia }}</span>
-    </div>
+    @if (diferencia !== undefined) {
+      <div class="diferencia" aria-live="polite"
+           [class.sobra]="diferencia! > 0" [class.falta]="diferencia! < 0" [class.igual]="diferencia === 0">
+        <strong>Diferencia: {{ diferencia! > 0 ? '+' : '' }}{{ diferencia }}</strong>
+        <span>{{ textoDiferencia }}</span>
+      </div>
+    }
 
-    <div class="campo">
-      <label for="observacion">Observacion</label>
-      <textarea
-        id="observacion"
-        rows="2"
-        maxlength="200"
-        [(ngModel)]="observacion"
-        (input)="limpiarMensajes()"
-        placeholder="Donde se conto, quien acompano, que explica la diferencia"></textarea>
-      <small class="error" *ngIf="errorCampo['observacion']">
-        {{ errorCampo['observacion'] }}
-      </small>
-    </div>
+    <label class="ui-campo" for="observacion">Observación
+      <textarea id="observacion" rows="2" maxlength="200" [(ngModel)]="observacion" (input)="limpiarMensajes()"
+                [attr.aria-invalid]="!!errorCampo['observacion']"
+                placeholder="Dónde se contó, quién acompañó, qué explica la diferencia"></textarea>
+      @if (errorCampo['observacion']) {
+        <small class="ui-error-campo">{{ errorCampo['observacion'] }}</small>
+      }
+    </label>
 
-    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
-    <p class="mensaje-exito" *ngIf="mensajeExito">{{ mensajeExito }}</p>
+    @if (mensajeError && mensajeError !== errorCarga && !ajusteRechazando) {
+      <p class="ui-mensaje peligro" role="alert">
+        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
+      </p>
+    }
+    @if (mensajeExito) {
+      <p class="ui-mensaje exito" role="status">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ mensajeExito }}
+      </p>
+    }
 
-    <div class="botones">
-      <button type="button" class="principal" [disabled]="guardando" (click)="registrar()">
-        {{ guardando ? 'Registrando...' : 'Registrar conteo' }}
+    <div class="ui-acciones">
+      <button type="button" class="ui-boton primario" [disabled]="guardando" (click)="registrar()">
+        <i class="fa-solid fa-clipboard-check" aria-hidden="true"></i>
+        {{ guardando ? 'Registrando…' : 'Registrar conteo' }}
       </button>
     </div>
 
-  </div>
+  </section>
 
-  <h2>Conteos registrados</h2>
+  <!-- Conteos registrados (HU-40: cargando, error con reintento y vacio explicado) -->
+  <section class="ui-tarjeta lista" aria-labelledby="titulo-lista">
 
-  <div class="filtros">
-    <div class="grupo-filtro">
-      <label for="estado">Estado</label>
-      <select id="estado" [(ngModel)]="filtroEstado" (change)="listar()">
-        <option value="">Todos</option>
-        <option value="PENDIENTE">Solo pendientes</option>
-      </select>
+    <div class="cabecera-lista">
+      <h2 class="ui-tarjeta-titulo" id="titulo-lista">Conteos registrados</h2>
+      <label class="ui-campo" for="estado">Estado
+        <select id="estado" [(ngModel)]="filtroEstado" (change)="listar()">
+          <option value="">Todos</option>
+          <option value="PENDIENTE">Solo pendientes</option>
+        </select>
+      </label>
     </div>
-  </div>
 
-  <table>
+    <app-estado-vista [estado]="estadoVista" textoCargando="Cargando conteos…"
+                      textoError="No se pudieron cargar los conteos."
+                      [textoVacio]="filtroEstado ? 'No hay conteos pendientes de aprobación.' : 'Todavía no hay conteos registrados.'"
+                      [detalle]="estadoVista === 'error' ? errorCarga
+                        : (filtroEstado ? 'Elija «Todos» para ver también los aprobados y rechazados.' : 'Registre un conteo físico con el formulario de arriba.')"
+                      (reintentar)="listar()"></app-estado-vista>
 
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Producto</th>
-        <th>Sistema</th>
-        <th>Contado</th>
-        <th>Diferencia</th>
-        <th>Solicito</th>
-        <th>Fecha</th>
-        <th>Estado</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
+    @if (estadoVista === 'listo') {
+      <div class="ui-tabla-contenedor">
+        <table class="ui-tabla">
+          <caption class="ui-visualmente-oculto">Conteos físicos registrados</caption>
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Producto</th>
+              <th scope="col" class="numero">Sistema</th>
+              <th scope="col" class="numero">Contado</th>
+              <th scope="col" class="numero">Diferencia</th>
+              <th scope="col">Solicitó</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="ui-visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of ajustes; track a.id) {
+              <tr [ngClass]="'fila-' + (a.estado || '')">
+                <td class="numero">{{ a.id }}</td>
+                <td>
+                  {{ a.producto }}
+                  @if (a.sku) { <small class="tenue">{{ a.sku }}</small> }
+                  @if (a.observacion) { <small class="tenue">{{ a.observacion }}</small> }
+                </td>
+                <td class="numero">{{ a.stockSistema }}</td>
+                <td class="numero">{{ a.stockFisico }}</td>
+                <td class="numero" [class.sobra]="a.diferencia! > 0" [class.falta]="a.diferencia! < 0">
+                  <strong>{{ a.diferencia! > 0 ? '+' : '' }}{{ a.diferencia }}</strong>
+                </td>
+                <td>{{ a.usuarioSolicita }}</td>
+                <td class="fecha">{{ a.fechaSolicitud | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <span class="ui-insignia" [class.aviso]="a.estado === 'PENDIENTE'"
+                        [class.exito]="a.estado === 'APROBADO'" [class.peligro]="a.estado === 'RECHAZADO'">
+                    {{ a.estado }}
+                  </span>
+                  @if (a.usuarioAprueba) { <small class="tenue">por {{ a.usuarioAprueba }}</small> }
+                  @if (a.motivoRechazo) { <small class="tenue rechazo">{{ a.motivoRechazo }}</small> }
+                  @if (a.movimientoId) { <small class="tenue">movimiento {{ a.movimientoId }}</small> }
+                </td>
+                <td>
+                  @if (a.estado === 'PENDIENTE') {
+                    @if (puedeResolver()) {
+                      <div class="acciones-fila">
+                        <button type="button" class="ui-boton secundario chico" [disabled]="guardando"
+                                (click)="aprobar(a)" [attr.aria-label]="'Aprobar el conteo ' + a.id">
+                          <i class="fa-solid fa-check" aria-hidden="true"></i> Aprobar
+                        </button>
+                        <button type="button" class="ui-boton peligro chico" [disabled]="guardando"
+                                (click)="abrirRechazo(a)" [attr.aria-label]="'Rechazar el conteo ' + a.id">
+                          <i class="fa-solid fa-xmark" aria-hidden="true"></i> Rechazar
+                        </button>
+                      </div>
+                    } @else {
+                      <small class="tenue">Espera aprobación</small>
+                    }
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
 
-    <tbody>
-      <tr *ngFor="let a of ajustes" [ngClass]="'fila-' + (a.estado || '')">
-
-        <td>{{ a.id }}</td>
-
-        <td>
-          {{ a.producto }}
-          <small class="sku" *ngIf="a.sku">{{ a.sku }}</small>
-          <small class="observacion" *ngIf="a.observacion">{{ a.observacion }}</small>
-        </td>
-
-        <td>{{ a.stockSistema }}</td>
-        <td>{{ a.stockFisico }}</td>
-
-        <td [ngClass]="{ 'sobra': a.diferencia! > 0, 'falta': a.diferencia! < 0 }">
-          <strong>{{ a.diferencia! > 0 ? '+' : '' }}{{ a.diferencia }}</strong>
-        </td>
-
-        <td>{{ a.usuarioSolicita }}</td>
-        <td>{{ a.fechaSolicitud | date:'dd/MM/yyyy HH:mm' }}</td>
-
-        <td>
-          <span class="estado" [ngClass]="'estado-' + (a.estado || '')">
-            {{ a.estado }}
-          </span>
-          <small class="resuelto" *ngIf="a.usuarioAprueba">
-            por {{ a.usuarioAprueba }}
-          </small>
-          <small class="rechazo" *ngIf="a.motivoRechazo">
-            {{ a.motivoRechazo }}
-          </small>
-          <small class="resuelto" *ngIf="a.movimientoId">
-            movimiento {{ a.movimientoId }}
-          </small>
-        </td>
-
-        <td>
-          <ng-container *ngIf="a.estado === 'PENDIENTE' && puedeResolver()">
-            <button
-              type="button"
-              class="aprobar"
-              [disabled]="guardando"
-              (click)="aprobar(a)">
-              Aprobar
-            </button>
-            <button
-              type="button"
-              class="rechazar"
-              [disabled]="guardando"
-              (click)="abrirRechazo(a)">
-              Rechazar
-            </button>
-          </ng-container>
-
-          <small
-            class="ayuda"
-            *ngIf="a.estado === 'PENDIENTE' && !puedeResolver()">
-            Espera aprobacion
-          </small>
-        </td>
-
-      </tr>
-
-      <tr *ngIf="ajustes.length === 0">
-        <td colspan="9" class="vacio">No hay conteos registrados.</td>
-      </tr>
-    </tbody>
-
-  </table>
+  </section>
 
   <!-- Cuadro de rechazo -->
-  <div class="fondo-modal" *ngIf="ajusteRechazando">
-    <div class="modal">
+  @if (ajusteRechazando) {
+    <div class="ui-velo">
+      <dialog class="ui-dialogo" open aria-modal="true" aria-labelledby="titulo-rechazo">
 
-      <h3>Rechazar el conteo {{ ajusteRechazando.id }}</h3>
+        <h2 id="titulo-rechazo">Rechazar el conteo {{ ajusteRechazando.id }}</h2>
 
-      <p>
-        <strong>{{ ajusteRechazando.producto }}</strong>: el sistema tiene
-        {{ ajusteRechazando.stockSistema }} y se contaron
-        {{ ajusteRechazando.stockFisico }}.
-      </p>
+        <p>
+          <strong>{{ ajusteRechazando.producto }}</strong>: el sistema tiene
+          {{ ajusteRechazando.stockSistema }} y se contaron {{ ajusteRechazando.stockFisico }}.
+        </p>
 
-      <p class="advertencia">
-        El inventario no se modifica. El conteo queda rechazado con el motivo
-        que escriba aqui, y el encargado puede registrar un recuento.
-      </p>
+        <p class="ui-mensaje aviso">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span>
+            El inventario no se modifica. El conteo queda rechazado con el motivo que escriba aquí, y el
+            encargado puede registrar un recuento.
+          </span>
+        </p>
 
-      <div class="campo">
-        <label for="motivo">Motivo del rechazo</label>
-        <textarea
-          id="motivo"
-          rows="3"
-          maxlength="200"
-          [(ngModel)]="motivoRechazo"
-          placeholder="Por que no se acepta esta diferencia"></textarea>
-        <small class="error" *ngIf="errorCampo['motivo']">
-          {{ errorCampo['motivo'] }}
-        </small>
-      </div>
+        <label class="ui-campo" for="motivo">Motivo del rechazo
+          <textarea id="motivo" rows="3" maxlength="200" [(ngModel)]="motivoRechazo"
+                    [attr.aria-invalid]="!!errorCampo['motivo']"
+                    [attr.aria-describedby]="errorCampo['motivo'] ? 'error-motivo' : null"
+                    placeholder="Por qué no se acepta esta diferencia"></textarea>
+          @if (errorCampo['motivo']) {
+            <small class="ui-error-campo" id="error-motivo">{{ errorCampo['motivo'] }}</small>
+          }
+        </label>
 
-      <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+        @if (mensajeError) {
+          <p class="ui-mensaje peligro" role="alert">
+            <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
+          </p>
+        }
 
-      <div class="botones">
-        <button type="button" class="rechazar" [disabled]="guardando" (click)="confirmarRechazo()">
-          {{ guardando ? 'Rechazando...' : 'Confirmar rechazo' }}
-        </button>
-        <button type="button" class="cancelar" [disabled]="guardando" (click)="cerrarRechazo()">
-          Cancelar
-        </button>
-      </div>
+        <div class="ui-acciones">
+          <button type="button" class="ui-boton secundario" [disabled]="guardando" (click)="cerrarRechazo()">
+            Cancelar
+          </button>
+          <button type="button" class="ui-boton peligro" [disabled]="guardando" (click)="confirmarRechazo()">
+            {{ guardando ? 'Rechazando…' : 'Confirmar rechazo' }}
+          </button>
+        </div>
 
+      </dialog>
     </div>
-  </div>
+  }
 
-</div>
+</section>

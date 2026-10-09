@@ -1,5 +1,4 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
@@ -10,7 +9,7 @@ import { AlertasComponent } from '../alertas/alertas';
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, AlertasComponent],
+  imports: [RouterModule, AlertasComponent],
   templateUrl: './layout.html',
   styleUrl: './layout.css'
 })

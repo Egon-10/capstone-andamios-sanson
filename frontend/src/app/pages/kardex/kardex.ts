@@ -7,6 +7,9 @@ import { Producto } from '../../models/producto';
 import { Kardex } from '../../models/kardex';
 import { ProductoService } from '../../services/producto.service';
 import { InventarioService } from '../../services/inventario.service';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+
+type EstadoVista = EstadoVistaComponent['estado'];
 
 /**
  * HU-18: kardex por producto con saldo acumulado.
@@ -20,7 +23,7 @@ import { InventarioService } from '../../services/inventario.service';
 @Component({
   selector: 'app-kardex',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, EstadoVistaComponent],
   templateUrl: './kardex.html',
   styleUrl: './kardex.css'
 })
@@ -34,6 +37,8 @@ export class KardexComponent implements OnInit {
   kardex?: Kardex;
   cargando = false;
   mensajeError = '';
+  /** La lista de productos alimenta el selector: sin ella no se puede consultar nada. */
+  errorProductos = '';
 
   constructor(
     private readonly productoService: ProductoService,
@@ -41,7 +46,55 @@ export class KardexComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.productoService.listar().subscribe(data => (this.productos = data));
+    this.cargarProductos();
+  }
+
+  cargarProductos(): void {
+    this.errorProductos = '';
+    this.productoService.listar().subscribe({
+      next: data => (this.productos = data),
+      error: (e: HttpErrorResponse) =>
+        (this.errorProductos = e.error?.mensaje || 'No se pudo cargar la lista de productos.')
+    });
+  }
+
+  /**
+   * HU-40: lo que muestra la consulta. Sin producto elegido es un estado
+   * vacio que invita a elegir uno, no un error.
+   */
+  get estadoVista(): EstadoVista {
+    if (this.cargando) {
+      return 'cargando';
+    }
+    if (this.mensajeError) {
+      return 'error';
+    }
+    if (!this.kardex || this.kardex.lineas.length === 0) {
+      return 'vacio';
+    }
+    return 'listo';
+  }
+
+  get hayFechas(): boolean {
+    return !!(this.desde || this.hasta);
+  }
+
+  get textoVacio(): string {
+    if (!this.kardex) {
+      return 'Seleccione un producto para ver su kardex.';
+    }
+    return this.hayFechas
+      ? 'Este producto no tiene movimientos en el periodo seleccionado.'
+      : 'Este producto todavía no tiene movimientos.';
+  }
+
+  get detalleVacio(): string {
+    if (!this.kardex) {
+      return 'Puede acotar el historial con un rango de fechas.';
+    }
+    return this.hayFechas
+      ? 'Amplíe el rango de fechas o consulte todo el historial.'
+      : 'Cuando se registre una entrada o una salida aparecerá aquí.';
   }
 
   consultar(): void {

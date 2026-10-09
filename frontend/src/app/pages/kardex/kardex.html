@@ -1,140 +1,143 @@
-<div class="contenedor">
+<section class="ui-pagina">
 
-  <h1>Kardex por producto</h1>
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-book" aria-hidden="true"></i> Kardex por producto</h1>
+      <p class="ui-subtitulo explicacion">
+        Historial de entradas y salidas con el saldo después de cada asiento. Un movimiento anulado se
+        muestra tachado y permanece en el historial: lo revierte el asiento de compensación que viene a
+        continuación, y la suma de los dos sobre el stock es cero.
+      </p>
+    </div>
+  </header>
 
-  <p class="explicacion">
-    Historial de entradas y salidas con el saldo despues de cada asiento. Un
-    movimiento anulado se muestra tachado y permanece en el historial: lo que
-    lo revierte es el asiento de compensacion que viene a continuacion, y la
-    suma de los dos sobre el stock es cero.
-  </p>
+  <div class="ui-tarjeta panel">
 
-  <div class="filtros">
-
-    <div class="grupo-filtro ancho">
-      <label for="producto">Producto</label>
-      <select id="producto" [(ngModel)]="productoId" (change)="consultar()">
-        <option [ngValue]="undefined">Seleccione un producto</option>
-        <option *ngFor="let p of productos" [ngValue]="p.id">
-          {{ p.nombre }}
-        </option>
-      </select>
+    <div class="ui-filtros">
+      <label class="ui-campo ancho" for="producto">Producto
+        <select id="producto" [(ngModel)]="productoId" (change)="consultar()">
+          <option [ngValue]="undefined">Seleccione un producto</option>
+          @for (p of productos; track p.id) {
+            <option [ngValue]="p.id">{{ p.nombre }}</option>
+          }
+        </select>
+      </label>
+      <label class="ui-campo" for="desde">Desde
+        <input id="desde" type="date" [(ngModel)]="desde" (change)="consultar()">
+      </label>
+      <label class="ui-campo" for="hasta">Hasta
+        <input id="hasta" type="date" [(ngModel)]="hasta" (change)="consultar()">
+      </label>
+      <div>
+        <button type="button" class="ui-boton secundario" (click)="limpiarFechas()">
+          <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Todo el historial
+        </button>
+      </div>
     </div>
 
-    <div class="grupo-filtro">
-      <label for="desde">Desde</label>
-      <input id="desde" type="date" [(ngModel)]="desde" (change)="consultar()">
-    </div>
+    @if (errorProductos) {
+      <div class="ui-mensaje peligro" role="alert">
+        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+        <span class="crece">{{ errorProductos }}</span>
+        <button type="button" class="ui-boton secundario chico" (click)="cargarProductos()">
+          <i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Reintentar
+        </button>
+      </div>
+    }
 
-    <div class="grupo-filtro">
-      <label for="hasta">Hasta</label>
-      <input id="hasta" type="date" [(ngModel)]="hasta" (change)="consultar()">
-    </div>
+    @if (kardex) {
+      <!-- Encabezado del producto -->
+      <div class="resumen">
+        <div class="indicador">
+          <span class="etiqueta">Producto</span>
+          <strong>{{ kardex.producto }}</strong>
+          @if (kardex.sku) { <small>{{ kardex.sku }}</small> }
+        </div>
+        <div class="indicador">
+          <span class="etiqueta">Stock actual</span>
+          <strong>{{ kardex.stockActual }}</strong>
+          <small>unidades</small>
+        </div>
+        <div class="indicador">
+          <span class="etiqueta">Costo promedio</span>
+          <strong>S/ {{ kardex.costoPromedio | number:'1.2-2' }}</strong>
+          <small>ponderado</small>
+        </div>
+        <div class="indicador">
+          <span class="etiqueta">Valorizado</span>
+          <strong>S/ {{ kardex.valorizado | number:'1.2-2' }}</strong>
+          <small>stock por costo</small>
+        </div>
+      </div>
 
-    <button type="button" class="cancelar" (click)="limpiarFechas()">
-      Todo el historial
-    </button>
+      @if (!kardexCuadra) {
+        <p class="ui-mensaje aviso" role="status">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span>
+            El saldo de la última línea no coincide con el stock actual del producto. Hubo un cambio de
+            stock que no quedó registrado como movimiento: conviene revisarlo antes de usar este kardex.
+          </span>
+        </p>
+      }
+    }
+
+    <!-- HU-40: elegir un producto es el estado inicial, no un error -->
+    <app-estado-vista [estado]="estadoVista" textoCargando="Cargando el kardex…"
+                      textoError="No se pudo cargar el kardex." [textoVacio]="textoVacio"
+                      [detalle]="estadoVista === 'error' ? mensajeError : detalleVacio"
+                      (reintentar)="consultar()"></app-estado-vista>
+
+    @if (estadoVista === 'listo' && kardex) {
+      <div class="ui-tabla-contenedor">
+        <table class="ui-tabla">
+          <caption class="ui-visualmente-oculto">Kardex de {{ kardex.producto }}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Motivo</th>
+              <th scope="col" class="numero">Entrada</th>
+              <th scope="col" class="numero">Salida</th>
+              <th scope="col" class="numero">Saldo</th>
+              <th scope="col" class="numero">Costo unit.</th>
+              <th scope="col" class="numero">Valorizado</th>
+              <th scope="col">Usuario</th>
+              <th scope="col">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Saldo anterior al primer asiento: deja claro con que existencia arranca el historial. -->
+            <tr class="fila-inicial">
+              <th scope="row" colspan="4">Saldo inicial</th>
+              <td class="numero"><strong>{{ kardex.saldoInicial }}</strong></td>
+              <td colspan="4"></td>
+            </tr>
+
+            @for (l of kardex.lineas; track l.id) {
+              <tr [ngClass]="claseEstado(l.estado)">
+                <td class="fecha">{{ l.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  {{ l.motivoNombre || l.motivo }}
+                  @if (l.observacion) { <small class="tenue">{{ l.observacion }}</small> }
+                </td>
+                <td class="numero entrada">{{ l.entrada ?? '' }}</td>
+                <td class="numero salida">{{ l.salida ?? '' }}</td>
+                <td class="numero"><strong>{{ l.saldo }}</strong></td>
+                <td class="numero">{{ l.costoUnitario | number:'1.2-2' }}</td>
+                <td class="numero">{{ l.valorizado | number:'1.2-2' }}</td>
+                <td>{{ l.usuario }}</td>
+                <td>
+                  <span class="ui-insignia" [class.exito]="l.estado === 'REGISTRADO'"
+                        [class.peligro]="l.estado === 'ANULADO'" [class.info]="l.estado === 'COMPENSACION'">
+                    {{ l.estado }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
 
   </div>
 
-  <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
-
-  <p class="ayuda" *ngIf="cargando">Cargando el kardex...</p>
-
-  <p class="ayuda" *ngIf="!kardex && !cargando && !mensajeError">
-    Seleccione un producto para ver su kardex.
-  </p>
-
-  <ng-container *ngIf="kardex">
-
-    <!-- Encabezado del producto -->
-    <div class="tarjetas">
-      <div class="tarjeta">
-        <span class="etiqueta">Producto</span>
-        <strong>{{ kardex.producto }}</strong>
-        <small *ngIf="kardex.sku">{{ kardex.sku }}</small>
-      </div>
-      <div class="tarjeta">
-        <span class="etiqueta">Stock actual</span>
-        <strong>{{ kardex.stockActual }}</strong>
-        <small>unidades</small>
-      </div>
-      <div class="tarjeta">
-        <span class="etiqueta">Costo promedio</span>
-        <strong>S/ {{ kardex.costoPromedio | number:'1.2-2' }}</strong>
-        <small>ponderado</small>
-      </div>
-      <div class="tarjeta">
-        <span class="etiqueta">Valorizado</span>
-        <strong>S/ {{ kardex.valorizado | number:'1.2-2' }}</strong>
-        <small>stock por costo</small>
-      </div>
-    </div>
-
-    <div class="aviso" *ngIf="!kardexCuadra">
-      El saldo de la ultima linea no coincide con el stock actual del producto.
-      Eso indica que hubo un cambio de stock que no quedo registrado como
-      movimiento, y conviene revisarlo antes de usar este kardex.
-    </div>
-
-    <table>
-
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Motivo</th>
-          <th class="numero">Entrada</th>
-          <th class="numero">Salida</th>
-          <th class="numero">Saldo</th>
-          <th class="numero">Costo unit.</th>
-          <th class="numero">Valorizado</th>
-          <th>Usuario</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-
-      <tbody>
-
-        <!-- Saldo anterior al primer asiento: deja claro con que existencia
-             arranca el historial. -->
-        <tr class="fila-inicial">
-          <td colspan="4"><em>Saldo inicial</em></td>
-          <td class="numero"><strong>{{ kardex.saldoInicial }}</strong></td>
-          <td colspan="4"></td>
-        </tr>
-
-        <tr *ngFor="let l of kardex.lineas" [ngClass]="claseEstado(l.estado)">
-          <td>{{ l.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
-
-          <td>
-            {{ l.motivoNombre || l.motivo }}
-            <small class="observacion" *ngIf="l.observacion">{{ l.observacion }}</small>
-          </td>
-
-          <td class="numero entrada">{{ l.entrada ?? '' }}</td>
-          <td class="numero salida">{{ l.salida ?? '' }}</td>
-          <td class="numero"><strong>{{ l.saldo }}</strong></td>
-          <td class="numero">{{ l.costoUnitario | number:'1.2-2' }}</td>
-          <td class="numero">{{ l.valorizado | number:'1.2-2' }}</td>
-          <td>{{ l.usuario }}</td>
-
-          <td>
-            <span class="estado" [ngClass]="'estado-' + (l.estado || '')">
-              {{ l.estado }}
-            </span>
-          </td>
-        </tr>
-
-        <tr *ngIf="kardex.lineas.length === 0">
-          <td colspan="9" class="vacio">
-            Este producto no tiene movimientos en el periodo seleccionado.
-          </td>
-        </tr>
-
-      </tbody>
-
-    </table>
-
-  </ng-container>
-
-</div>
+</section>

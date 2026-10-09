@@ -1,5 +1,4 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -10,10 +9,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule
-  ],
+  imports: [FormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css'
 })
@@ -31,6 +27,7 @@ export class LoginComponent implements OnInit {
   mensajeError = '';
   mensajeAviso = '';
   enviando = false;
+  mostrarPassword = false;
 
   ngOnInit(): void {
     const motivo = this.ruta.snapshot.queryParamMap.get('motivo');

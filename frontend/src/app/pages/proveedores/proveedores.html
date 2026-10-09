@@ -1,118 +1,97 @@
-<div class="contenedor">
-  <h1>Gestión de Proveedores</h1>
+<section class="ui-pagina">
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-truck" aria-hidden="true"></i> Proveedores</h1>
+      <p class="ui-subtitulo">Empresas que abastecen el almacén. El RUC y el correo no se pueden repetir.</p>
+    </div>
+  </header>
 
-  <div class="formulario">
-    <h2>{{ editando ? 'Editar Proveedor' : 'Nuevo Proveedor' }}</h2>
+  <form class="ui-tarjeta formulario" (ngSubmit)="guardar()" aria-labelledby="tituloFormulario">
+    <h2 id="tituloFormulario" class="ui-tarjeta-titulo">{{ editando ? 'Editar proveedor' : 'Nuevo proveedor' }}</h2>
 
-    <!-- Contenedor en grilla -->
-    <div class="campos-grid">
-      <!-- Fila 1: Nombre, RUC, Dirección -->
-      <div class="campo">
-        <h5>Nombre del proveedor</h5>
-        <input
-          type="text"
-          placeholder="Nombre"
-          [(ngModel)]="proveedor.nombre"
-          (input)="mensajeError = ''">
-      </div>
-      <div class="campo">
-        <h5>RUC</h5>
-        <input
-          type="text"
-          placeholder="RUC"
-          [(ngModel)]="proveedor.ruc"
-          (input)="mensajeError = ''">
-      </div>
-      <div class="campo">
-        <h5>Dirección</h5>
-        <input
-          type="text"
-          placeholder="Dirección"
-          [(ngModel)]="proveedor.direccion"
-          (input)="mensajeError = ''">
-      </div>
-
-      <!-- Fila 2: Teléfono (1 columna) y Correo (ocupa 2 columnas) -->
-      <div class="campo">
-        <h5>Teléfono</h5>
-        <input
-          type="text"
-          placeholder="Teléfono"
-          [(ngModel)]="proveedor.telefono"
-          (input)="mensajeError = ''">
-      </div>
-      <div class="campo ancho-doble">
-        <h5>Correo</h5>
-        <input
-          type="email"
-          placeholder="Correo"
-          [(ngModel)]="proveedor.correo"
-          (input)="mensajeError = ''">
-      </div>
+    <div class="campos">
+      <label class="ui-campo">Nombre del proveedor
+        <input type="text" name="nombre" placeholder="Razón social" autocomplete="organization"
+               [(ngModel)]="proveedor.nombre" (input)="mensajeError = ''">
+      </label>
+      <label class="ui-campo">RUC
+        <input type="text" name="ruc" placeholder="11 dígitos" inputmode="numeric" maxlength="11"
+               [(ngModel)]="proveedor.ruc" (input)="mensajeError = ''">
+      </label>
+      <label class="ui-campo">Dirección
+        <input type="text" name="direccion" placeholder="Av., calle, distrito" autocomplete="street-address"
+               [(ngModel)]="proveedor.direccion" (input)="mensajeError = ''">
+      </label>
+      <label class="ui-campo">Teléfono
+        <input type="tel" name="telefono" placeholder="9 dígitos" inputmode="numeric" maxlength="9"
+               autocomplete="tel" [(ngModel)]="proveedor.telefono" (input)="mensajeError = ''">
+      </label>
+      <label class="ui-campo ancho-doble">Correo
+        <input type="email" name="correo" placeholder="ventas@empresa.com" autocomplete="email"
+               [(ngModel)]="proveedor.correo" (input)="mensajeError = ''">
+      </label>
     </div>
 
-    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+    @if (mensajeError) {
+      <p class="ui-mensaje peligro" role="alert">
+        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
+      </p>
+    }
 
-    <div class="botones">
-      <button class="guardar" (click)="guardar()">Guardar</button>
-      <button class="cancelar" (click)="limpiar()">Cancelar</button>
+    <div class="ui-acciones">
+      <button type="submit" class="ui-boton primario">
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar
+      </button>
+      <button type="button" class="ui-boton secundario" (click)="limpiar()">Cancelar</button>
     </div>
-  </div>
+  </form>
 
+  <section class="ui-tarjeta lista" aria-labelledby="tituloLista">
+    <h2 id="tituloLista" class="ui-tarjeta-titulo">Proveedores registrados</h2>
 
-    <table>
+    <app-estado-vista [estado]="estadoLista" textoCargando="Consultando los proveedores…"
+                      textoError="No se pudieron cargar los proveedores." [detalle]="estadoLista === 'error' ? errorCarga : 'Registre el primero con el formulario de arriba.'"
+                      textoVacio="Aún no hay proveedores registrados." (reintentar)="listar()"></app-estado-vista>
 
-        <thead>
-
+    @if (estadoLista === 'listo') {
+      <div class="ui-tabla-contenedor">
+        <table class="ui-tabla">
+          <caption class="ui-visualmente-oculto">Proveedores registrados</caption>
+          <thead>
             <tr>
-
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>RUC</th>
-                <th>Dirección</th>
-                <th>Teléfono</th>
-                <th>Correo</th>
-                <th>Acciones</th>
-
+              <th scope="col" class="numero">ID</th>
+              <th scope="col">Nombre</th>
+              <th scope="col">RUC</th>
+              <th scope="col">Dirección</th>
+              <th scope="col">Teléfono</th>
+              <th scope="col">Correo</th>
+              <th scope="col"><span class="ui-visualmente-oculto">Acciones</span></th>
             </tr>
-
-        </thead>
-
-        <tbody>
-
-            <tr *ngFor="let p of proveedores">
-
-                <td>{{p.id}}</td>
-                <td>{{p.nombre}}</td>
-                <td>{{p.ruc}}</td>
-                <td>{{p.direccion}}</td>
-                <td>{{p.telefono}}</td>
-                <td>{{p.correo}}</td>
-
-                <td>
-
-                    <button
-                        class="editar"
-                        (click)="editar(p)">
-
-                        Editar
-
-                    </button>
-
-                    <button
-                        class="eliminar"
-                        (click)="eliminar(p.id!)">
-
-                        Eliminar
-
-                    </button>
-
+          </thead>
+          <tbody>
+            @for (p of proveedores; track p.id) {
+              <tr [class.editando]="editando && p.id === proveedor.id">
+                <td class="numero tenue">{{ p.id }}</td>
+                <td>{{ p.nombre }}</td>
+                <td class="cifra">{{ p.ruc }}</td>
+                <td>{{ p.direccion }}</td>
+                <td class="cifra">{{ p.telefono }}</td>
+                <td>{{ p.correo }}</td>
+                <td class="acciones">
+                  <button type="button" class="ui-boton fantasma chico" (click)="editar(p)"
+                          [attr.aria-label]="'Editar ' + p.nombre">
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i> Editar
+                  </button>
+                  <button type="button" class="ui-boton fantasma chico eliminar" (click)="eliminar(p.id!)"
+                          [attr.aria-label]="'Eliminar ' + p.nombre">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar
+                  </button>
                 </td>
-
-            </tr>
-
-        </tbody>
-
-    </table>
-
-</div>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

@@ -38,10 +38,14 @@ public class InventarioController {
         this.kardex = kardex;
     }
 
-    /** HU-17: valor del inventario al costo promedio ponderado. */
+    /**
+     * HU-17: valor del inventario al costo promedio ponderado.
+     * HU-28: con el parámetro fecha, valor al cierre de ese día.
+     */
     @GetMapping("/valorizacion")
-    public ValorizacionResponse valorizacion() {
-        return valorizacion.calcular();
+    public ValorizacionResponse valorizacion(@RequestParam(required = false) String fecha) {
+        LocalDate corte = comoFecha(fecha);
+        return corte == null ? valorizacion.calcular() : valorizacion.calcularAlCorte(corte);
     }
 
     /** HU-20: productos que alcanzaron su umbral de reposición. */

@@ -33,7 +33,7 @@ class ProductoServiceTest {
         categorias = mock(CategoriaRepository.class);
         servicio = new ProductoService(productos, categorias, mock(ProveedorRepository.class),
                 mock(MovimientoRepository.class), mock(AjusteInventarioRepository.class),
-                mock(KardexService.class));
+                mock(KardexService.class), mock(AuditoriaService.class));
         when(productos.save(any(Producto.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 

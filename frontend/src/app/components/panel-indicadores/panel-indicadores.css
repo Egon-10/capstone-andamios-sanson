@@ -1,0 +1,364 @@
+:host {
+  /* Paleta validada: categórica (identidad de la serie) y de estado (nivel). */
+  --serie-entrada: #2a78d6;
+  --serie-salida: #eb6834;
+  --estado-critico: #d03b3b;
+  --estado-serio: #ec835a;
+  --estado-alerta: #fab219;
+  --texto-primario: #1e293b;
+  --texto-secundario: #475569;
+  --texto-tenue: #64748b;
+  --rejilla: #e2e8f0;
+  --superficie: #ffffff;
+  display: block;
+  margin-bottom: 28px;
+}
+
+.panel {
+  font-family: Arial, sans-serif;
+  color: var(--texto-primario);
+}
+
+h2 {
+  color: #1e3c72;
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+
+h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--texto-primario);
+}
+
+/* HU-23: tiles */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.tile {
+  background: var(--superficie);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 4px solid transparent;
+}
+
+.tile.principal {
+  background: #1e3c72;
+}
+
+.tile.principal .tile-etiqueta,
+.tile.principal .tile-nota {
+  color: #c7d2fe;
+}
+
+.tile.principal .tile-valor {
+  color: #fff;
+}
+
+.tile.atencion {
+  border-left-color: var(--estado-alerta);
+}
+
+.tile-etiqueta {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  font-weight: 700;
+  color: var(--texto-tenue);
+}
+
+.tile-valor {
+  font-size: 24px;
+  color: var(--texto-primario);
+}
+
+.tile-nota {
+  font-size: 12px;
+  color: var(--texto-tenue);
+}
+
+/* Bloques */
+.bloque {
+  background: var(--superficie);
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+  margin-bottom: 16px;
+}
+
+.bloque-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.controles {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.segmentado {
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+  display: inline-flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segmentado button {
+  background: #fff;
+  border: none;
+  padding: 6px 11px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--texto-secundario);
+}
+
+.segmentado button + button {
+  border-left: 1px solid #cbd5e1;
+}
+
+.segmentado button.activo {
+  background: #1e3c72;
+  color: #fff;
+  font-weight: 600;
+}
+
+.enlace {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.resumen-tendencia {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--texto-secundario);
+  margin: 0 0 8px;
+}
+
+.resumen-tendencia strong {
+  color: var(--texto-primario);
+  margin-right: 10px;
+}
+
+.resumen-tendencia .periodo {
+  color: var(--texto-tenue);
+  margin-left: auto;
+}
+
+.clave {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* Gráfico */
+.grafico {
+  position: relative;
+}
+
+svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.rejilla line {
+  stroke: var(--rejilla);
+  stroke-width: 1;
+}
+
+.rejilla text,
+.eje-x {
+  fill: var(--texto-tenue);
+  font-size: 10px;
+}
+
+.barra.entrada,
+.muestra.entrada,
+.clave.entrada,
+.trazo.entrada {
+  fill: var(--serie-entrada);
+  background: var(--serie-entrada);
+}
+
+.barra.salida,
+.muestra.salida,
+.clave.salida,
+.trazo.salida {
+  fill: var(--serie-salida);
+  background: var(--serie-salida);
+}
+
+.atenuado .barra {
+  opacity: .35;
+}
+
+.zona {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.zona:focus {
+  outline: none;
+  fill: rgba(30, 60, 114, .06);
+  stroke: #1e3c72;
+  stroke-width: 1;
+}
+
+.tooltip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, .15);
+  padding: 7px 10px;
+  font-size: 12px;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.tooltip-fecha {
+  color: var(--texto-tenue);
+  font-size: 11px;
+}
+
+.tooltip-fila {
+  color: var(--texto-secundario);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tooltip-fila strong {
+  color: var(--texto-primario);
+}
+
+/* Clave de línea en el tooltip, no una caja */
+.trazo {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+}
+
+.leyenda {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--texto-secundario);
+  margin-top: 4px;
+}
+
+.leyenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.muestra {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* Tablas */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  color: var(--texto-tenue);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--rejilla);
+}
+
+td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.numero {
+  text-align: right;
+}
+
+td small {
+  color: var(--texto-tenue);
+  margin-left: 4px;
+}
+
+.contador {
+  font-size: 12px;
+  color: var(--texto-tenue);
+}
+
+/* HU-25: el nivel lleva ícono y etiqueta; el color no carga el significado solo */
+.nivel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--texto-primario);
+}
+
+.nivel-AGOTADO i {
+  color: var(--estado-critico);
+}
+
+.nivel-CRITICO i {
+  color: var(--estado-serio);
+}
+
+.nivel-BAJO i {
+  color: var(--estado-alerta);
+}
+
+.vacio {
+  color: var(--texto-tenue);
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.mensaje-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}

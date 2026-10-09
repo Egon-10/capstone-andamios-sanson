@@ -3,6 +3,7 @@ package com.proyecto.microservicio.service;
 import com.proyecto.microservicio.dto.LoginRequest;
 import com.proyecto.microservicio.dto.LoginResponse;
 import com.proyecto.microservicio.exception.CredencialesInvalidasException;
+import com.proyecto.microservicio.model.Acceso;
 import com.proyecto.microservicio.model.Rol;
 import com.proyecto.microservicio.model.TokenRevocado;
 import com.proyecto.microservicio.model.Usuario;
@@ -10,6 +11,7 @@ import com.proyecto.microservicio.repository.TokenRevocadoRepository;
 import com.proyecto.microservicio.repository.UsuarioRepository;
 import com.proyecto.microservicio.security.JwtProperties;
 import com.proyecto.microservicio.security.JwtService;
+import com.proyecto.microservicio.security.OrigenSolicitud;
 import com.proyecto.microservicio.security.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +25,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /** CP-03 (inicio de sesión) y CP-08 (cierre de sesión). */
@@ -34,6 +37,7 @@ class AuthServiceTest {
     private RefreshTokenService refreshTokens;
     private TokenRevocadoRepository revocados;
     private AuditoriaService auditoria;
+    private AccesoService accesos;
     private AuthService servicio;
     private Usuario ana;
 
@@ -41,12 +45,14 @@ class AuthServiceTest {
     void preparar() {
         usuarios = mock(UsuarioRepository.class);
         encoder = mock(PasswordEncoder.class);
+        when(encoder.encode(anyString())).thenReturn("hash-senuelo");
         jwtService = mock(JwtService.class);
         refreshTokens = mock(RefreshTokenService.class);
         revocados = mock(TokenRevocadoRepository.class);
         auditoria = mock(AuditoriaService.class);
+        accesos = mock(AccesoService.class);
         servicio = new AuthService(usuarios, encoder, jwtService, refreshTokens, revocados, auditoria,
-                new JwtProperties("clave-de-prueba-con-mas-de-treinta-y-dos-caracteres", 15, 30));
+                new JwtProperties("clave-de-prueba-con-mas-de-treinta-y-dos-caracteres", 15, 30), accesos);
 
         ana = new Usuario(5L, "Ana", "ana@andamios.pe", "$2a$10$hash", new Rol(1L, "ADMINISTRADOR"));
         ana.setNombreUsuario("ana.perez");
@@ -71,6 +77,7 @@ class AuthServiceTest {
         assertEquals(1800L, r.inactividadMaximaSegundos());
         assertEquals("ana@andamios.pe", r.usuario().correo());
         verify(auditoria).registrar("INICIO DE SESIÓN", 5L);
+        verify(accesos).registrar("ana@andamios.pe", ana, Acceso.EXITOSO, null, OrigenSolicitud.DESCONOCIDO);
     }
 
     @Test
@@ -93,6 +100,9 @@ class AuthServiceTest {
 
         assertEquals("Credenciales inválidas", ex.getMessage());
         verify(refreshTokens, never()).emitir(any());
+        // CP-33: el fallo queda en la bitácora con su causa real.
+        verify(accesos).registrar("ana@andamios.pe", ana, Acceso.FALLIDO, "Contraseña incorrecta",
+                OrigenSolicitud.DESCONOCIDO);
     }
 
     @Test
@@ -104,6 +114,11 @@ class AuthServiceTest {
                 () -> servicio.login(new LoginRequest("nadie@andamios.pe", "x")));
 
         assertEquals("Credenciales inválidas", ex.getMessage());
+        // Se compara contra un hash señuelo para que el tiempo de respuesta no
+        // revele que la cuenta no existe.
+        verify(encoder).matches("x", "hash-senuelo");
+        verify(accesos).registrar("nadie@andamios.pe", null, Acceso.FALLIDO, "Cuenta inexistente",
+                OrigenSolicitud.DESCONOCIDO);
     }
 
     @Test

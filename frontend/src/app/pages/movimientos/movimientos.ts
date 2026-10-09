@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -10,6 +10,7 @@ import { Motivo } from '../../models/motivo';
 import { ProductoService } from '../../services/producto.service';
 import { MovimientoService, MovimientoSolicitud } from '../../services/movimiento.service';
 import { MotivoService } from '../../services/motivo.service';
+import { AlertaService } from '../../services/alerta.service';
 
 /**
  * Pantalla de movimientos de inventario.
@@ -70,6 +71,9 @@ export class MovimientosComponent implements OnInit {
   fechaInicio = '';
   fechaFin = '';
   tipoFiltro = '';
+
+  /** HU-29: tras mover stock se actualizan las alertas sin esperar al siguiente minuto. */
+  private readonly alertas = inject(AlertaService);
 
   constructor(
     private readonly productoService: ProductoService,
@@ -193,6 +197,7 @@ export class MovimientosComponent implements OnInit {
         this.limpiarFormulario();
         this.listarProductos();
         this.listarMovimientos();
+        this.alertas.actualizar();
       },
       error: (e: HttpErrorResponse) => {
         this.guardando = false;
@@ -244,6 +249,7 @@ export class MovimientosComponent implements OnInit {
           this.cerrarAnulacion();
           this.listarProductos();
           this.listarMovimientos();
+          this.alertas.actualizar();
         },
         error: (e: HttpErrorResponse) => {
           this.guardando = false;

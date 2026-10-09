@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,6 +7,7 @@ import { Producto } from '../../models/producto';
 import { Ajuste } from '../../models/ajuste';
 import { ProductoService } from '../../services/producto.service';
 import { AjusteService } from '../../services/ajuste.service';
+import { AlertaService } from '../../services/alerta.service';
 
 /**
  * HU-16: ajustes de inventario por conteo fisico.
@@ -47,6 +48,9 @@ export class AjustesComponent implements OnInit {
   mensajeExito = '';
   errorCampo: { [campo: string]: string } = {};
   guardando = false;
+
+  /** HU-29: aprobar un ajuste mueve el stock: se actualizan las alertas. */
+  private readonly alertas = inject(AlertaService);
 
   constructor(
     private readonly productoService: ProductoService,
@@ -154,6 +158,7 @@ export class AjustesComponent implements OnInit {
         // tambien: si no se recarga, el proximo conteo se calcularia contra
         // un stock vencido.
         this.productoService.listar().subscribe(data => (this.productos = data));
+        this.alertas.actualizar();
       },
       error: (e: HttpErrorResponse) => {
         this.guardando = false;

@@ -1,8 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuditoriaService }
-from '../../services/auditoria.service';
 import { Categoria } from '../../models/categoria';
 import { CategoriaService } from '../../services/categoria.service';
 
@@ -28,8 +26,7 @@ export class CategoriasComponent implements OnInit {
   mensajeError = '';
 
   constructor(
-    private categoriaService: CategoriaService,
-    private auditoriaService: AuditoriaService
+    private categoriaService: CategoriaService
   ) {}
 
   ngOnInit(): void {
@@ -67,10 +64,6 @@ export class CategoriasComponent implements OnInit {
       )
       .subscribe(() => {
 
-    this.registrarAuditoria(
-      'EDITÓ la categoría: ' +
-      this.categoria.nombre
-    );
 
     this.listar();
 
@@ -83,10 +76,6 @@ export class CategoriasComponent implements OnInit {
       .crear(this.categoria)
       .subscribe(() => {
 
-    this.registrarAuditoria(
-      'CREÓ la categoría: ' +
-      this.categoria.nombre
-    );
 
     this.listar();
 
@@ -105,10 +94,7 @@ export class CategoriasComponent implements OnInit {
   }
 
   eliminar(id: number): void {
-    const categoriaEliminar =
-  this.categorias.find(
-    c => c.id === id
-  );
+
 
     if (confirm('¿Desea eliminar esta categoría?')) {
 
@@ -116,10 +102,6 @@ export class CategoriasComponent implements OnInit {
         .eliminar(id)
         .subscribe(() => {
 
-    this.registrarAuditoria(
-      'ELIMINÓ la categoría: ' +
-      categoriaEliminar?.nombre
-    );
 
     this.listar();
 });
@@ -136,27 +118,6 @@ export class CategoriasComponent implements OnInit {
 
   this.mensajeError = '';
 }
-registrarAuditoria(
-  accion: string
-): void {
+// La auditoria del catalogo la registra el servidor (correccion DEF-01).
 
-  const usuarioGuardado =
-    localStorage.getItem('usuario');
-
-  if (!usuarioGuardado) return;
-
-  const usuario =
-    JSON.parse(usuarioGuardado);
-
-  const auditoria = {
-    accion: accion,
-    usuario: {
-      id: usuario.id
-    }
-  };
-
-  this.auditoriaService
-    .crear(auditoria as any)
-    .subscribe();
-}
 }

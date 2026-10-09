@@ -125,6 +125,18 @@ jobs:
       - name: Repetir la migracion del Sprint 2 (debe ser idempotente)
         run: $MYSQL < database/03-sprint2-movimientos.sql
 
+      - name: Aplicar la migracion del Sprint 3
+        run: $MYSQL < database/04-sprint3-reportes-accesos.sql
+
+      - name: Repetir la migracion del Sprint 3 (debe ser idempotente)
+        run: $MYSQL < database/04-sprint3-reportes-accesos.sql
+
+      - name: Aplicar la migracion del Sprint 4
+        run: $MYSQL < database/05-sprint4-seguridad.sql
+
+      - name: Repetir la migracion del Sprint 4 (debe ser idempotente)
+        run: $MYSQL < database/05-sprint4-seguridad.sql
+
       - name: Verificar el esquema y los datos resultantes
         run: |
           set -euo pipefail
@@ -216,8 +228,22 @@ jobs:
           comprobar "productos cuyo kardex no cuadra" 0 \
             "$(consulta "SELECT COUNT(*) FROM ( SELECT p.id, p.stock - COALESCE(SUM(m.cantidad * CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE -1 END), 0) AS saldo_inicial FROM productos p LEFT JOIN movimientos m ON m.producto_id = p.id GROUP BY p.id, p.stock ) t WHERE t.saldo_inicial < 0;")"
 
+          echo "Sprint 3: valorizacion a fecha y bitacoras (HU-28, HU-31, HU-32)"
+          comprobar "existe movimientos.costo_promedio_resultante" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'inventario_andamios' AND table_name = 'movimientos' AND column_name = 'costo_promedio_resultante';")"
+          comprobar "existe usuarios.sesiones_validas_desde" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'inventario_andamios' AND table_name = 'usuarios' AND column_name = 'sesiones_validas_desde';")"
+          comprobar "existe la tabla accesos" 1 \
+            "$(consulta "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'inventario_andamios' AND table_name = 'accesos';")"
+
+          echo "Sprint 4: bloqueo y contrasena temporal (HU-35, HU-36, HU-37)"
+          for columna in intentos_fallidos bloqueado_hasta debe_cambiar_password fecha_cambio_password; do
+            comprobar "existe usuarios.$columna" 1 \
+              "$(consulta "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'inventario_andamios' AND table_name = 'usuarios' AND column_name = '$columna';")"
+          done
+
           echo "Integridad referencial"
-          comprobar "claves foraneas declaradas" 14 \
+          comprobar "claves foraneas declaradas" 15 \
             "$(consulta "SELECT COUNT(*) FROM information_schema.table_constraints WHERE table_schema = 'inventario_andamios' AND constraint_type = 'FOREIGN KEY';")"
 
           echo

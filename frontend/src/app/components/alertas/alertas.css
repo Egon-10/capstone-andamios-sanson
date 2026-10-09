@@ -1,0 +1,131 @@
+.alertas {
+  position: relative;
+}
+
+.campana {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto-tenue);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.campana.activa {
+  color: var(--color-primario);
+}
+
+.contador {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--color-primario);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.punto {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d03b3b;
+  border: 2px solid var(--superficie);
+}
+
+.panel {
+  color: var(--texto);
+  text-align: left;
+  font-weight: 400;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(380px, 92vw);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-elevada);
+  z-index: 900;
+  padding: var(--espacio-3);
+}
+
+.panel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--espacio-1) var(--espacio-2) var(--espacio-3);
+  border-bottom: 1px solid var(--borde);
+}
+
+.tenue {
+  color: var(--texto-tenue);
+  font-size: var(--texto-chico);
+}
+
+ul {
+  list-style: none;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+li {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: var(--espacio-2);
+  border-bottom: 1px solid var(--borde);
+  font-size: var(--texto-chico);
+}
+
+li.nueva {
+  background: var(--info-fondo);
+}
+
+.producto {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.producto small {
+  color: var(--texto-tenue);
+  font-weight: 400;
+}
+
+.nivel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 78px;
+  font-weight: 700;
+}
+
+.nivel.agotado { color: #d03b3b; }
+.nivel.critico { color: #c2410c; }
+.nivel.bajo { color: #92400e; }
+
+.vacio {
+  display: flex;
+  gap: var(--espacio-2);
+  align-items: center;
+  padding: var(--espacio-4) var(--espacio-2);
+  color: var(--exito);
+}
+
+.ver-todo {
+  margin-top: var(--espacio-3);
+  width: 100%;
+}

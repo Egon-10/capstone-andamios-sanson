@@ -1,3 +1,56 @@
+/* =====================================================================
+   Sistema de diseño de la aplicación (HU-39)
+   ---------------------------------------------------------------------
+   Los colores, espacios y radios se definen una sola vez como variables.
+   Las pantallas nuevas usan las clases ui-*; las anteriores se migran a
+   estas variables para que toda la aplicación se vea y se comporte igual.
+   ===================================================================== */
+
+:root {
+    /* Marca */
+    --color-primario: #1e3c72;
+    --color-primario-hover: #162e59;
+    --color-primario-suave: #e8eef8;
+    --color-acento: #2563eb;
+
+    /* Texto y superficies */
+    --texto: #0f172a;
+    --texto-suave: #475569;
+    --texto-tenue: #64748b;
+    --borde: #e2e8f0;
+    --borde-fuerte: #cbd5e1;
+    --fondo: #f1f5f9;
+    --superficie: #ffffff;
+    --superficie-alterna: #f8fafc;
+
+    /* Estados: cada uno con su fondo, y siempre acompañados de texto o icono */
+    --exito: #15803d;
+    --exito-fondo: #dcfce7;
+    --peligro: #b91c1c;
+    --peligro-fondo: #fef2f2;
+    --aviso: #92400e;
+    --aviso-fondo: #fffbeb;
+    --info: #1e40af;
+    --info-fondo: #eff6ff;
+
+    /* Medidas */
+    --espacio-1: 4px;
+    --espacio-2: 8px;
+    --espacio-3: 12px;
+    --espacio-4: 16px;
+    --espacio-5: 24px;
+    --espacio-6: 32px;
+    --radio: 8px;
+    --radio-chico: 6px;
+    --sombra: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.08);
+    --sombra-elevada: 0 10px 30px rgba(15, 23, 42, 0.18);
+    --foco: 0 0 0 3px rgba(37, 99, 235, 0.35);
+
+    --fuente: Arial, Helvetica, sans-serif;
+    --texto-chico: 0.8125rem;
+    --texto-base: 0.9375rem;
+}
+
 /* Reset */
 * {
     margin: 0;
@@ -5,13 +58,416 @@
     box-sizing: border-box;
 }
 
-/* Aplica a todo el cuerpo y al contenedor principal */
 html, body, app-root {
-    font-family: Arial, sans-serif !important;
+    font-family: var(--fuente) !important;
+    color: var(--texto);
+    background: var(--fondo);
 }
 
-/* Esto es un seguro: si algún framework interno le pone Times New Roman a los textos, 
-   le decimos que herede la fuente del body */
+/* Si algún componente externo impone otra fuente, se hereda la del cuerpo. */
 div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, textarea, button {
     font-family: inherit !important;
+}
+
+/* Foco visible en todo elemento interactivo (accesibilidad con teclado). */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow: var(--foco);
+}
+
+/* Oculto a la vista pero leído por los lectores de pantalla. */
+.ui-visualmente-oculto {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---------------------------------------------------------------------
+   Página
+   --------------------------------------------------------------------- */
+
+.ui-pagina {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-5);
+    max-width: 1280px;
+}
+
+.ui-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--espacio-4);
+}
+
+.ui-titulo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primario);
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-2);
+}
+
+.ui-subtitulo {
+    margin-top: var(--espacio-1);
+    color: var(--texto-tenue);
+    font-size: var(--texto-base);
+}
+
+.ui-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espacio-2);
+}
+
+.ui-tarjeta {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    padding: var(--espacio-5);
+}
+
+.ui-tarjeta-titulo {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--texto);
+    margin-bottom: var(--espacio-4);
+}
+
+/* ---------------------------------------------------------------------
+   Formularios y filtros
+   --------------------------------------------------------------------- */
+
+.ui-filtros {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: var(--espacio-3) var(--espacio-4);
+    align-items: end;
+}
+
+.ui-campo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-1);
+    font-size: var(--texto-chico);
+    font-weight: 600;
+    color: var(--texto-suave);
+}
+
+.ui-campo input,
+.ui-campo select,
+.ui-campo textarea {
+    font-size: var(--texto-base);
+    font-weight: 400;
+    color: var(--texto);
+    background: var(--superficie);
+    border: 1px solid var(--borde-fuerte);
+    border-radius: var(--radio-chico);
+    padding: 9px 10px;
+    min-height: 40px;
+}
+
+.ui-campo textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.ui-campo input:disabled,
+.ui-campo select:disabled {
+    background: var(--superficie-alterna);
+    color: var(--texto-tenue);
+}
+
+.ui-ayuda {
+    font-weight: 400;
+    color: var(--texto-tenue);
+}
+
+.ui-error-campo {
+    font-weight: 400;
+    color: var(--peligro);
+}
+
+/* ---------------------------------------------------------------------
+   Botones
+   --------------------------------------------------------------------- */
+
+.ui-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--espacio-2);
+    min-height: 40px;
+    padding: 0 var(--espacio-4);
+    border-radius: var(--radio-chico);
+    border: 1px solid transparent;
+    font-size: var(--texto-base);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ui-boton:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.ui-boton.primario {
+    background: var(--color-primario);
+    color: #fff;
+}
+
+.ui-boton.primario:hover:not(:disabled) {
+    background: var(--color-primario-hover);
+}
+
+.ui-boton.secundario {
+    background: var(--superficie);
+    color: var(--color-primario);
+    border-color: var(--borde-fuerte);
+}
+
+.ui-boton.secundario:hover:not(:disabled) {
+    background: var(--color-primario-suave);
+}
+
+.ui-boton.peligro {
+    background: var(--peligro);
+    color: #fff;
+}
+
+.ui-boton.peligro:hover:not(:disabled) {
+    background: #991b1b;
+}
+
+.ui-boton.fantasma {
+    background: transparent;
+    color: var(--color-acento);
+    padding: 0 var(--espacio-2);
+}
+
+.ui-boton.fantasma:hover:not(:disabled) {
+    background: var(--color-primario-suave);
+}
+
+.ui-boton.chico {
+    min-height: 32px;
+    padding: 0 var(--espacio-3);
+    font-size: var(--texto-chico);
+}
+
+/* ---------------------------------------------------------------------
+   Tablas
+   --------------------------------------------------------------------- */
+
+.ui-tabla-contenedor {
+    overflow-x: auto;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+}
+
+.ui-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--texto-base);
+}
+
+.ui-tabla th {
+    text-align: left;
+    background: var(--superficie-alterna);
+    color: var(--texto-suave);
+    font-size: var(--texto-chico);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--borde);
+    white-space: nowrap;
+}
+
+.ui-tabla td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--borde);
+    vertical-align: top;
+}
+
+.ui-tabla tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.ui-tabla tbody tr:hover {
+    background: var(--superficie-alterna);
+}
+
+.ui-tabla .numero {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.ui-tabla .tenue {
+    color: var(--texto-tenue);
+    font-size: var(--texto-chico);
+}
+
+.ui-tabla th button.ordenar {
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ---------------------------------------------------------------------
+   Insignias de estado: color más texto, nunca solo color
+   --------------------------------------------------------------------- */
+
+.ui-insignia {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: var(--texto-chico);
+    font-weight: 700;
+    white-space: nowrap;
+    background: var(--superficie-alterna);
+    color: var(--texto-suave);
+    border: 1px solid var(--borde);
+}
+
+.ui-insignia.exito { background: var(--exito-fondo); color: var(--exito); border-color: transparent; }
+.ui-insignia.peligro { background: var(--peligro-fondo); color: var(--peligro); border-color: transparent; }
+.ui-insignia.aviso { background: var(--aviso-fondo); color: var(--aviso); border-color: transparent; }
+.ui-insignia.info { background: var(--info-fondo); color: var(--info); border-color: transparent; }
+
+/* ---------------------------------------------------------------------
+   Mensajes
+   --------------------------------------------------------------------- */
+
+.ui-mensaje {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--espacio-2);
+    padding: var(--espacio-3) var(--espacio-4);
+    border-radius: var(--radio-chico);
+    font-size: var(--texto-base);
+    border: 1px solid transparent;
+}
+
+.ui-mensaje.exito { background: var(--exito-fondo); color: var(--exito); }
+.ui-mensaje.peligro { background: var(--peligro-fondo); color: var(--peligro); border-color: #fecaca; }
+.ui-mensaje.aviso { background: var(--aviso-fondo); color: var(--aviso); border-color: #fde68a; }
+.ui-mensaje.info { background: var(--info-fondo); color: var(--info); }
+
+/* ---------------------------------------------------------------------
+   Paginación
+   --------------------------------------------------------------------- */
+
+.ui-paginacion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espacio-3);
+    font-size: var(--texto-chico);
+    color: var(--texto-tenue);
+}
+
+.ui-paginacion .controles {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-2);
+}
+
+/* ---------------------------------------------------------------------
+   Diálogo
+   --------------------------------------------------------------------- */
+
+.ui-velo {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--espacio-4);
+    z-index: 1000;
+}
+
+.ui-dialogo {
+    background: var(--superficie);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-elevada);
+    width: min(480px, 100%);
+    padding: var(--espacio-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-4);
+}
+
+.ui-dialogo h2 {
+    font-size: 1.15rem;
+    color: var(--texto);
+}
+
+.ui-dialogo .ui-acciones {
+    justify-content: flex-end;
+}
+
+/* ---------------------------------------------------------------------
+   Pestañas
+   --------------------------------------------------------------------- */
+
+.ui-pestanas {
+    display: flex;
+    gap: var(--espacio-1);
+    border-bottom: 1px solid var(--borde);
+}
+
+.ui-pestanas button {
+    all: unset;
+    cursor: pointer;
+    padding: 10px var(--espacio-4);
+    font-weight: 600;
+    color: var(--texto-tenue);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+}
+
+.ui-pestanas button[aria-selected="true"] {
+    color: var(--color-primario);
+    border-bottom-color: var(--color-primario);
+}
+
+.ui-pestanas button:focus-visible {
+    box-shadow: var(--foco);
+    border-radius: var(--radio-chico);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* El diálogo nativo (<dialog open>) se dibuja con el estilo del sistema, sin los márgenes del navegador. */
+dialog.ui-dialogo {
+    position: static;
+    margin: 0;
+    border: none;
+    color: var(--texto);
 }

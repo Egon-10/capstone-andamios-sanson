@@ -199,12 +199,14 @@ class ControladoresSprint2Test {
         KardexService kardex = mock(KardexService.class);
         InventarioController c = new InventarioController(valorizacion, kardex);
 
-        c.valorizacion();
+        c.valorizacion(null);
+        c.valorizacion("2026-01-31");
         c.porReponer();
         c.kardex(5L, "2026-01-01", "2026-01-31");
         c.kardex(5L, null, " ");
 
         verify(valorizacion).calcular();
+        verify(valorizacion).calcularAlCorte(java.time.LocalDate.of(2026, 1, 31));
         verify(valorizacion).porReponer();
         verify(kardex).obtener(5L, LocalDateTime.of(2026, 1, 1, 0, 0),
                 LocalDateTime.of(2026, 1, 31, 0, 0).with(LocalTime.MAX));
@@ -312,5 +314,26 @@ class ControladoresSprint2Test {
         pc.reactivar(2L);
         verify(proveedores).darDeBaja(2L);
         verify(proveedores).listar(false);
+    }
+
+    // --- indicadores (HU-23 a HU-25) ---
+
+    @Test
+    @DisplayName("HU-23 a HU-25: resumen, tendencia con fechas y stock critico")
+    void indicadores() {
+        com.proyecto.microservicio.service.IndicadoresService servicio =
+                mock(com.proyecto.microservicio.service.IndicadoresService.class);
+        IndicadoresController c = new IndicadoresController(servicio);
+
+        c.resumen();
+        c.stockCritico();
+        c.tendencia("2026-06-01", "2026-06-30");
+        c.tendencia(null, " ");
+
+        verify(servicio).indicadores();
+        verify(servicio).stockCritico();
+        verify(servicio).tendencia(java.time.LocalDate.of(2026, 6, 1), java.time.LocalDate.of(2026, 6, 30));
+        verify(servicio).tendencia(null, null);
+        assertThrows(ReglaNegocioException.class, () -> c.tendencia("junio", null));
     }
 }

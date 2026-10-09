@@ -64,6 +64,14 @@ public class Usuario {
     @JoinColumn(name = "rol_id")
     private Rol rol;
 
+    /**
+     * HU-31: los tokens emitidos antes de este instante ya no son válidos.
+     * Se fija al desactivar la cuenta y, desde el Sprint 4, al cambiar o
+     * restablecer la contraseña.
+     */
+    @Column(name = "sesiones_validas_desde")
+    private LocalDateTime sesionesValidasDesde;
+
     public Usuario() {
     }
 
@@ -126,4 +134,9 @@ public class Usuario {
 
     public Rol getRol() { return rol; }
     public void setRol(Rol rol) { this.rol = rol; }
+
+    public LocalDateTime getSesionesValidasDesde() { return sesionesValidasDesde; }
+    public void setSesionesValidasDesde(LocalDateTime sesionesValidasDesde) {
+        this.sesionesValidasDesde = sesionesValidasDesde;
+    }
 }

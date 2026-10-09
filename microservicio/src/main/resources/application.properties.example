@@ -36,7 +36,7 @@ server.error.include-message=never
 app.seguridad.intentos-maximos=5
 app.seguridad.minutos-bloqueo=15
 # Intentos de autenticacion admitidos por origen y por minuto
-app.seguridad.limite-intentos-por-minuto=10
+app.seguridad.limite-intentos-por-minuto=${LIMITE_INTENTOS_MINUTO:10}
 
 # Tamano maximo de los archivos de carga masiva
 spring.servlet.multipart.max-file-size=2MB

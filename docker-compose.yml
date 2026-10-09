@@ -56,6 +56,8 @@ services:
       # Detrás de Nginx la IP real llega en X-Forwarded-For. Es seguro porque
       # el backend solo es accesible desde la red interna.
       FORWARD_HEADERS: native
+      # Intentos de inicio de sesión por origen y por minuto (HU-38).
+      LIMITE_INTENTOS_MINUTO: ${LIMITE_INTENTOS_MINUTO:-10}
       TZ: America/Lima
     expose:
       - "8081"

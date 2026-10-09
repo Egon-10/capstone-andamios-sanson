@@ -19,7 +19,7 @@ jobs:
   verificacion:
     name: Compilacion, pruebas y base de datos
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
     services:
       mysql:
         image: mysql:8.0
@@ -64,7 +64,9 @@ jobs:
           # levanta el contexto completo y necesita MySQL. Antes se listaban
           # los sufijos que si se corrian, y una clase nueva con otro sufijo
           # (por ejemplo ControllerTest) quedaba fuera sin que nadie lo notara.
-          mvn -B test -Dtest='!MicroservicioApplicationTests' -Dsurefire.failIfNoSpecifiedTests=false | tee mvn.log
+          # Las pruebas de integracion (*IT) van en un paso aparte, despues de
+          # migrar la base, porque necesitan MySQL con el esquema completo.
+          mvn -B test -Dtest='!MicroservicioApplicationTests,!*IT' -Dsurefire.failIfNoSpecifiedTests=false | tee mvn.log
 
       - name: Backend - comprobar que las pruebas se ejecutaron
         working-directory: microservicio
@@ -77,6 +79,7 @@ jobs:
             echo "::error title=Pruebas del backend::Se ejecutaron ${total:-0} pruebas; se esperaban al menos 100."
             exit 1
           fi
+          echo "::notice title=Pruebas unitarias del backend::${total} pruebas ejecutadas sin fallas"
 
       - name: Backend - resumen de errores
         if: failure()
@@ -105,7 +108,19 @@ jobs:
 
       - name: Frontend - pruebas unitarias
         working-directory: frontend
-        run: npx ng test --watch=false --browsers=ChromeHeadless
+        run: |
+          set -o pipefail
+          npx ng test --watch=false --browsers=ChromeHeadless | tee ng-test.log
+          total=$(grep -oE "TOTAL: [0-9]+ SUCCESS" ng-test.log | tail -1 | grep -oE "[0-9]+")
+          echo "::notice title=Pruebas unitarias del frontend::${total:-0} pruebas ejecutadas sin fallas"
+
+      - name: Frontend - compilacion de produccion y presupuestos
+        working-directory: frontend
+        run: |
+          set -o pipefail
+          npx ng build --configuration production | tee ng-build.log
+          inicial=$(grep -E "Initial total" ng-build.log | sed -E 's/ +/ /g')
+          echo "::notice title=Tamano del paquete inicial::${inicial}"
 
       # ---------------------------------------------------------------
       # Base de datos
@@ -262,6 +277,40 @@ jobs:
           echo "Sin contrasenas en texto plano en database/."
 
       # ---------------------------------------------------------------
+      # Pruebas de integracion (Sprint 4)
+      # ---------------------------------------------------------------
+      # La aplicacion completa contra el MySQL ya migrado, por HTTP: filtros
+      # de seguridad, validadores del token, consultas nativas y
+      # transacciones reales. Cada prueba crea sus cuentas con contrasenas
+      # aleatorias y la clave de los tokens se genera en cada ejecucion.
+      - name: Backend - pruebas de integracion contra MySQL
+        working-directory: microservicio
+        env:
+          DB_URL: jdbc:mysql://127.0.0.1:3306/inventario_andamios
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: |
+          set -o pipefail
+          JWT_SECRET="$(openssl rand -base64 48 | tr -d '\n')"
+          echo "::add-mask::${JWT_SECRET}"
+          export JWT_SECRET
+          mvn -B test -Dtest='*IT' -Dsurefire.failIfNoSpecifiedTests=false | tee it.log
+          total=$(grep -E "Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+, Skipped: [0-9]+$" it.log | tail -1 | sed -E 's/.*Tests run: ([0-9]+).*/\1/')
+          if [ "${total:-0}" -lt 12 ]; then
+            echo "::error title=Pruebas de integracion::Se ejecutaron ${total:-0}; se esperaban al menos 12."
+            exit 1
+          fi
+          echo "::notice title=Pruebas de integracion::${total} pruebas contra MySQL sin fallas"
+
+      - name: Backend - resumen de las pruebas de integracion
+        if: failure()
+        working-directory: microservicio
+        run: |
+          [ -f it.log ] || exit 0
+          resumen=$(grep -E "\[ERROR\]|Tests run:|expected|Caused by" it.log | grep -v "^\[ERROR\] *$" | head -60 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+          echo "::error title=Resumen de las pruebas de integracion::${resumen}"
+
+      # ---------------------------------------------------------------
       # Analisis estatico con SonarCloud
       # ---------------------------------------------------------------
       # Va en este mismo job y no en un workflow aparte porque en esta cuenta
@@ -283,7 +332,7 @@ jobs:
         if: steps.sonar.outputs.configurado == 'si'
         working-directory: microservicio
         run: |
-          mvn -B verify -Dtest='!MicroservicioApplicationTests' -Dsurefire.failIfNoSpecifiedTests=false
+          mvn -B verify -Dtest='!MicroservicioApplicationTests,!*IT' -Dsurefire.failIfNoSpecifiedTests=false
           mvn -B dependency:copy-dependencies -DoutputDirectory=target/dependency
 
       - name: Medir cobertura del frontend
@@ -296,3 +345,80 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # ---------------------------------------------------------------
+      # Despliegue preliminar y pruebas de sistema (HU-42)
+      # ---------------------------------------------------------------
+      # Se levanta el sistema con el mismo docker-compose.yml que se usara en
+      # el servidor de la empresa: MySQL con el volcado y las migraciones,
+      # la API y Nginx. Los secretos se generan al azar en cada ejecucion.
+      - name: Despliegue preliminar - generar la configuracion
+        run: |
+          raiz=$(openssl rand -hex 16); clave=$(openssl rand -hex 16); jwt=$(openssl rand -base64 48 | tr -d '\n')
+          echo "::add-mask::${raiz}"; echo "::add-mask::${clave}"; echo "::add-mask::${jwt}"
+          {
+            echo "MYSQL_ROOT_PASSWORD=${raiz}"
+            echo "MYSQL_USER=inventario"
+            echo "MYSQL_PASSWORD=${clave}"
+            echo "JWT_SECRET=${jwt}"
+            echo "PUERTO_WEB=8080"
+            echo "CORS_ORIGENES=http://localhost:8080"
+            # Las pruebas inician sesion muchas veces desde la misma IP.
+            echo "LIMITE_INTENTOS_MINUTO=120"
+          } > .env
+
+      - name: Despliegue preliminar - construir y levantar los contenedores
+        run: |
+          inicio=$(date +%s)
+          docker compose up -d --build --wait --wait-timeout 600
+          docker compose ps
+          echo "::notice title=Despliegue preliminar::Tres contenedores sanos en $(( $(date +%s) - inicio )) s (db, backend, frontend)"
+
+      - name: Despliegue preliminar - crear las cuentas de prueba
+        run: |
+          python3 -m pip install --quiet bcrypt
+          python3 pruebas-sistema/crear-cuentas.py /tmp/cuentas-e2e.sql "$GITHUB_ENV"
+          set -a; . ./.env; set +a
+          docker compose exec -T db mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" inventario_andamios < /tmp/cuentas-e2e.sql
+          rm -f /tmp/cuentas-e2e.sql
+
+      - name: Pruebas de sistema - instalar Playwright
+        working-directory: pruebas-sistema
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Pruebas de sistema y aceptacion
+        working-directory: pruebas-sistema
+        env:
+          BASE_URL: http://localhost:8080
+        run: npx playwright test
+
+      - name: Pruebas de sistema - publicar resultados
+        if: always()
+        working-directory: pruebas-sistema
+        run: |
+          [ -d resultados ] && node resumen.mjs || echo "Las pruebas de sistema no llegaron a ejecutarse."
+
+      - name: Pruebas de sistema - guardar evidencias
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: pruebas-sistema
+          path: pruebas-sistema/resultados/
+          if-no-files-found: ignore
+
+      - name: Despliegue preliminar - registro de los contenedores
+        if: failure()
+        run: |
+          [ -f .env ] || exit 0
+          for servicio in backend frontend db; do
+            registro=$(docker compose logs --no-color --tail 60 "$servicio" 2>&1 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')
+            echo "::error title=Registro de ${servicio}::${registro}"
+          done
+
+      - name: Despliegue preliminar - detener
+        if: always()
+        run: |
+          [ -f .env ] && docker compose down -v || true
+          rm -f .env

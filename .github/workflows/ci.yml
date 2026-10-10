@@ -367,6 +367,9 @@ jobs:
             echo "LIMITE_INTENTOS_MINUTO=120"
           } > .env
 
+      - name: Despliegue preliminar - validar la configuracion de produccion con HTTPS
+        run: DOMINIO=inventario.ejemplo.test docker compose -f docker-compose.yml -f docker-compose.https.yml config -q
+
       - name: Despliegue preliminar - construir y levantar los contenedores
         run: |
           inicio=$(date +%s)

@@ -84,7 +84,7 @@ dd {
   gap: var(--espacio-4);
 }
 
-.clave,
+.completo,
 .mensajes,
 .formulario .ui-acciones {
   grid-column: 1 / -1;

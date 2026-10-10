@@ -1,217 +1,122 @@
-
-
-<div class="layout">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-
-        <div class="logo">
-
-            <img
-                src="images/logoempresa.png"
-                alt="Logo Empresa"
-                class="logo-img">
-
-            <h2>INVENTARIO</h2>
-
-            <p>Sistema de Gestión</p>
-
-        </div>
-
-        <nav>
-
-            <a routerLink="/dashboard" routerLinkActive="active">
-                <i class="fas fa-tachometer-alt"></i>
-                Dashboard
-            </a>
-
-            <a routerLink="/productos" routerLinkActive="active">
-                <i class="fas fa-box"></i>
-                Productos
-            </a>
-
-            <a
-                *ngIf="esAdministrador()"
-                routerLink="/categorias"
-                routerLinkActive="active">
-
-                <i class="fas fa-tags"></i>
-                Categorías
-
-            </a>
-
-            <a
-                *ngIf="esAdministrador() || esGerente()"
-                routerLink="/proveedores"
-                routerLinkActive="active">
-
-                <i class="fas fa-truck"></i>
-                Proveedores
-
-            </a>
-
-            <a
-                *ngIf="esAdministrador()"
-                routerLink="/usuarios"
-                routerLinkActive="active">
-
-                <i class="fas fa-users"></i>
-                Usuarios
-
-            </a>
-
-            <a
-                routerLink="/movimientos"
-                routerLinkActive="active">
-
-                <i class="fas fa-exchange-alt"></i>
-                Movimientos
-
-            </a>
-
-            <!-- Sprint 2 -->
-
-            <a routerLink="/kardex" routerLinkActive="active">
-                <i class="fas fa-book"></i>
-                Kardex
-            </a>
-
-            <a routerLink="/ajustes" routerLinkActive="active">
-                <i class="fas fa-balance-scale"></i>
-                Ajustes
-            </a>
-
-            <a
-                *ngIf="esAdministrador() || esGerente()"
-                routerLink="/valorizacion"
-                routerLinkActive="active">
-
-                <i class="fas fa-coins"></i>
-                Valorización
-
-            </a>
-
-            <a
-                *ngIf="esAdministrador() || esGerente()"
-                routerLink="/carga-masiva"
-                routerLinkActive="active">
-
-                <i class="fas fa-file-upload"></i>
-                Carga masiva
-
-            </a>
-
-            <a
-                *ngIf="esAdministrador() || esGerente()"
-                routerLink="/auditoria"
-                routerLinkActive="active">
-
-                <i class="fas fa-clipboard-check"></i>
-                Auditoría
-
-            </a>
-            <a routerLink="/reportes">
-
-    <i class="fas fa-file-pdf"></i>
-
-    Reportes
-
-</a>
-
-        </nav>
-
-    </aside>
-
-
-    <!-- CONTENIDO -->
-    <div class="main-container">
-
-        <!-- BARRA SUPERIOR -->
-        <header class="topbar">
-
-            <div class="topbar-left">
-
-                Sistema de Inventario
-
-            </div>
-
-            <div class="topbar-right">
-
-            <!-- HU-29: alertas de reposición -->
-            <app-alertas></app-alertas>
-
-            <div
-                class="user-menu"
-                (click)="menuAbierto = !menuAbierto">
-
-                <i class="fas fa-user-circle user-icon"></i>
-
-                <div class="user-info">
-
-                    <span class="user-name">
-                        {{ usuarioNombre }}
-                    </span>
-
-                    <span class="user-role">
-                        {{ usuarioRol }}
-                    </span>
-
-                </div>
-
-                <i class="fas fa-chevron-down"></i>
-
-                <div
-                    class="dropdown-menu"
-                    *ngIf="menuAbierto">
-
-                    <a
-                        routerLink="/perfil"
-                        (click)="menuAbierto = false">
-
-                        <i class="fas fa-user"></i>
-                        Mi Perfil
-
-                    </a>
-
-                    <button
-                        (click)="logout()">
-
-                        <i class="fas fa-sign-out-alt"></i>
-                        Cerrar sesión
-
-                    </button>
-
-                </div>
-
-            </div>
-
-            </div>
-
-        </header>
-
-        <!-- AVISO DE CIERRE POR INACTIVIDAD (HU-09) -->
-        <div
-            class="aviso-inactividad"
-            role="alertdialog"
-            *ngIf="inactividad.segundosRestantes() as segundos">
-
-            <span>
-                Su sesión se cerrará en {{ segundos }} s por inactividad.
-            </span>
-
-            <button type="button" (click)="seguirConectado()">
-                Seguir conectado
-            </button>
-
-        </div>
-
-        <!-- CONTENIDO DE LAS PÁGINAS -->
-        <main class="content">
-
-            <router-outlet></router-outlet>
-
-        </main>
-
+<div class="layout" (keydown.escape)="menuLateralAbierto = false">
+
+  <!-- Barra lateral -->
+  <aside class="sidebar" id="menu-lateral" [class.abierta]="menuLateralAbierto">
+    <div class="logo">
+      <img src="images/logoempresa.png" alt="Andamios Sansón" class="logo-img">
+      <p class="logo-titulo">INVENTARIO</p>
+      <p class="logo-sub">Sistema de Gestión</p>
     </div>
 
+    <nav aria-label="Menú principal">
+      <a routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <i class="fas fa-tachometer-alt" aria-hidden="true"></i> Dashboard
+      </a>
+      <a routerLink="/productos" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <i class="fas fa-box" aria-hidden="true"></i> Productos
+      </a>
+      @if (esAdministrador()) {
+        <a routerLink="/categorias" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <i class="fas fa-tags" aria-hidden="true"></i> Categorías
+        </a>
+      }
+      @if (esAdministrador() || esGerente()) {
+        <a routerLink="/proveedores" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <i class="fas fa-truck" aria-hidden="true"></i> Proveedores
+        </a>
+      }
+      @if (esAdministrador()) {
+        <a routerLink="/usuarios" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <i class="fas fa-users" aria-hidden="true"></i> Usuarios
+        </a>
+      }
+      <a routerLink="/movimientos" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <i class="fas fa-exchange-alt" aria-hidden="true"></i> Movimientos
+      </a>
+
+      <!-- Sprint 2 -->
+      <a routerLink="/kardex" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <i class="fas fa-book" aria-hidden="true"></i> Kardex
+      </a>
+      <a routerLink="/ajustes" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <i class="fas fa-balance-scale" aria-hidden="true"></i> Ajustes
+      </a>
+      @if (esAdministrador() || esGerente()) {
+        <a routerLink="/valorizacion" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <i class="fas fa-coins" aria-hidden="true"></i> Valorización
+        </a>
+        <a routerLink="/carga-masiva" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <i class="fas fa-file-upload" aria-hidden="true"></i> Carga masiva
+        </a>
+        <a routerLink="/auditoria" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <i class="fas fa-clipboard-check" aria-hidden="true"></i> Auditoría
+        </a>
+      }
+      <a routerLink="/reportes" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <i class="fas fa-file-pdf" aria-hidden="true"></i> Reportes
+      </a>
+    </nav>
+  </aside>
+
+  @if (menuLateralAbierto) {
+    <button type="button" class="velo-menu" aria-label="Cerrar el menú" (click)="menuLateralAbierto = false"></button>
+  }
+
+  <!-- Contenido -->
+  <div class="main-container">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <!-- En pantallas angostas el menú lateral se abre con este botón. -->
+        <button type="button" class="abrir-menu" (click)="menuLateralAbierto = !menuLateralAbierto"
+                [attr.aria-expanded]="menuLateralAbierto" aria-controls="menu-lateral"
+                [attr.aria-label]="menuLateralAbierto ? 'Cerrar el menú' : 'Abrir el menú'">
+          <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
+        Sistema de Inventario
+      </div>
+
+      <div class="topbar-right">
+        <!-- HU-29: alertas de reposición -->
+        <app-alertas></app-alertas>
+
+        <div class="usuario" (keydown.escape)="menuAbierto = false">
+          <button type="button" class="user-menu" (click)="menuAbierto = !menuAbierto"
+                  [attr.aria-expanded]="menuAbierto" aria-controls="menu-usuario">
+            <i class="fas fa-user-circle user-icon" aria-hidden="true"></i>
+            <span class="user-info">
+              <span class="user-name">{{ usuarioNombre }}</span>
+              <span class="user-role">{{ usuarioRol }}</span>
+            </span>
+            <i class="fas fa-chevron-down flecha" aria-hidden="true"></i>
+          </button>
+
+          @if (menuAbierto) {
+            <div id="menu-usuario" class="dropdown-menu">
+              <a routerLink="/perfil" (click)="menuAbierto = false">
+                <i class="fas fa-user" aria-hidden="true"></i> Mi Perfil
+              </a>
+              <button type="button" (click)="logout()">
+                <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- Aviso de cierre por inactividad (HU-09) -->
+    @if (inactividad.segundosRestantes(); as segundos) {
+      <div class="aviso-inactividad ui-mensaje aviso" role="alertdialog" aria-label="Aviso de inactividad">
+        <span>Su sesión se cerrará en {{ segundos }} s por inactividad.</span>
+        <button type="button" class="ui-boton primario chico" (click)="seguirConectado()">Seguir conectado</button>
+      </div>
+    }
+
+    <!-- Contenido de las páginas -->
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
 </div>

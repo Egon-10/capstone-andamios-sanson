@@ -1,36 +1,31 @@
 import { Routes } from '@angular/router';
-import { authChildGuard, authGuard, loginGuard } from './core/auth.guard';
-import { PerfilComponent } from './pages/perfil/perfil';
+
+import { authChildGuard, authGuard, cambioObligatorioGuard, loginGuard } from './core/auth.guard';
 import { LoginComponent } from './pages/login/login';
 import { LayoutComponent } from './components/layout/layout';
-import { AuditoriaComponent } from './pages/auditoria/auditoria';
-import { DashboardComponent } from './pages/dashboard/dashboard';
-import { ProductosComponent } from './pages/productos/productos';
-import { CategoriasComponent } from './pages/categorias/categorias';
-import { ProveedoresComponent } from './pages/proveedores/proveedores';
-import { UsuariosComponent } from './pages/usuarios/usuarios';
-import { MovimientosComponent } from './pages/movimientos/movimientos';
-import {
-  ReportesComponent
-}
-from './pages/reportes/reportes';
-import { AjustesComponent } from './pages/ajustes/ajustes';
-import { KardexComponent } from './pages/kardex/kardex';
-import { ValorizacionComponent } from './pages/valorizacion/valorizacion';
-import { CargaMasivaComponent } from './pages/carga-masiva/carga-masiva';
 
+const GESTION = ['ADMINISTRADOR', 'GERENTE'];
+const ADMINISTRADOR = ['ADMINISTRADOR'];
+
+/**
+ * Rutas de la aplicación.
+ *
+ * Cada pantalla se carga cuando se visita por primera vez (loadComponent) y no
+ * al abrir la aplicación: el inicio de sesión descarga solo lo que necesita y
+ * el panel aparece antes, sobre todo en la conexión móvil del almacén. Los
+ * roles de cada ruta replican los del servidor (HU-05), que es quien decide.
+ */
 export const routes: Routes = [
 
-  {
-    path: '',
-    redirectTo: 'login',
-    pathMatch: 'full'
-  },
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
 
+  { path: 'login', component: LoginComponent, canActivate: [loginGuard] },
+
+  // HU-36: con contraseña temporal, esta es la única pantalla disponible.
   {
-    path: 'login',
-    component: LoginComponent,
-    canActivate: [loginGuard]
+    path: 'cambiar-password',
+    canActivate: [cambioObligatorioGuard],
+    loadComponent: () => import('./pages/cambiar-password/cambiar-password').then(m => m.CambiarPasswordComponent)
   },
 
   {
@@ -38,92 +33,45 @@ export const routes: Routes = [
     component: LayoutComponent,
     canActivate: [authGuard],
     canActivateChild: [authChildGuard],
-
     children: [
-
+      { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard').then(m => m.DashboardComponent) },
+      { path: 'productos', loadComponent: () => import('./pages/productos/productos').then(m => m.ProductosComponent) },
       {
-        path: 'dashboard',
-        component: DashboardComponent
+        path: 'categorias', data: { roles: ADMINISTRADOR },
+        loadComponent: () => import('./pages/categorias/categorias').then(m => m.CategoriasComponent)
       },
-
       {
-        path: 'productos',
-        component: ProductosComponent
+        path: 'proveedores', data: { roles: GESTION },
+        loadComponent: () => import('./pages/proveedores/proveedores').then(m => m.ProveedoresComponent)
       },
-
       {
-        path: 'categorias',
-        component: CategoriasComponent,
-        data: { roles: ['ADMINISTRADOR'] }
+        path: 'usuarios', data: { roles: ADMINISTRADOR },
+        loadComponent: () => import('./pages/usuarios/usuarios').then(m => m.UsuariosComponent)
       },
-
+      { path: 'movimientos', loadComponent: () => import('./pages/movimientos/movimientos').then(m => m.MovimientosComponent) },
       {
-        path: 'proveedores',
-        component: ProveedoresComponent,
-        data: { roles: ['ADMINISTRADOR', 'GERENTE'] }
+        path: 'auditoria', data: { roles: GESTION },
+        loadComponent: () => import('./pages/auditoria/auditoria').then(m => m.AuditoriaComponent)
       },
+      { path: 'perfil', loadComponent: () => import('./pages/perfil/perfil').then(m => m.PerfilComponent) },
+      { path: 'reportes', loadComponent: () => import('./pages/reportes/reportes').then(m => m.ReportesComponent) },
 
+      // HU-16: el encargado registra el conteo; aprobar lo hacen administrador y gerente.
+      { path: 'ajustes', loadComponent: () => import('./pages/ajustes/ajustes').then(m => m.AjustesComponent) },
+      // HU-18: el kardex lo necesita también el encargado para operar.
+      { path: 'kardex', loadComponent: () => import('./pages/kardex/kardex').then(m => m.KardexComponent) },
+      // HU-17 y HU-28: la valorización es información económica del negocio.
       {
-        path: 'usuarios',
-        component: UsuariosComponent,
-        data: { roles: ['ADMINISTRADOR'] }
+        path: 'valorizacion', data: { roles: GESTION },
+        loadComponent: () => import('./pages/valorizacion/valorizacion').then(m => m.ValorizacionComponent)
       },
-
+      // HU-19: la carga masiva da de alta decenas de productos de una vez.
       {
-        path: 'movimientos',
-        component: MovimientosComponent
-      },
-
-      {
-  path: 'auditoria',
-  component: AuditoriaComponent,
-  data: { roles: ['ADMINISTRADOR', 'GERENTE'] }
-},
-{
-    path: 'perfil',
-    component: PerfilComponent
-},
-{
-    path:'reportes',
-    component: ReportesComponent
-},
-
-      // --- Sprint 2 ---
-
-      // HU-16: el encargado registra el conteo y lo ve; los botones de aprobar
-      // y rechazar solo aparecen para el administrador y el gerente, y el
-      // servidor los restringe de todos modos.
-      {
-        path: 'ajustes',
-        component: AjustesComponent
-      },
-
-      // HU-18: el kardex lo necesita tambien el encargado para operar.
-      {
-        path: 'kardex',
-        component: KardexComponent
-      },
-
-      // HU-17: la valorizacion es informacion economica del negocio.
-      {
-        path: 'valorizacion',
-        component: ValorizacionComponent,
-        data: { roles: ['ADMINISTRADOR', 'GERENTE'] }
-      },
-
-      // HU-19: la carga masiva da de alta decenas de productos de una vez, asi
-      // que queda al mismo nivel que el alta individual.
-      {
-        path: 'carga-masiva',
-        component: CargaMasivaComponent,
-        data: { roles: ['ADMINISTRADOR', 'GERENTE'] }
+        path: 'carga-masiva', data: { roles: GESTION },
+        loadComponent: () => import('./pages/carga-masiva/carga-masiva').then(m => m.CargaMasivaComponent)
       }
     ]
   },
 
-  {
-    path: '**',
-    redirectTo: 'login'
-  }
-
+  { path: '**', redirectTo: 'login' }
 ];

@@ -38,6 +38,7 @@ class AuthServiceTest {
     private TokenRevocadoRepository revocados;
     private AuditoriaService auditoria;
     private AccesoService accesos;
+    private BloqueoCuentaService bloqueo;
     private AuthService servicio;
     private Usuario ana;
 
@@ -51,8 +52,10 @@ class AuthServiceTest {
         revocados = mock(TokenRevocadoRepository.class);
         auditoria = mock(AuditoriaService.class);
         accesos = mock(AccesoService.class);
+        bloqueo = mock(BloqueoCuentaService.class);
+        when(bloqueo.registrarFallo(any())).thenReturn(new BloqueoCuentaService.Fallo(1, 5, null));
         servicio = new AuthService(usuarios, encoder, jwtService, refreshTokens, revocados, auditoria,
-                new JwtProperties("clave-de-prueba-con-mas-de-treinta-y-dos-caracteres", 15, 30), accesos);
+                new JwtProperties("clave-de-prueba-con-mas-de-treinta-y-dos-caracteres", 15, 30), accesos, bloqueo);
 
         ana = new Usuario(5L, "Ana", "ana@andamios.pe", "$2a$10$hash", new Rol(1L, "ADMINISTRADOR"));
         ana.setNombreUsuario("ana.perez");
@@ -101,7 +104,7 @@ class AuthServiceTest {
         assertEquals("Credenciales inválidas", ex.getMessage());
         verify(refreshTokens, never()).emitir(any());
         // CP-33: el fallo queda en la bitácora con su causa real.
-        verify(accesos).registrar("ana@andamios.pe", ana, Acceso.FALLIDO, "Contraseña incorrecta",
+        verify(accesos).registrar("ana@andamios.pe", ana, Acceso.FALLIDO, "Contraseña incorrecta (intento 1 de 5)",
                 OrigenSolicitud.DESCONOCIDO);
     }
 

@@ -11,6 +11,9 @@ import { ProductoService } from '../../services/producto.service';
 import { MovimientoService, MovimientoSolicitud } from '../../services/movimiento.service';
 import { MotivoService } from '../../services/motivo.service';
 import { AlertaService } from '../../services/alerta.service';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+
+type EstadoVista = EstadoVistaComponent['estado'];
 
 /**
  * Pantalla de movimientos de inventario.
@@ -36,7 +39,7 @@ import { AlertaService } from '../../services/alerta.service';
 @Component({
   selector: 'app-movimientos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, EstadoVistaComponent],
   templateUrl: './movimientos.html',
   styleUrl: './movimientos.css'
 })
@@ -71,6 +74,10 @@ export class MovimientosComponent implements OnInit {
   fechaInicio = '';
   fechaFin = '';
   tipoFiltro = '';
+
+  /** HU-40: estado de la consulta del historial, distinto de los errores del formulario. */
+  cargando = false;
+  errorCarga = '';
 
   /** HU-29: tras mover stock se actualizan las alertas sin esperar al siguiente minuto. */
   private readonly alertas = inject(AlertaService);
@@ -116,10 +123,44 @@ export class MovimientosComponent implements OnInit {
   }
 
   listarMovimientos(): void {
-    this.movimientoService.listar().subscribe(data => {
-      this.movimientos = data;
-      this.movimientosFiltrados = data;
+    this.cargando = true;
+    this.errorCarga = '';
+    this.movimientoService.listar().subscribe({
+      next: data => {
+        this.cargando = false;
+        this.movimientos = data;
+        this.movimientosFiltrados = data;
+      },
+      error: (e: HttpErrorResponse) => {
+        this.cargando = false;
+        this.errorCarga = e.error?.mensaje || 'Revise la conexion e intente de nuevo.';
+      }
     });
+  }
+
+  /** HU-40: lo que muestra el historial (cargando, error, vacio o la tabla). */
+  get estadoVista(): EstadoVista {
+    if (this.cargando) {
+      return 'cargando';
+    }
+    if (this.errorCarga) {
+      return 'error';
+    }
+    return this.movimientosFiltrados.length === 0 ? 'vacio' : 'listo';
+  }
+
+  /** Hay algun filtro aplicado: un historial vacio significa "sin coincidencias". */
+  get hayFiltros(): boolean {
+    return !!(this.fechaInicio || this.fechaFin || this.tipoFiltro);
+  }
+
+  /** Reintento desde el estado de error: repite la ultima consulta. */
+  recargar(): void {
+    if (this.hayFiltros) {
+      this.aplicarFiltros();
+    } else {
+      this.listarMovimientos();
+    }
   }
 
   /** Motivos aplicables al tipo de movimiento elegido. */
@@ -281,12 +322,20 @@ export class MovimientosComponent implements OnInit {
   }
 
   aplicarFiltros(): void {
+    this.cargando = true;
+    this.errorCarga = '';
     this.movimientoService
       .filtrar(this.fechaInicio, this.fechaFin, this.tipoFiltro)
       .subscribe({
-        next: data => (this.movimientosFiltrados = data),
-        error: (e: HttpErrorResponse) =>
-          this.mostrarError(e, 'No se pudieron filtrar los movimientos')
+        next: data => {
+          this.cargando = false;
+          this.movimientosFiltrados = data;
+        },
+        error: (e: HttpErrorResponse) => {
+          this.cargando = false;
+          this.mostrarError(e, 'No se pudieron filtrar los movimientos');
+          this.errorCarga = this.mensajeError;
+        }
       });
   }
 
@@ -294,6 +343,11 @@ export class MovimientosComponent implements OnInit {
     this.fechaInicio = '';
     this.fechaFin = '';
     this.tipoFiltro = '';
+    // Si la ultima consulta fallo, la lista guardada puede no estar al dia.
+    if (this.errorCarga) {
+      this.listarMovimientos();
+      return;
+    }
     this.movimientosFiltrados = this.movimientos;
   }
 

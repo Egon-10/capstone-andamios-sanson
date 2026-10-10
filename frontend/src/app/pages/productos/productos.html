@@ -1,379 +1,343 @@
-<div class="contenedor">
-  <h1>Gestión de Productos</h1>
+<section class="ui-pagina">
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> Productos</h1>
+      <p class="ui-subtitulo">Catálogo de andamios y accesorios, con su stock, costo y estado de reposición.</p>
+    </div>
+  </header>
 
-  <div class="formulario">
-    <h2>{{ editando ? 'Editar Producto' : 'Nuevo Producto' }}</h2>
+  <!-- Alta y edición -->
+  <form class="ui-tarjeta" (ngSubmit)="guardar()" aria-labelledby="tituloFormulario">
+    <h2 id="tituloFormulario" class="ui-tarjeta-titulo">{{ editando ? 'Editar producto' : 'Nuevo producto' }}</h2>
 
-    <!-- Contenedor en grilla -->
-    <div class="campos-grid">
-      <!-- Fila 1: SKU, Nombre, Descripción, Precio -->
-      <div class="campo">
-        <h5>Código SKU</h5>
-        <input type="text" placeholder="Ej. PLA-200" maxlength="20" [(ngModel)]="producto.sku" (input)="mensajeError = ''">
-      </div>
-      <div class="campo">
-        <h5>Nombre producto</h5>
-        <input type="text" placeholder="Nombre" [(ngModel)]="producto.nombre">
-      </div>
-      <div class="campo">
-        <h5>Descripción</h5>
-        <input type="text" placeholder="Descripción" [(ngModel)]="producto.descripcion">
-      </div>
-      <div class="campo">
-        <h5>Precio</h5>
-        <input type="number" placeholder="Precio" [(ngModel)]="producto.precio">
-      </div>
-
-      <!-- Fila 2: Stock, Stock mínimo, Categoría -->
-      <div class="campo">
-        <h5>Stock</h5>
-        <input type="number" placeholder="Stock" min="0" [(ngModel)]="producto.stock" [disabled]="editando"
-               title="En la edición, el stock solo cambia mediante movimientos" (input)="mensajeError = ''">
-      </div>
-      <div class="campo">
-        <h5>Stock mínimo</h5>
-        <input type="number" placeholder="Stock Mínimo" min="0" [(ngModel)]="producto.stockMinimo" (input)="mensajeError = ''">
-      </div>
-      <div class="campo">
-        <h5>Categoría</h5>
-        <select [(ngModel)]="producto.categoria">
-          <option *ngFor="let categoria of categorias" [ngValue]="categoria">{{categoria.nombre}}</option>
+    <div class="campos">
+      <label class="ui-campo">Código SKU
+        <input type="text" name="sku" placeholder="Ej.: PLA-200" maxlength="20" autocomplete="off"
+               [(ngModel)]="producto.sku" (input)="mensajeError = ''">
+      </label>
+      <label class="ui-campo">Nombre
+        <input type="text" name="nombre" placeholder="Nombre del producto" [(ngModel)]="producto.nombre">
+      </label>
+      <label class="ui-campo">Descripción
+        <input type="text" name="descripcion" placeholder="Material, medidas…" [(ngModel)]="producto.descripcion">
+      </label>
+      <label class="ui-campo">Precio (S/)
+        <input type="number" name="precio" min="0" step="0.01" [(ngModel)]="producto.precio">
+      </label>
+      <label class="ui-campo">Stock
+        <input type="number" name="stock" min="0" [(ngModel)]="producto.stock" [disabled]="editando"
+               aria-describedby="ayudaStock" (input)="mensajeError = ''">
+        @if (editando) {
+          <span id="ayudaStock" class="ui-ayuda">En la edición, el stock solo cambia mediante movimientos.</span>
+        }
+      </label>
+      <label class="ui-campo">Stock mínimo
+        <input type="number" name="stockMinimo" min="0" [(ngModel)]="producto.stockMinimo" (input)="mensajeError = ''">
+      </label>
+      <label class="ui-campo">Categoría
+        <select name="categoria" [(ngModel)]="producto.categoria" [compareWith]="mismoId">
+          <option [ngValue]="undefined" disabled>Seleccione…</option>
+          @for (categoria of categorias; track categoria.id) {
+            <option [ngValue]="categoria">{{ categoria.nombre }}</option>
+          }
         </select>
-      </div>
-
-      <!-- Fila 3: Proveedor (ocupa toda la fila) -->
-      <div class="campo ancho-completo">
-        <h5>Proveedor</h5>
-        <select [(ngModel)]="producto.proveedor">
-          <option *ngFor="let proveedor of proveedores" [ngValue]="proveedor">{{proveedor.nombre}}</option>
+      </label>
+      <label class="ui-campo">Proveedor
+        <select name="proveedor" [(ngModel)]="producto.proveedor" [compareWith]="mismoId">
+          <option [ngValue]="undefined" disabled>Seleccione…</option>
+          @for (proveedor of proveedores; track proveedor.id) {
+            <option [ngValue]="proveedor">{{ proveedor.nombre }}</option>
+          }
         </select>
-      </div>
+      </label>
     </div>
 
-    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+    @if (mensajeError && mensajeError !== errorCarga) {
+      <p class="ui-mensaje peligro" role="alert">
+        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
+      </p>
+    }
 
-    <div class="botones">
-      <button class="guardar" (click)="guardar()">Guardar</button>
-      <button class="cancelar" (click)="limpiar()">Cancelar</button>
+    <div class="ui-acciones">
+      <button type="submit" class="ui-boton primario">
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar
+      </button>
+      <button type="button" class="ui-boton secundario" (click)="limpiar()">Cancelar</button>
     </div>
-  </div>
-<div class="filtros-container">
+  </form>
 
-    <div class="busqueda">
-        <i class="fa-solid fa-magnifying-glass"></i>
+  <!-- HU-21: catálogo paginado en el servidor -->
+  <section class="ui-tarjeta lista" aria-labelledby="tituloCatalogo">
+    <h2 id="tituloCatalogo" class="ui-tarjeta-titulo">Catálogo</h2>
 
-        <label for="filtroTexto" class="solo-lectores">Buscar por SKU o nombre</label>
-        <input
-            id="filtroTexto"
-            type="text"
-            placeholder="Buscar por SKU o nombre..."
-            [(ngModel)]="textoBusqueda"
-            (keyup.enter)="aplicarFiltros()">
-    </div>
-
-    <div class="filtro">
-        <i class="fa-solid fa-layer-group"></i>
-
-        <label for="filtroCategoria" class="solo-lectores">Filtrar por categoría</label>
-        <select id="filtroCategoria" [(ngModel)]="categoriaFiltro" (ngModelChange)="aplicarFiltros()">
-            <option [ngValue]="undefined">Todas las categorías</option>
-            <option *ngFor="let categoria of categorias" [ngValue]="categoria.id">
-                {{ categoria.nombre }}
-            </option>
+    <form class="ui-filtros" role="search" (ngSubmit)="aplicarFiltros()">
+      <label class="ui-campo">Buscar
+        <input type="search" name="q" placeholder="SKU o nombre" [(ngModel)]="textoBusqueda">
+      </label>
+      <label class="ui-campo">Categoría
+        <select name="categoriaFiltro" [(ngModel)]="categoriaFiltro" (ngModelChange)="aplicarFiltros()">
+          <option [ngValue]="undefined">Todas</option>
+          @for (categoria of categorias; track categoria.id) {
+            <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+          }
         </select>
-    </div>
-
-    <div class="filtro">
-        <i class="fa-solid fa-truck"></i>
-
-        <label for="filtroProveedor" class="solo-lectores">Filtrar por proveedor</label>
-        <select id="filtroProveedor" [(ngModel)]="proveedorFiltro" (ngModelChange)="aplicarFiltros()">
-            <option [ngValue]="undefined">Todos los proveedores</option>
-            <option *ngFor="let proveedor of proveedores" [ngValue]="proveedor.id">
-                {{ proveedor.nombre }}
-            </option>
+      </label>
+      <label class="ui-campo">Proveedor
+        <select name="proveedorFiltro" [(ngModel)]="proveedorFiltro" (ngModelChange)="aplicarFiltros()">
+          <option [ngValue]="undefined">Todos</option>
+          @for (proveedor of proveedores; track proveedor.id) {
+            <option [ngValue]="proveedor.id">{{ proveedor.nombre }}</option>
+          }
         </select>
-    </div>
-
-    <!-- HU-20: ver de un golpe lo que hay que pedir -->
-    <label class="casilla">
-        <input type="checkbox" [(ngModel)]="soloPorReponer" (ngModelChange)="aplicarFiltros()">
+      </label>
+      <!-- HU-20: ver de un golpe lo que hay que pedir -->
+      <label class="casilla">
+        <input type="checkbox" name="soloPorReponer" [(ngModel)]="soloPorReponer" (ngModelChange)="aplicarFiltros()">
         Solo por reponer
-    </label>
-
-    <button type="button" class="buscar" (click)="aplicarFiltros()">Buscar</button>
-    <button type="button" class="cancelar" (click)="limpiarFiltros()">Limpiar</button>
-
-</div>
-
-<p class="resumen-lista" *ngIf="pagina">
-    {{ pagina.totalElementos }}
-    {{ pagina.totalElementos === 1 ? 'producto' : 'productos' }}
-    <span *ngIf="pagina.totalPaginas > 1">
-        &middot; página {{ pagina.pagina + 1 }} de {{ pagina.totalPaginas }}
-    </span>
-    <span class="cargando" *ngIf="cargandoLista">cargando...</span>
-</p>
-
-  <table>
-
-    <thead>
-
-      <tr>
-        <th class="ordenable" [attr.aria-sort]="ariaOrden('sku')">
-          <button type="button" class="orden" (click)="ordenarPor('sku')">
-            SKU
-            <i class="fa-solid" *ngIf="orden === 'sku'"
-               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
-          </button>
-        </th>
-        <th class="ordenable" [attr.aria-sort]="ariaOrden('nombre')">
-          <button type="button" class="orden" (click)="ordenarPor('nombre')">
-            Nombre
-            <i class="fa-solid" *ngIf="orden === 'nombre'"
-               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
-          </button>
-        </th>
-        <th class="ordenable" [attr.aria-sort]="ariaOrden('precio')">
-          <button type="button" class="orden" (click)="ordenarPor('precio')">
-            Precio
-            <i class="fa-solid" *ngIf="orden === 'precio'"
-               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
-          </button>
-        </th>
-        <th class="ordenable" [attr.aria-sort]="ariaOrden('stock')">
-          <button type="button" class="orden" (click)="ordenarPor('stock')">
-            Stock
-            <i class="fa-solid" *ngIf="orden === 'stock'"
-               [ngClass]="direccion === 'asc' ? 'fa-caret-up' : 'fa-caret-down'"></i>
-          </button>
-        </th>
-        <th>Costo prom.</th>
-        <th>Valorizado</th>
-        <th>Categoría</th>
-        <th>Proveedor</th>
-        <th>Estado</th>
-        <th>Acciones</th>
-      </tr>
-
-    </thead>
-
-    <tbody>
-
-      <tr *ngFor="let p of pagina?.contenido" [class.fila-reposicion]="p.necesitaReposicion">
-
-        <td>{{ p.sku || '—' }}</td>
-        <td>{{ p.nombre }}</td>
-        <td>{{ p.precio | number:'1.2-2' }}</td>
-        <td>{{ p.stock }}</td>
-        <td>{{ p.costoPromedio | number:'1.2-2' }}</td>
-        <td>{{ p.valorizado | number:'1.2-2' }}</td>
-        <td>{{ p.categoria }}</td>
-        <td>{{ p.proveedor || '—' }}</td>
-
-        <td>
-          <!-- HU-20: el umbral que manda es el punto de reposicion cuando
-               esta definido, y eso lo decide el servidor. -->
-          <span *ngIf="!p.necesitaReposicion" class="estado-normal">Disponible</span>
-          <span *ngIf="p.necesitaReposicion" class="estado-bajo">Reponer</span>
-        </td>
-
-        <td>
-          <button class="ficha" (click)="verFicha(p.id!)">Ficha</button>
-
-          <button *ngIf="puedeEditar()" class="editar" (click)="editar(p)">
-            Editar
-          </button>
-
-          <button *ngIf="esAdministrador()" class="eliminar" (click)="eliminar(p.id!)">
-            Eliminar
-          </button>
-        </td>
-
-      </tr>
-
-      <tr *ngIf="pagina && pagina.contenido.length === 0">
-        <td colspan="10" class="vacio">
-          Ningún producto coincide con la búsqueda.
-        </td>
-      </tr>
-
-    </tbody>
-
-  </table>
-
-  <!-- HU-21: paginación en servidor -->
-  <div class="paginacion" *ngIf="pagina && pagina.totalPaginas > 1">
-
-    <button type="button" [disabled]="pagina.primera" (click)="irAPagina(0)">
-      Primera
-    </button>
-    <button type="button" [disabled]="pagina.primera" (click)="irAPagina(pagina.pagina - 1)">
-      Anterior
-    </button>
-
-    <button
-      type="button"
-      *ngFor="let n of paginasVisibles"
-      [class.actual]="n === pagina.pagina"
-      (click)="irAPagina(n)">
-      {{ n + 1 }}
-    </button>
-
-    <button type="button" [disabled]="pagina.ultima" (click)="irAPagina(pagina.pagina + 1)">
-      Siguiente
-    </button>
-    <button type="button" [disabled]="pagina.ultima" (click)="irAPagina(pagina.totalPaginas - 1)">
-      Última
-    </button>
-
-  </div>
-
-  <!-- HU-22: ficha de detalle consolidada -->
-  <!-- Se cierra con el boton o con la tecla Escape. Cerrar al hacer clic
-       en el fondo dejaba fuera a quien navega con teclado. -->
-  <div class="fondo-modal" *ngIf="ficha">
-    <dialog class="modal-ficha" open aria-modal="true" aria-labelledby="tituloFicha">
-
-      <div class="cabecera-ficha">
-        <div>
-          <h2 id="tituloFicha">{{ ficha.nombre }}</h2>
-          <p class="sku-ficha">{{ ficha.sku }}</p>
-        </div>
-        <button type="button" class="cerrar" aria-label="Cerrar la ficha" (click)="cerrarFicha()">&times;</button>
-      </div>
-
-      <p class="descripcion-ficha" *ngIf="ficha.descripcion">{{ ficha.descripcion }}</p>
-
-      <div class="rejilla-ficha">
-        <div class="dato">
-          <span>Categoría</span>
-          <strong>{{ ficha.categoria?.nombre || '—' }}</strong>
-        </div>
-        <div class="dato">
-          <span>Proveedor</span>
-          <strong>{{ ficha.proveedor?.nombre || '—' }}</strong>
-        </div>
-        <div class="dato">
-          <span>Stock actual</span>
-          <strong>{{ ficha.existencias?.stock }}</strong>
-        </div>
-        <div class="dato">
-          <span>Costo promedio</span>
-          <strong>S/ {{ ficha.valorizacion?.costoPromedio | number:'1.2-2' }}</strong>
-        </div>
-        <div class="dato">
-          <span>Valorizado</span>
-          <strong>S/ {{ ficha.valorizacion?.valorizado | number:'1.2-2' }}</strong>
-        </div>
-        <div class="dato">
-          <span>Precio de venta</span>
-          <strong>S/ {{ ficha.valorizacion?.precioVenta | number:'1.2-2' }}</strong>
-        </div>
-      </div>
-
-      <div class="alerta-ficha" *ngIf="ficha.existencias?.necesitaReposicion">
-        Este producto alcanzó su umbral de reposición.
-      </div>
-
-      <div class="alerta-ficha pendiente" *ngIf="ficha.ajustesPendientes">
-        Tiene {{ ficha.ajustesPendientes }}
-        {{ ficha.ajustesPendientes === 1 ? 'conteo' : 'conteos' }}
-        pendiente de aprobación.
-      </div>
-
-      <!-- HU-20: umbrales editables sin reenviar el resto de la ficha -->
-      <h3>Umbrales de reposición</h3>
-
-      <div class="umbrales">
-        <div class="campo-umbral">
-          <label for="minimo">Stock mínimo</label>
-          <input id="minimo" type="number" min="0" [(ngModel)]="umbrales.stockMinimo">
-        </div>
-        <div class="campo-umbral">
-          <label for="reposicion">Punto de reposición</label>
-          <input id="reposicion" type="number" min="0" [(ngModel)]="umbrales.puntoReposicion">
-        </div>
-        <div class="campo-umbral">
-          <label for="maximo">Stock máximo</label>
-          <input id="maximo" type="number" min="0" [(ngModel)]="umbrales.stockMaximo">
-        </div>
-        <button
-          type="button"
-          class="guardar"
-          [disabled]="guardandoUmbrales"
-          (click)="guardarUmbrales()">
-          {{ guardandoUmbrales ? 'Guardando...' : 'Guardar' }}
+      </label>
+      <div class="ui-acciones">
+        <button type="submit" class="ui-boton primario">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar
         </button>
+        @if (hayFiltros()) {
+          <button type="button" class="ui-boton fantasma" (click)="limpiarFiltros()">Quitar filtros</button>
+        }
       </div>
+    </form>
 
-      <p class="ayuda-umbral">
-        El punto de reposición es el nivel en el que hay que pedir. Si no se
-        define, se usa el stock mínimo.
-        <span *ngIf="ficha.existencias?.faltanteHastaElMaximo">
-          Faltan {{ ficha.existencias?.faltanteHastaElMaximo }} unidades para
-          llegar al máximo.
-        </span>
+    <app-estado-vista [estado]="estadoLista" textoCargando="Consultando el catálogo…"
+                      textoError="No se pudo cargar el catálogo." [textoVacio]="textoVacio"
+                      [detalle]="estadoLista === 'error' ? errorCarga : detalleVacio"
+                      (reintentar)="aplicarFiltros(false)"></app-estado-vista>
+
+    @if (estadoLista === 'listo' && pagina) {
+      <p class="resumen" aria-live="polite">
+        {{ pagina.totalElementos }} {{ pagina.totalElementos === 1 ? 'producto' : 'productos' }}
+        @if (cargandoLista) { <span class="tenue">· actualizando…</span> }
       </p>
 
-      <p class="mensaje-exito" *ngIf="mensajeFicha">{{ mensajeFicha }}</p>
-      <p class="mensaje-error" *ngIf="errorFicha">{{ errorFicha }}</p>
-
-      <!-- Resumen del histórico -->
-      <h3>Histórico</h3>
-
-      <div class="rejilla-ficha">
-        <div class="dato">
-          <span>Movimientos</span>
-          <strong>{{ ficha.resumen?.movimientos }}</strong>
-        </div>
-        <div class="dato">
-          <span>Entradas</span>
-          <strong>{{ ficha.resumen?.entradas }}</strong>
-          <small>{{ ficha.resumen?.unidadesIngresadas }} unidades</small>
-        </div>
-        <div class="dato">
-          <span>Salidas</span>
-          <strong>{{ ficha.resumen?.salidas }}</strong>
-          <small>{{ ficha.resumen?.unidadesRetiradas }} unidades</small>
-        </div>
-        <div class="dato">
-          <span>Último movimiento</span>
-          <strong>
-            {{ ficha.resumen?.ultimoMovimiento
-                ? (ficha.resumen?.ultimoMovimiento | date:'dd/MM/yyyy')
-                : '—' }}
-          </strong>
-        </div>
+      <div class="ui-tabla-contenedor" [attr.aria-busy]="cargandoLista">
+        <table class="ui-tabla">
+          <caption class="ui-visualmente-oculto">Productos del catálogo</caption>
+          <thead>
+            <tr>
+              @for (col of columnasOrdenables; track col.campo) {
+                <th scope="col" [class.numero]="col.numero" [attr.aria-sort]="ariaOrden(col.campo)">
+                  <button type="button" class="ordenar" (click)="ordenarPor(col.campo)">
+                    {{ col.titulo }}
+                    @if (orden === col.campo) {
+                      <i class="fa-solid" [class.fa-caret-up]="direccion === 'asc'"
+                         [class.fa-caret-down]="direccion === 'desc'" aria-hidden="true"></i>
+                    }
+                  </button>
+                </th>
+              }
+              <th scope="col" class="numero">Costo prom.</th>
+              <th scope="col" class="numero">Valorizado</th>
+              <th scope="col">Categoría</th>
+              <th scope="col">Proveedor</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of pagina.contenido; track p.id) {
+              <tr [class.reponer]="p.necesitaReposicion">
+                <td><code>{{ p.sku || '—' }}</code></td>
+                <td>{{ p.nombre }}</td>
+                <td class="numero">{{ p.precio | number:'1.2-2' }}</td>
+                <td class="numero">{{ p.stock }}</td>
+                <td class="numero">{{ p.costoPromedio | number:'1.2-2' }}</td>
+                <td class="numero">{{ p.valorizado | number:'1.2-2' }}</td>
+                <td>{{ p.categoria }}</td>
+                <td>{{ p.proveedor || '—' }}</td>
+                <td>
+                  <!-- HU-20: el umbral que manda lo decide el servidor -->
+                  @if (p.necesitaReposicion) {
+                    <span class="ui-insignia aviso"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Reponer</span>
+                  } @else {
+                    <span class="ui-insignia exito"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Disponible</span>
+                  }
+                </td>
+                <td class="acciones">
+                  <button type="button" class="ui-boton secundario chico" (click)="verFicha(p.id!)"
+                          [attr.aria-label]="'Ver ficha de ' + p.nombre">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i> Ficha
+                  </button>
+                  @if (puedeEditar()) {
+                    <button type="button" class="ui-boton fantasma chico" (click)="editar(p)"
+                            [attr.aria-label]="'Editar ' + p.nombre">
+                      <i class="fa-solid fa-pen" aria-hidden="true"></i> Editar
+                    </button>
+                  }
+                  @if (esAdministrador()) {
+                    <button type="button" class="ui-boton fantasma chico eliminar" (click)="eliminar(p.id!)"
+                            [attr.aria-label]="'Eliminar ' + p.nombre">
+                      <i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
 
-      <h3>Últimos movimientos</h3>
+      @if (pagina.totalPaginas > 1) {
+        <nav class="ui-paginacion" aria-label="Paginación del catálogo">
+          <span aria-live="polite">Página {{ pagina.pagina + 1 }} de {{ pagina.totalPaginas }}</span>
+          <div class="controles">
+            <button type="button" class="ui-boton secundario chico" [disabled]="pagina.primera"
+                    (click)="irAPagina(0)" aria-label="Primera página">
+              <i class="fa-solid fa-angles-left" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="ui-boton secundario chico" [disabled]="pagina.primera"
+                    (click)="irAPagina(pagina.pagina - 1)" aria-label="Página anterior">
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            </button>
+            @for (n of paginasVisibles; track n) {
+              <button type="button" class="ui-boton chico" [class.primario]="n === pagina.pagina"
+                      [class.secundario]="n !== pagina.pagina"
+                      [attr.aria-current]="n === pagina.pagina ? 'page' : null"
+                      [attr.aria-label]="'Página ' + (n + 1)" (click)="irAPagina(n)">{{ n + 1 }}</button>
+            }
+            <button type="button" class="ui-boton secundario chico" [disabled]="pagina.ultima"
+                    (click)="irAPagina(pagina.pagina + 1)" aria-label="Página siguiente">
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="ui-boton secundario chico" [disabled]="pagina.ultima"
+                    (click)="irAPagina(pagina.totalPaginas - 1)" aria-label="Última página">
+              <i class="fa-solid fa-angles-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </nav>
+      }
+    }
+  </section>
 
-      <table class="tabla-ficha">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Motivo</th>
-            <th class="numero">Entrada</th>
-            <th class="numero">Salida</th>
-            <th class="numero">Saldo</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let l of ficha.ultimosMovimientos" [class.anulada]="l.estado === 'ANULADO'">
-            <td>{{ l.fecha | date:'dd/MM/yy HH:mm' }}</td>
-            <td>{{ l.motivoNombre || l.motivo }}</td>
-            <td class="numero">{{ l.entrada ?? '' }}</td>
-            <td class="numero">{{ l.salida ?? '' }}</td>
-            <td class="numero"><strong>{{ l.saldo }}</strong></td>
-          </tr>
-          <tr *ngIf="ficha.ultimosMovimientos.length === 0">
-            <td colspan="5" class="vacio">Sin movimientos registrados.</td>
-          </tr>
-        </tbody>
-      </table>
+  <!-- HU-22: ficha de detalle consolidada. Se cierra con el botón o con Escape;
+       cerrar al hacer clic en el fondo dejaba fuera a quien navega con teclado. -->
+  @if (ficha) {
+    <div class="ui-velo velo-ficha">
+      <dialog class="ui-dialogo ficha" open aria-modal="true" aria-labelledby="tituloFicha">
+        <div class="cabecera-ficha">
+          <div>
+            <h2 id="tituloFicha">{{ ficha.nombre }}</h2>
+            <p class="tenue"><code>{{ ficha.sku }}</code></p>
+          </div>
+          <button type="button" class="ui-boton fantasma" aria-label="Cerrar la ficha" (click)="cerrarFicha()">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
 
-    </dialog>
-  </div>
+        @if (ficha.descripcion) { <p class="descripcion">{{ ficha.descripcion }}</p> }
 
-</div>
+        <dl class="datos">
+          <div class="dato"><dt>Categoría</dt><dd>{{ ficha.categoria?.nombre || '—' }}</dd></div>
+          <div class="dato"><dt>Proveedor</dt><dd>{{ ficha.proveedor?.nombre || '—' }}</dd></div>
+          <div class="dato"><dt>Stock actual</dt><dd>{{ ficha.existencias?.stock }}</dd></div>
+          <div class="dato"><dt>Costo promedio</dt><dd>S/ {{ ficha.valorizacion?.costoPromedio | number:'1.2-2' }}</dd></div>
+          <div class="dato"><dt>Valorizado</dt><dd>S/ {{ ficha.valorizacion?.valorizado | number:'1.2-2' }}</dd></div>
+          <div class="dato"><dt>Precio de venta</dt><dd>S/ {{ ficha.valorizacion?.precioVenta | number:'1.2-2' }}</dd></div>
+        </dl>
+
+        @if (ficha.existencias?.necesitaReposicion) {
+          <p class="ui-mensaje aviso">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            Este producto alcanzó su umbral de reposición.
+          </p>
+        }
+        @if (ficha.ajustesPendientes) {
+          <p class="ui-mensaje info">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            Tiene {{ ficha.ajustesPendientes }} {{ ficha.ajustesPendientes === 1 ? 'conteo' : 'conteos' }}
+            pendiente de aprobación.
+          </p>
+        }
+
+        <!-- HU-20: umbrales editables sin reenviar el resto de la ficha -->
+        <h3>Umbrales de reposición</h3>
+        <div class="umbrales">
+          <label class="ui-campo">Stock mínimo
+            <input type="number" min="0" [(ngModel)]="umbrales.stockMinimo">
+          </label>
+          <label class="ui-campo">Punto de reposición
+            <input type="number" min="0" [(ngModel)]="umbrales.puntoReposicion">
+          </label>
+          <label class="ui-campo">Stock máximo
+            <input type="number" min="0" [(ngModel)]="umbrales.stockMaximo">
+          </label>
+          <button type="button" class="ui-boton primario" [disabled]="guardandoUmbrales" (click)="guardarUmbrales()">
+            {{ guardandoUmbrales ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+        <p class="ui-ayuda">
+          El punto de reposición es el nivel en el que hay que pedir. Si no se define, se usa el stock mínimo.
+          @if (ficha.existencias?.faltanteHastaElMaximo) {
+            Faltan {{ ficha.existencias?.faltanteHastaElMaximo }} unidades para llegar al máximo.
+          }
+        </p>
+
+        @if (mensajeFicha) {
+          <output class="ui-mensaje exito">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ mensajeFicha }}
+          </output>
+        }
+        @if (errorFicha) {
+          <p class="ui-mensaje peligro" role="alert">
+            <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ errorFicha }}
+          </p>
+        }
+
+        <h3>Histórico</h3>
+        <dl class="datos">
+          <div class="dato"><dt>Movimientos</dt><dd>{{ ficha.resumen?.movimientos }}</dd></div>
+          <div class="dato">
+            <dt>Entradas</dt><dd>{{ ficha.resumen?.entradas }}</dd>
+            <small>{{ ficha.resumen?.unidadesIngresadas }} unidades</small>
+          </div>
+          <div class="dato">
+            <dt>Salidas</dt><dd>{{ ficha.resumen?.salidas }}</dd>
+            <small>{{ ficha.resumen?.unidadesRetiradas }} unidades</small>
+          </div>
+          <div class="dato">
+            <dt>Último movimiento</dt>
+            <dd>{{ ficha.resumen?.ultimoMovimiento ? (ficha.resumen?.ultimoMovimiento | date:'dd/MM/yyyy') : '—' }}</dd>
+          </div>
+        </dl>
+
+        <h3>Últimos movimientos</h3>
+        <div class="ui-tabla-contenedor">
+          <table class="ui-tabla">
+            <caption class="ui-visualmente-oculto">Últimos movimientos del producto</caption>
+            <thead>
+              <tr>
+                <th scope="col">Fecha</th>
+                <th scope="col">Motivo</th>
+                <th scope="col" class="numero">Entrada</th>
+                <th scope="col" class="numero">Salida</th>
+                <th scope="col" class="numero">Saldo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of ficha.ultimosMovimientos; track $index) {
+                <tr [class.anulada]="l.estado === 'ANULADO'">
+                  <td>{{ l.fecha | date:'dd/MM/yy HH:mm' }}</td>
+                  <td>
+                    {{ l.motivoNombre || l.motivo }}
+                    @if (l.estado === 'ANULADO') { <span class="ui-visualmente-oculto">(anulado)</span> }
+                  </td>
+                  <td class="numero">{{ l.entrada ?? '' }}</td>
+                  <td class="numero">{{ l.salida ?? '' }}</td>
+                  <td class="numero"><strong>{{ l.saldo }}</strong></td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="tenue">Sin movimientos registrados.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </dialog>
+    </div>
+  }
+</section>

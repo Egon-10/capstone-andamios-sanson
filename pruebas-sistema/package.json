@@ -1,0 +1,16 @@
+{
+  "name": "pruebas-sistema",
+  "private": true,
+  "description": "Pruebas de sistema y de aceptación del inventario de Andamios Sansón, contra el despliegue completo (Nginx + API + MySQL).",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.56.1",
+    "@types/node": "22.15.3"
+  },
+  "overrides": {
+    "playwright-core": "1.56.1"
+  }
+}

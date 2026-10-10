@@ -1,137 +1,86 @@
-* {
-    box-sizing: border-box;
-    margin: 0;        /* añadido para eliminar márgenes */
-    padding: 0;       /* añadido para eliminar padding */
+.contenedor {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espacio-4);
+  background:
+    linear-gradient(135deg, rgba(30, 60, 114, 0.92), rgba(42, 82, 152, 0.88)),
+    url('/images/loginandamios.jpg') center / cover;
 }
 
-html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden; /* elimina scroll si no quieres que se mueva */
-}
-
-.login-page {
-    display: flex;
-    height: 100vh;              /* mejor que min-height para ocupar toda la ventana */
-    font-family: 'Poppins', sans-serif;
-
-    /* Fondo: gradiente + imagen correctamente combinados */
-    background: 
-        linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 58, 138, 0.85), rgba(37, 99, 235, 0.85)),
-        url('/images/loginandamios.jpg');
-    background-size: cover;
-    background-position: center;
-    background-blend-mode: normal;
-}
-
-/* PANEL IZQUIERDO */
-.login-left {
-    flex: 1;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 60px;
+.tarjeta {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  padding: var(--espacio-6) var(--espacio-5);
+  box-shadow: var(--sombra-elevada);
 }
 
 .logo {
-    width: 180px;
-    margin-bottom: 30px;
+  width: 96px;
+  height: auto;
+  align-self: center;
 }
 
-.login-left h1 {
-    font-size: 42px;
-    margin-bottom: 20px;
+h1 {
+  font-size: 1.4rem;
+  color: var(--color-primario);
+  text-align: center;
 }
 
-.login-left p {
-    font-size: 18px;
-    text-align: center;
-    max-width: 400px;
-    line-height: 1.7;
+.explicacion {
+  margin-top: var(--espacio-1);
+  color: var(--texto-suave);
+  text-align: center;
 }
 
-/* PANEL DERECHO */
-.login-right {
-    width: 500px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 40px;
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
 }
 
-/* TARJETA */
-.login-card {
-    width: 100%;
-    max-width: 400px;
-    padding: 45px;
-    border-radius: 25px;
-    background: rgba(255, 255, 255, 0.77);
-    backdrop-filter: blur(15px);
-    box-shadow: 0 20px 40px rgba(0,0,0,.25);
-    text-align: center;
+/* Etiqueta separada del campo para poder poner el botón de mostrar junto a él. */
+form label + .entrada,
+form label + .clave {
+  margin-bottom: var(--espacio-2);
 }
 
-.avatar {
-    width: 90px;
-    margin-bottom: 20px;
+.entrada {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: var(--texto-base);
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-chico);
 }
 
-.login-card h2 {
-    color: #0f172a;
-    margin-bottom: 10px;
+.entrada[aria-invalid="true"] {
+  border-color: var(--peligro);
 }
 
-.subtitulo {
-    color: #0f172a;
-    margin-bottom: 30px;
+.clave {
+  position: relative;
 }
 
-.login-card input {
-    width: 100%;
-    padding: 14px;
-    margin-bottom: 15px;
-    border: none;
-    border-radius: 12px;
-    font-size: 15px;
+.clave .entrada {
+  padding-right: 48px;
 }
 
-.login-card input:focus {
-    outline: none;
-    box-shadow: 0 0 0 4px rgba(255,255,255,.25);
+.ver {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-height: 40px;
+  width: 44px;
+  color: var(--texto-suave);
 }
 
-.login-card button {
-    width: 100%;
-    padding: 15px;
-    border: none;
-    border-radius: 12px;
-    background: #2563eb;
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: .3s;
-}
-
-.login-card button:hover {
-    background: #1d4ed8;
-    transform: translateY(-2px);
-}
-
-.error {
-    color: #bd0606;
-    margin-top: 15px;
-    font-size: 14px;
-}
-.aviso {
-    margin-top: 12px;
-    color: #8a6d00;
-    background: #fff7d6;
-    border: 1px solid #f0d77a;
-    border-radius: 6px;
-    padding: 8px 10px;
-    font-size: 14px;
+form .ui-boton.primario {
+  margin-top: var(--espacio-2);
+  min-height: 44px;
 }

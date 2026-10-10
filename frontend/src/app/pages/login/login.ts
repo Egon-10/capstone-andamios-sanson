@@ -1,5 +1,4 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -10,10 +9,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule
-  ],
+  imports: [FormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css'
 })
@@ -31,6 +27,7 @@ export class LoginComponent implements OnInit {
   mensajeError = '';
   mensajeAviso = '';
   enviando = false;
+  mostrarPassword = false;
 
   ngOnInit(): void {
     const motivo = this.ruta.snapshot.queryParamMap.get('motivo');
@@ -60,17 +57,34 @@ export class LoginComponent implements OnInit {
     this.authService
       .login({ correo: this.loginData.correo.trim(), password: this.loginData.password })
       .subscribe({
-        next: () => {
+        next: respuesta => {
           this.enviando = false;
-          this.router.navigate(['/dashboard']);
+          // HU-36: con contraseña temporal, lo primero es cambiarla.
+          void this.router.navigate([respuesta.usuario?.debeCambiarPassword ? '/cambiar-password' : '/dashboard']);
         },
         error: (error: HttpErrorResponse) => {
           this.enviando = false;
-          this.mensajeError = error.status === 401
-            ? 'Usuario o contraseña incorrectos.'
-            : 'No se pudo conectar con el servidor. Intente nuevamente.';
+          this.mensajeError = mensajeDeLogin(error);
         }
       });
+  }
+}
+
+/**
+ * Mensaje para cada rechazo del inicio de sesión. Las credenciales inválidas
+ * reciben siempre el mismo texto, sin decir si falló el usuario o la clave;
+ * el bloqueo (HU-35) y el límite de intentos (HU-38) muestran el mensaje del
+ * servidor, que dice cuánto esperar.
+ */
+export function mensajeDeLogin(error: HttpErrorResponse): string {
+  switch (error.status) {
+    case 401:
+      return 'Usuario o contraseña incorrectos.';
+    case 423:
+    case 429:
+      return error.error?.mensaje ?? 'Demasiados intentos. Espere unos minutos e intente nuevamente.';
+    default:
+      return 'No se pudo conectar con el servidor. Intente nuevamente.';
   }
 
 }

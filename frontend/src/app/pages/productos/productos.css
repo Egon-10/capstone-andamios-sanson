@@ -1,717 +1,134 @@
-.contenedor{
-
-  padding:30px;
-
-  font-family:Arial;
-}
-
-h1{
-
-  color:#1e3c72;
-
-  margin-bottom:20px;
-}
-
-.formulario{
-
-  background:white;
-
-  padding:20px;
-
-  border-radius:10px;
-
-  box-shadow:0 2px 10px rgba(0,0,0,.1);
-
-  margin-bottom:30px;
-}
-
-.formulario h2{
-
-  margin-bottom:20px;
-}
-
-.formulario input,
-.formulario select{
-
-  width: 90%;
-
-  padding:12px;
-
-  margin-bottom:15px;
-
-  border:1px solid #ccc;
-
-  border-radius:6px;
-}
-
-.botones{
-
-  display:flex;
-
-  gap:10px;
-}
-
-.guardar{
-
-  background:#3e88c1;
-
-  color:white;
-
-  border:none;
-
-  padding:12px 20px;
-
-  cursor:pointer;
-
-  border-radius:6px;
-}
-
-.cancelar{
-
-  background:gray;
-
-  color:white;
-
-  border:none;
-
-  padding:12px 20px;
-
-  cursor:pointer;
-
-  border-radius:6px;
-}
-
-table{
-
-  width:100%;
-
-  border-collapse:collapse;
-
-  background:white;
-
-  box-shadow:0 2px 10px rgba(0,0,0,.1);
-}
-
-th{
-
-  background:#1e3c72;
-
-  color:white;
-
-  padding:12px;
-}
-
-td{
-
-  padding:10px;
-
-  border-bottom:1px solid #ddd;
-}
-
-.editar{
-
-  background:#f6f60b;
-
-  color:rgb(3, 0, 0);
-
-  border:none;
-
-  padding:8px 12px;
-
-  border-radius:5px;
-
-  cursor:pointer;
-
-  margin-right:5px;
-}
-
-.eliminar{
-
-  background:red;
-
-  color:white;
-
-  border:none;
-
-  padding:8px 12px;
-
-  border-radius:5px;
-
-  cursor:pointer;
-}
-.mensaje-error {
-
-    background: #ffe5e5;
-
-    color: #c62828;
-
-    border: 1px solid #ef9a9a;
-
-    padding: 12px;
-
-    border-radius: 8px;
-
-    margin-top: 15px;
-
-    margin-bottom: 15px;
-
-    font-size: 14px;
-
-    font-weight: 600;
-}
-
-/*añadido*/
-/* Grilla para los campos del formulario */
-.campos-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 columnas iguales */
-  gap: 1rem 2rem; /* espacio vertical y horizontal */
-  margin-bottom: 1.5rem; /* separación con el mensaje de error */
-}
-
-/* Cada campo (etiqueta + input/select) */
-.campo {
+form.ui-tarjeta,
+.lista {
   display: flex;
   flex-direction: column;
+  gap: var(--espacio-4);
 }
 
-/* Estilos para las etiquetas h5 dentro de cada campo */
-.campo h5 {
-  margin: 0 0 0.25rem 0;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #333; /* o el color que prefieras */
+.lista .ui-tarjeta-titulo { margin-bottom: 0; }
+
+.campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--espacio-3) var(--espacio-4);
 }
-
-/* Los inputs y selects dentro de .campo */
-.campo input,
-.campo select {
-  width: 100%; /* para que ocupen todo el ancho de la columna */
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box; /* importante para que el padding no desborde */
-  /* Eliminamos el margin-bottom porque el gap del grid ya lo maneja */
-  margin-bottom: 0;
-}
-
-/* Si quieres que proveedor ocupe toda la fila */
-.campo.ancho-completo {
-  grid-column: 1 / -1; /* ocupa desde la primera hasta la última columna */
-}
-
-/* Responsive: en pantallas pequeñas, una sola columna */
-@media (max-width: 768px) {
-  .campos-grid {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-  .campo.ancho-completo {
-    grid-column: 1; /* vuelve a una columna */
-  }
-}
-/* ===== BUSCADOR ===== */
-
-.buscador {
-
-    display: flex;
-
-    justify-content: flex-end;
-
-    margin: 20px 0;
-}
-
-.buscador input {
-
-    width: 350px;
-
-    padding: 12px 18px;
-
-    border: 1px solid #dcdfe6;
-
-    border-radius: 10px;
-
-    font-size: 15px;
-
-    background-color: #fff;
-
-    box-shadow: 0 2px 5px rgba(0,0,0,.08);
-
-    transition: .3s;
-}
-
-.buscador input:focus {
-
-    outline: none;
-
-    border-color: #1e3c72;
-
-    box-shadow: 0 0 8px rgba(30,60,114,.25);
-}
-.filtros {
-
-    display: flex;
-
-    gap: 15px;
-
-    flex-wrap: wrap;
-
-    margin: 25px 0;
-}
-
-.filtros input,
-.filtros select {
-
-    padding: 12px 15px;
-
-    border: 1px solid #d1d5db;
-
-    border-radius: 8px;
-
-    font-size: 14px;
-
-    min-width: 250px;
-
-    background: white;
-
-    transition: .3s;
-}
-
-.filtros input:focus,
-.filtros select:focus {
-
-    outline: none;
-
-    border-color: #1e3c72;
-
-    box-shadow: 0 0 5px rgba(30,60,114,.3);
-}
-.filtros-container {
-
-    display: flex;
-    gap: 15px;
-    margin: 25px 0;
-    flex-wrap: wrap;
-}
-
-.busqueda,
-.filtro {
-
-    position: relative;
-    flex: 1;
-    min-width: 250px;
-}
-
-.busqueda i,
-.filtro i {
-
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #7a7a7a;
-}
-
-.busqueda input,
-.filtro select {
-
-    width: 80%;
-    padding: 12px 15px 12px 45px;
-    border: 1px solid #dcdcdc;
-    border-radius: 10px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    outline: none;
-    transition: 0.3s;
-    background: white;
-}
-
-.busqueda input:focus,
-.filtro select:focus {
-
-    border-color: #1e3c72;
-
-    box-shadow: 0 0 8px rgba(30, 60, 114, 0.25);
-}
-.estado-normal{
-    background: #d4edda;
-    color: #155724;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.estado-bajo{
-    background: #f8d7da;
-    color: #721c24;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: bold;
-}
-/* ------------------------------------------------------------------
-   Sprint 2: paginacion en servidor (HU-21) y ficha de detalle (HU-22)
-   ------------------------------------------------------------------ */
 
 .casilla {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #334155;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.filtros-container .buscar {
-  background: #1e3c72;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 9px 16px;
-  cursor: pointer;
+  gap: var(--espacio-2);
+  min-height: 40px;
+  font-size: var(--texto-chico);
   font-weight: 600;
-  font-size: 13px;
-}
-
-.filtros-container .cancelar {
-  background: #64748b;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 9px 16px;
+  color: var(--texto-suave);
   cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
 }
 
-.resumen-lista {
-  color: #475569;
-  font-size: 13px;
-  margin: 0 0 12px;
+.casilla input { width: 18px; height: 18px; accent-color: var(--color-primario); }
+
+.resumen,
+.tenue {
+  color: var(--texto-tenue);
+  font-size: var(--texto-chico);
 }
 
-.resumen-lista .cargando {
-  color: #94a3b8;
-  font-style: italic;
-  margin-left: 8px;
+code {
+  font-family: ui-monospace, Consolas, monospace !important;
+  font-size: var(--texto-chico);
 }
 
-/* Encabezados ordenables: el orden lo resuelve el servidor */
-th.ordenable {
-  cursor: pointer;
-  user-select: none;
-}
+.ui-tabla td { vertical-align: middle; }
+.ui-tabla th.numero .ordenar { flex-direction: row-reverse; }
+.ui-tabla tr.reponer td { background: var(--aviso-fondo); }
 
-th.ordenable:hover {
-  background: #2a4d8f;
-}
+.acciones { white-space: nowrap; }
+.acciones .ui-boton + .ui-boton { margin-left: var(--espacio-1); }
+.ui-boton.eliminar { color: var(--peligro); }
+.ui-boton.eliminar:hover:not(:disabled) { background: var(--peligro-fondo); }
 
-th.ordenable i {
-  margin-left: 4px;
-}
-
-.fila-reposicion td {
-  background: #fffbeb;
-}
-
-.vacio {
-  text-align: center;
-  color: #64748b;
-  padding: 24px;
-}
-
-button.ficha {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  padding: 6px 11px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  margin-right: 4px;
-}
-
-/* Paginacion */
-.paginacion {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  margin-top: 20px;
-  flex-wrap: wrap;
-}
-
-.paginacion button {
-  padding: 7px 13px;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 13px;
-  color: #475569;
-}
-
-.paginacion button.actual {
-  background: #1e3c72;
-  border-color: #1e3c72;
-  color: #fff;
-  font-weight: 700;
-}
-
-.paginacion button:disabled {
-  opacity: .45;
-  cursor: default;
-}
-
-/* Ficha de detalle */
-.fondo-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, .55);
-  display: flex;
+/* Ficha de detalle (HU-22) */
+.velo-ficha {
   align-items: flex-start;
-  justify-content: center;
-  padding: 32px 16px;
-  z-index: 60;
   overflow-y: auto;
 }
 
-.modal-ficha {
-  /* Se anulan los estilos por omision de <dialog>, que lo posicionan en
-     absoluto y le ponen borde: aqui lo centra el fondo. */
-  position: static;
-  margin: 0;
-  border: none;
-  color: inherit;
-  background: #fff;
-  border-radius: 12px;
-  padding: 28px;
-  max-width: 760px;
-  width: 100%;
-  box-shadow: 0 24px 48px rgba(15, 23, 42, .3);
-}
+.ui-dialogo.ficha { width: min(760px, 100%); }
 
 .cabecera-ficha {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 14px;
-  margin-bottom: 16px;
+  gap: var(--espacio-4);
+  padding-bottom: var(--espacio-3);
+  border-bottom: 1px solid var(--borde);
 }
 
-.cabecera-ficha h2 {
-  margin: 0;
-  color: #1e3c72;
-  font-size: 20px;
-}
+.cabecera-ficha h2 { color: var(--color-primario); }
 
-.sku-ficha {
-  margin: 2px 0 0;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: .5px;
-}
-
-.cerrar {
-  background: none;
-  border: none;
-  font-size: 28px;
-  line-height: 1;
-  color: #94a3b8;
-  cursor: pointer;
-  padding: 0 4px;
-}
-
-.descripcion-ficha {
-  color: #475569;
-  font-size: 14px;
-  margin: 0 0 18px;
+.descripcion {
+  color: var(--texto-suave);
   line-height: 1.5;
 }
 
-.modal-ficha h3 {
-  color: #334155;
-  font-size: 14px;
-  margin: 22px 0 10px;
+.ficha h3 {
+  margin-top: var(--espacio-2);
+  font-size: var(--texto-chico);
   text-transform: uppercase;
-  letter-spacing: .4px;
+  letter-spacing: 0.04em;
+  color: var(--texto-suave);
 }
 
-.rejilla-ficha {
+.datos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 14px;
+  gap: var(--espacio-3);
 }
 
 .dato {
-  background: #f8fafc;
-  padding: 12px 14px;
-  border-radius: 8px;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding: var(--espacio-3);
+  background: var(--superficie-alterna);
+  border-radius: var(--radio);
 }
 
-.dato span {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .4px;
-  color: #64748b;
+.dato dt {
+  font-size: 0.6875rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texto-tenue);
 }
 
-.dato strong {
-  font-size: 16px;
-  color: #1e3c72;
+.dato dd {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primario);
 }
 
 .dato small {
-  font-size: 11px;
-  color: #94a3b8;
+  font-size: 0.6875rem;
+  color: var(--texto-tenue);
 }
 
-.alerta-ficha {
-  background: #fffbeb;
-  border-left: 4px solid #f59e0b;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: #78350f;
-  border-radius: 6px;
-  margin-top: 14px;
-}
-
-.alerta-ficha.pendiente {
-  background: #eff6ff;
-  border-color: #2563eb;
-  color: #1e3a8a;
-}
-
-/* Umbrales editables (HU-20) */
 .umbrales {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: var(--espacio-3);
+  align-items: end;
 }
 
-.campo-umbral {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.ficha .ui-ayuda { font-size: var(--texto-chico); line-height: 1.5; }
 
-.campo-umbral label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #334155;
-}
-
-.campo-umbral input {
-  padding: 8px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 14px;
-  width: 130px;
-}
-
-.umbrales .guardar {
-  background: #15803d;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 9px 18px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.umbrales .guardar:disabled {
-  opacity: .6;
-  cursor: progress;
-}
-
-.ayuda-umbral {
-  color: #64748b;
-  font-size: 12px;
-  margin: 8px 0 0;
-  line-height: 1.5;
-}
-
-.tabla-ficha {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.tabla-ficha th {
-  background: #f1f5f9;
-  color: #334155;
-  padding: 9px 10px;
-  text-align: left;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .3px;
-}
-
-.tabla-ficha td {
-  padding: 9px 10px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.tabla-ficha th.numero,
-.tabla-ficha td.numero {
-  text-align: right;
-}
-
-.tabla-ficha tr.anulada td {
+tr.anulada td {
+  color: var(--texto-tenue);
   text-decoration: line-through;
-  text-decoration-color: #fca5a5;
-  color: #94a3b8;
 }
 
-.mensaje-exito {
-  color: #166534;
-  background: #dcfce7;
-  padding: 9px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  margin-top: 10px;
-}
-
-/* Etiqueta presente para los lectores de pantalla pero invisible: los
-   filtros ya se identifican por su icono y su texto de ejemplo. */
-.solo-lectores {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* El encabezado ordenable es un boton para que funcione tambien con teclado */
-th.ordenable .orden {
-  background: none;
-  border: none;
-  color: inherit;
-  font: inherit;
-  font-weight: inherit;
-  padding: 0;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-th.ordenable .orden:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+@media (max-width: 640px) {
+  .velo-ficha { padding: var(--espacio-2); }
+  .ui-dialogo.ficha { padding: var(--espacio-4); }
+  .umbrales { grid-template-columns: 1fr; }
+  .ui-paginacion { justify-content: center; }
 }

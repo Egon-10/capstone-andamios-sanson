@@ -1,96 +1,73 @@
-<div class="contenedor">
-
-    <h1>Gestión de Categorías</h1>
-
-    <div class="formulario">
-
-        <h2>
-
-            {{ editando ? 'Editar Categoría' : 'Nueva Categoría' }}
-
-        </h2>
-
-        <input
-            type="text"
-            placeholder="Nombre de la categoría"
-            [(ngModel)]="categoria.nombre">
-
-            <p
-  class="mensaje-error"
-  *ngIf="mensajeError">
-
-  {{ mensajeError }}
-
-</p>
-
-        <div class="botones">
-
-            <button
-                class="guardar"
-                (click)="guardar()">
-
-                Guardar
-
-            </button>
-
-            <button
-                class="cancelar"
-                (click)="limpiar()">
-
-                Cancelar
-
-            </button>
-
-        </div>
-
+<section class="ui-pagina">
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-tags" aria-hidden="true"></i> Categorías</h1>
+      <p class="ui-subtitulo">Agrupan los productos del catálogo para buscarlos y reportarlos.</p>
     </div>
+  </header>
 
-    <table>
+  <div class="distribucion">
+    <form class="ui-tarjeta formulario" (ngSubmit)="guardar()" aria-labelledby="tituloFormulario">
+      <h2 id="tituloFormulario" class="ui-tarjeta-titulo">{{ editando ? 'Editar categoría' : 'Nueva categoría' }}</h2>
 
-        <thead>
+      <label class="ui-campo">Nombre de la categoría
+        <input type="text" name="nombre" placeholder="Ej.: Andamios multidireccionales" autocomplete="off"
+               [(ngModel)]="categoria.nombre" [attr.aria-invalid]="mensajeError ? true : null">
+      </label>
 
-            <tr>
+      @if (mensajeError) {
+        <p class="ui-mensaje peligro" role="alert">
+          <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
+        </p>
+      }
 
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Acciones</th>
+      <div class="ui-acciones">
+        <button type="submit" class="ui-boton primario">
+          <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar
+        </button>
+        <button type="button" class="ui-boton secundario" (click)="limpiar()">Cancelar</button>
+      </div>
+    </form>
 
-            </tr>
+    <section class="ui-tarjeta lista" aria-labelledby="tituloLista">
+      <h2 id="tituloLista" class="ui-tarjeta-titulo">Categorías registradas</h2>
 
-        </thead>
+      <app-estado-vista [estado]="estadoLista" textoCargando="Consultando las categorías…"
+                        textoError="No se pudieron cargar las categorías." [detalle]="estadoLista === 'error' ? errorCarga : 'Registre la primera con el formulario.'"
+                        textoVacio="Aún no hay categorías registradas." (reintentar)="listar()"></app-estado-vista>
 
-        <tbody>
-
-            <tr *ngFor="let c of categorias">
-
-                <td>{{c.id}}</td>
-
-                <td>{{c.nombre}}</td>
-
-                <td>
-
-                    <button
-                        class="editar"
-                        (click)="editar(c)">
-
-                        Editar
-
+      @if (estadoLista === 'listo') {
+        <div class="ui-tabla-contenedor">
+          <table class="ui-tabla">
+            <caption class="ui-visualmente-oculto">Categorías registradas</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="numero">ID</th>
+                <th scope="col">Nombre</th>
+                <th scope="col"><span class="ui-visualmente-oculto">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of categorias; track c.id) {
+                <tr [class.editando]="editando && c.id === categoria.id">
+                  <td class="numero tenue">{{ c.id }}</td>
+                  <td>{{ c.nombre }}</td>
+                  <td class="acciones">
+                    <button type="button" class="ui-boton fantasma chico" (click)="editar(c)"
+                            [attr.aria-label]="'Editar ' + c.nombre">
+                      <i class="fa-solid fa-pen" aria-hidden="true"></i> Editar
                     </button>
-
-                    <button
-                        class="eliminar"
-                        (click)="eliminar(c.id!)">
-
-                        Eliminar
-
+                    <button type="button" class="ui-boton fantasma chico eliminar" (click)="eliminar(c.id!)"
+                            [attr.aria-label]="'Eliminar ' + c.nombre">
+                      <i class="fa-solid fa-trash" aria-hidden="true"></i> Eliminar
                     </button>
-
-                </td>
-
-            </tr>
-
-        </tbody>
-
-    </table>
-
-</div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+</section>

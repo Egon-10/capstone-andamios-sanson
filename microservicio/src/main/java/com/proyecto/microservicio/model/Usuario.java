@@ -72,6 +72,22 @@ public class Usuario {
     @Column(name = "sesiones_validas_desde")
     private LocalDateTime sesionesValidasDesde;
 
+    /** HU-35: intentos fallidos consecutivos desde el último acceso correcto. */
+    @Column(name = "intentos_fallidos", nullable = false)
+    private int intentosFallidos;
+
+    /** HU-35: la cuenta no admite inicios de sesión hasta este instante. */
+    @Column(name = "bloqueado_hasta")
+    private LocalDateTime bloqueadoHasta;
+
+    /** HU-36: la contraseña vigente es temporal y debe cambiarse al ingresar. */
+    @Column(name = "debe_cambiar_password", nullable = false)
+    private boolean debeCambiarPassword;
+
+    /** HU-37: último cambio de contraseña. */
+    @Column(name = "fecha_cambio_password")
+    private LocalDateTime fechaCambioPassword;
+
     public Usuario() {
     }
 
@@ -87,6 +103,11 @@ public class Usuario {
     /** Los registros anteriores al Sprint 1 no tienen estado: se consideran activos. */
     public boolean estaActivo() {
         return estado == null || ESTADO_ACTIVO.equals(estado);
+    }
+
+    /** HU-35: la cuenta está bloqueada en el instante indicado. */
+    public boolean estaBloqueado(LocalDateTime ahora) {
+        return bloqueadoHasta != null && ahora.isBefore(bloqueadoHasta);
     }
 
     public String getNombreCompleto() {
@@ -134,6 +155,18 @@ public class Usuario {
 
     public Rol getRol() { return rol; }
     public void setRol(Rol rol) { this.rol = rol; }
+
+    public int getIntentosFallidos() { return intentosFallidos; }
+    public void setIntentosFallidos(int intentosFallidos) { this.intentosFallidos = intentosFallidos; }
+
+    public LocalDateTime getBloqueadoHasta() { return bloqueadoHasta; }
+    public void setBloqueadoHasta(LocalDateTime bloqueadoHasta) { this.bloqueadoHasta = bloqueadoHasta; }
+
+    public boolean isDebeCambiarPassword() { return debeCambiarPassword; }
+    public void setDebeCambiarPassword(boolean debeCambiarPassword) { this.debeCambiarPassword = debeCambiarPassword; }
+
+    public LocalDateTime getFechaCambioPassword() { return fechaCambioPassword; }
+    public void setFechaCambioPassword(LocalDateTime fechaCambioPassword) { this.fechaCambioPassword = fechaCambioPassword; }
 
     public LocalDateTime getSesionesValidasDesde() { return sesionesValidasDesde; }
     public void setSesionesValidasDesde(LocalDateTime sesionesValidasDesde) {

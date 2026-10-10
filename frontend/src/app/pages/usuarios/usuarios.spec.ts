@@ -29,7 +29,7 @@ describe('UsuariosComponent', () => {
   }
 
   beforeEach(() => {
-    servicio = jasmine.createSpyObj('UsuarioService', ['buscar', 'cambiarEstado', 'registrar', 'actualizarParcial']);
+    servicio = jasmine.createSpyObj('UsuarioService', ['buscar', 'cambiarEstado', 'registrar', 'actualizarParcial', 'restablecerPassword', 'desbloquear']);
     servicio.buscar.and.returnValue(of(pagina([ana, luis, rosa])));
     servicio.cambiarEstado.and.returnValue(of({ ...luis, estado: 'INACTIVO' }));
     TestBed.configureTestingModule({
@@ -133,5 +133,51 @@ describe('UsuariosComponent', () => {
     expect(c.hayFiltros()).toBeTrue();
     c.limpiarFiltros();
     expect(c.hayFiltros()).toBeFalse();
+  });
+
+  it('CP-37: restablece la contraseña y muestra la temporal una sola vez', () => {
+    servicio.restablecerPassword.and.returnValue(of({ nombreUsuario: 'luis', passwordTemporal: 'Tmp#Clave2026xy' }));
+    const c = crear().componentInstance;
+    c.pedirRestablecimiento(luis);
+    c.confirmarRestablecimiento();
+    expect(servicio.restablecerPassword).toHaveBeenCalledWith(2);
+    expect(c.restablecimiento?.passwordTemporal).toBe('Tmp#Clave2026xy');
+    c.cerrarRestablecimiento();
+    expect(c.restablecimiento).toBeNull();
+  });
+
+  it('CP-37: copia la temporal al portapapeles', async () => {
+    const escribir = jasmine.createSpy('writeText').and.returnValue(Promise.resolve());
+    spyOnProperty(navigator, 'clipboard', 'get').and.returnValue({ writeText: escribir } as unknown as Clipboard);
+    const c = crear().componentInstance;
+    c.restablecimiento = { nombreUsuario: 'luis', passwordTemporal: 'Tmp#Clave2026xy' };
+    c.copiarTemporal();
+    await Promise.resolve();
+    expect(escribir).toHaveBeenCalledWith('Tmp#Clave2026xy');
+  });
+
+  it('CP-36: desbloquea una cuenta bloqueada', () => {
+    servicio.desbloquear.and.returnValue(of({ ...luis, bloqueado: false }));
+    const c = crear().componentInstance;
+    c.desbloquear({ ...luis, bloqueado: true });
+    expect(servicio.desbloquear).toHaveBeenCalledWith(2);
+    expect(c.mensajeExito).toContain('desbloqueó');
+  });
+
+  it('CP-38: el registro exige una contraseña que cumpla la política', () => {
+    const c = crear().componentInstance;
+    c.form = { ...c.form, nombres: 'Ana', apellidos: 'Pérez', correo: 'ana@a.pe', rolId: 1, area: 'LOGISTICA',
+      numeroDocumento: '45678912', nombreUsuario: 'ana.perez', password: 'Clave2026', confirmarPassword: 'Clave2026' };
+    c.guardar();
+    expect(c.errores['password']).toContain('requisitos');
+    expect(servicio.registrar).not.toHaveBeenCalled();
+  });
+
+  it('muestra la cuenta bloqueada y la clave temporal en la lista', () => {
+    servicio.buscar.and.returnValue(of(pagina([{ ...luis, bloqueado: true, bloqueadoHasta: '2026-10-08T15:30:00', debeCambiarPassword: true }])));
+    const texto = crear().nativeElement.textContent;
+    expect(texto).toContain('Bloqueada hasta 15:30');
+    expect(texto).toContain('Clave temporal');
+    expect(texto).toContain('Desbloquear');
   });
 });

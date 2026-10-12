@@ -18,6 +18,9 @@ public interface AjusteInventarioRepository extends JpaRepository<AjusteInventar
 
     List<AjusteInventario> findAllByOrderByFechaSolicitudDesc();
 
+    /** HU-23: cuantos conteos esperan aprobacion. */
+    long countByEstado(String estado);
+
     /**
      * Comprueba si el producto ya tiene un conteo sin resolver. Dos ajustes
      * pendientes sobre el mismo producto se calcularían contra el mismo stock

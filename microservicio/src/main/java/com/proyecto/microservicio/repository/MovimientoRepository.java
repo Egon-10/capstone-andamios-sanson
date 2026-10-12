@@ -2,6 +2,8 @@ package com.proyecto.microservicio.repository;
 
 import com.proyecto.microservicio.model.Movimiento;
 import com.proyecto.microservicio.model.KardexLineaDTO;
+import com.proyecto.microservicio.model.MovimientosDelDiaDTO;
+import com.proyecto.microservicio.model.TendenciaDiaDTO;
 import com.proyecto.microservicio.model.ResumenProductoDTO;
 import com.proyecto.microservicio.model.MovimientoDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -218,4 +220,38 @@ List<Object[]> movimientosPorSemana(
     WHERE m.producto_id = :productoId
     """, nativeQuery = true)
     ResumenProductoDTO obtenerResumen(@Param("productoId") Long productoId);
+
+    /** HU-23: movimientos vigentes desde un instante, por lo general el inicio del dia. */
+    @Query(value = """
+    SELECT
+        COUNT(*) AS total,
+        CAST(COALESCE(SUM(CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE 0 END), 0) AS SIGNED) AS entradas,
+        CAST(COALESCE(SUM(CASE WHEN m.tipo = 'SALIDA' THEN 1 ELSE 0 END), 0) AS SIGNED) AS salidas
+    FROM movimientos m
+    WHERE m.fecha >= :desde
+      AND m.estado = 'REGISTRADO'
+    """, nativeQuery = true)
+    MovimientosDelDiaDTO obtenerMovimientosDesde(@Param("desde") LocalDateTime desde);
+
+    /**
+     * HU-24: movimientos vigentes por dia en un rango semiabierto [desde, hasta).
+     * Se excluyen los anulados y sus compensatorios: el par se cancela en
+     * unidades, pero contarlo inflaria la actividad con algo que no ocurrio.
+     */
+    @Query(value = """
+    SELECT
+        DATE_FORMAT(m.fecha, '%Y-%m-%d') AS dia,
+        CAST(SUM(CASE WHEN m.tipo = 'ENTRADA' THEN 1 ELSE 0 END) AS SIGNED) AS entradas,
+        CAST(SUM(CASE WHEN m.tipo = 'SALIDA' THEN 1 ELSE 0 END) AS SIGNED) AS salidas,
+        CAST(SUM(CASE WHEN m.tipo = 'ENTRADA' THEN m.cantidad ELSE 0 END) AS SIGNED) AS unidadesEntrada,
+        CAST(SUM(CASE WHEN m.tipo = 'SALIDA' THEN m.cantidad ELSE 0 END) AS SIGNED) AS unidadesSalida
+    FROM movimientos m
+    WHERE m.fecha >= :desde
+      AND m.fecha < :hasta
+      AND m.estado = 'REGISTRADO'
+    GROUP BY DATE_FORMAT(m.fecha, '%Y-%m-%d')
+    ORDER BY dia
+    """, nativeQuery = true)
+    List<TendenciaDiaDTO> obtenerTendencia(@Param("desde") LocalDateTime desde,
+                                           @Param("hasta") LocalDateTime hasta);
 }

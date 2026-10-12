@@ -95,6 +95,10 @@ public class SecurityConfig {
                 // queda para el administrador y el gerente. El kardex y la lista
                 // de reposicion los necesita tambien el encargado para operar.
                 .requestMatchers(HttpMethod.GET, "/api/inventario/valorizacion").hasAnyRole(ADMIN, GERENTE)
+                // HU-23: el resumen incluye el valor del inventario; la tendencia
+                // y el stock critico los necesita tambien el encargado.
+                .requestMatchers(HttpMethod.GET, "/api/indicadores/resumen").hasAnyRole(ADMIN, GERENTE)
+                .requestMatchers(HttpMethod.GET, "/api/indicadores/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
                 .requestMatchers(HttpMethod.GET, "/api/inventario/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
 
                 // HU-16: el encargado registra el conteo fisico, pero solo el

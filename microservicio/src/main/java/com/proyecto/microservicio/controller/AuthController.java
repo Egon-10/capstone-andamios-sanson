@@ -3,7 +3,9 @@ package com.proyecto.microservicio.controller;
 import com.proyecto.microservicio.dto.LoginRequest;
 import com.proyecto.microservicio.dto.LoginResponse;
 import com.proyecto.microservicio.dto.RefreshRequest;
+import com.proyecto.microservicio.security.OrigenSolicitud;
 import com.proyecto.microservicio.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,8 +23,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@Valid @RequestBody LoginRequest solicitud) {
-        return service.login(solicitud);
+    public LoginResponse login(@Valid @RequestBody LoginRequest solicitud, HttpServletRequest http) {
+        return service.login(solicitud, OrigenSolicitud.de(http));
     }
 
     @PostMapping("/refresh")

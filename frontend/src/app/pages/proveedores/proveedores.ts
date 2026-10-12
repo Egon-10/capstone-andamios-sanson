@@ -1,8 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuditoriaService }
-from '../../services/auditoria.service';
 import { Proveedor } from '../../models/proveedor';
 import { ProveedorService } from '../../services/proveedor.service';
 
@@ -32,8 +30,7 @@ export class ProveedoresComponent implements OnInit {
 mensajeError = '';
   constructor(
     
-    private proveedorService: ProveedorService,
-  private auditoriaService: AuditoriaService
+    private proveedorService: ProveedorService
   ) {}
 
   ngOnInit(): void {
@@ -162,10 +159,6 @@ mensajeError = '';
       )
       .subscribe(() => {
 
-        this.registrarAuditoria(
-          'EDITÓ el proveedor: ' +
-          this.proveedor.nombre
-        );
 
         this.listar();
 
@@ -179,10 +172,6 @@ mensajeError = '';
       .crear(this.proveedor)
       .subscribe(() => {
 
-        this.registrarAuditoria(
-          'CREÓ el proveedor: ' +
-          this.proveedor.nombre
-        );
 
         this.listar();
 
@@ -204,11 +193,6 @@ mensajeError = '';
 
   eliminar(id: number): void {
 
-  const proveedorEliminar =
-    this.proveedores.find(
-      p => p.id === id
-    );
-
   if (confirm(
     '¿Desea eliminar este proveedor?'
   )) {
@@ -217,10 +201,6 @@ mensajeError = '';
       .eliminar(id)
       .subscribe(() => {
 
-        this.registrarAuditoria(
-          'ELIMINÓ el proveedor: ' +
-          proveedorEliminar?.nombre
-        );
 
         this.listar();
 
@@ -245,30 +225,6 @@ mensajeError = '';
   this.mensajeError = '';
 }
 
-registrarAuditoria(
-  accion: string
-): void {
+// La auditoria del catalogo la registra el servidor (correccion DEF-01).
 
-  const usuarioGuardado =
-    localStorage.getItem('usuario');
-
-  if (!usuarioGuardado) return;
-
-  const usuario =
-    JSON.parse(usuarioGuardado);
-
-  const auditoria = {
-
-    accion: accion,
-
-    usuario: {
-      id: usuario.id
-    }
-
-  };
-
-  this.auditoriaService
-    .crear(auditoria as any)
-    .subscribe();
-}
 }

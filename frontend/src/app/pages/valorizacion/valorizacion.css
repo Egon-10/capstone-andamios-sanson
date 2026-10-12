@@ -109,17 +109,6 @@ h1 {
   cursor: pointer;
 }
 
-.secundario {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  background: #475569;
-  color: #fff;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-}
-
 table {
   width: 100%;
   border-collapse: collapse;
@@ -212,4 +201,25 @@ tfoot td {
   border-radius: 6px;
   font-size: 14px;
   margin-bottom: 12px;
+}
+
+/* HU-28: corte a fecha y exportacion */
+.corte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--espacio-3);
+  margin: var(--espacio-4) 0;
+  padding: var(--espacio-4);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.corte .separador {
+  flex: 1;
+}
+
+.ui-mensaje {
+  margin-bottom: var(--espacio-3);
 }

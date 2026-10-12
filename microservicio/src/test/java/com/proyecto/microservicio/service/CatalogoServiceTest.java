@@ -31,8 +31,8 @@ class CatalogoServiceTest {
     void preparar() {
         categorias = mock(CategoriaRepository.class);
         proveedores = mock(ProveedorRepository.class);
-        categoriaService = new CategoriaService(categorias);
-        proveedorService = new ProveedorService(proveedores);
+        categoriaService = new CategoriaService(categorias, mock(AuditoriaService.class));
+        proveedorService = new ProveedorService(proveedores, mock(AuditoriaService.class));
         when(categorias.save(any(Categoria.class))).thenAnswer(i -> i.getArgument(0));
         when(proveedores.save(any(Proveedor.class))).thenAnswer(i -> i.getArgument(0));
     }

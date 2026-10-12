@@ -1,14 +1,20 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
+import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { Rol } from '../../models/rol';
 import { ErrorApi } from '../../models/respuesta-login';
-import { Usuario, UsuarioActualizacion, UsuarioRegistro } from '../../models/usuario';
+import { FiltroUsuarios, Usuario, UsuarioActualizacion, UsuarioRegistro } from '../../models/usuario';
+import { Pagina } from '../../models/pagina';
 import { RolService } from '../../services/rol.service';
 import { UsuarioService } from '../../services/usuario.service';
 import { AuthService } from '../../services/auth.service';
+import { FormatoReporte, ReporteService } from '../../services/reporte.service';
+import { mensajeDeError, mensajeDeErrorEnBlob } from '../../core/errores';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+import { PaginacionComponent } from '../../components/paginacion/paginacion';
 
 const SOLO_LETRAS = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$/;
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,6 +23,8 @@ const PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
 /**
  * HU-43: registro de usuarios (12 campos y turno, CAM-02).
  * HU-07: edición parcial mediante PATCH.
+ * HU-30: listado con búsqueda, filtros, orden y paginación en el servidor.
+ * HU-31: activación y desactivación con confirmación y motivo.
  * Las validaciones del cliente replican las del servidor, que es quien decide.
  */
 @Component({
@@ -24,16 +32,19 @@ const PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    EstadoVistaComponent,
+    PaginacionComponent
   ],
   templateUrl: './usuarios.html',
   styleUrl: './usuarios.css'
 })
-export class UsuariosComponent implements OnInit {
+export class UsuariosComponent implements OnInit, OnDestroy {
 
   private readonly usuarioService = inject(UsuarioService);
   private readonly rolService = inject(RolService);
   private readonly auth = inject(AuthService);
+  private readonly reportes = inject(ReporteService);
 
   readonly tiposDocumento = [
     { valor: 'DNI', texto: 'DNI' },
@@ -52,11 +63,25 @@ export class UsuariosComponent implements OnInit {
     { valor: 'NOCHE', texto: 'Noche' }
   ];
 
-  usuarios: Usuario[] = [];
   roles: Rol[] = [];
 
+  // --- HU-30: listado ---
+  filtro: FiltroUsuarios = { texto: '', rolId: null, estado: '', pagina: 0, tamano: 10, orden: 'nombre', descendente: false };
+  pagina?: Pagina<Usuario>;
+  estadoLista: 'cargando' | 'error' | 'vacio' | 'listo' = 'cargando';
+  errorLista = '';
+  private readonly busqueda = new Subject<string>();
+  private suscripcionBusqueda?: Subscription;
+
+  // --- HU-31: cambio de estado ---
+  usuarioCambiando: Usuario | null = null;
+  motivo = '';
+  cambiandoEstado = false;
+  errorEstado = '';
+
+  descargando: FormatoReporte | null = null;
+
   form: UsuarioRegistro = this.formularioVacio();
-  estado = 'ACTIVO';
   idEditando: number | null = null;
 
   errores: Record<string, string> = {};
@@ -69,13 +94,134 @@ export class UsuariosComponent implements OnInit {
     return this.idEditando !== null;
   }
 
+  get usuarios(): Usuario[] {
+    return this.pagina?.contenido ?? [];
+  }
+
   ngOnInit(): void {
     this.listarUsuarios();
     this.rolService.listar().subscribe(data => (this.roles = data));
+    // La búsqueda por texto espera a que el usuario deje de escribir, para no
+    // consultar al servidor en cada tecla.
+    this.suscripcionBusqueda = this.busqueda
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe(() => this.irAPagina(0));
+  }
+
+  ngOnDestroy(): void {
+    this.suscripcionBusqueda?.unsubscribe();
   }
 
   listarUsuarios(): void {
-    this.usuarioService.listar().subscribe(data => (this.usuarios = data));
+    this.estadoLista = 'cargando';
+    this.usuarioService.buscar(this.filtro).subscribe({
+      next: p => {
+        this.pagina = p;
+        this.estadoLista = p.contenido.length === 0 ? 'vacio' : 'listo';
+      },
+      error: (e: HttpErrorResponse) => {
+        this.estadoLista = 'error';
+        this.errorLista = mensajeDeError(e, 'Revise la conexión e intente de nuevo.');
+      }
+    });
+  }
+
+  buscarTexto(texto: string): void {
+    this.busqueda.next(texto);
+  }
+
+  aplicarFiltros(): void {
+    this.irAPagina(0);
+  }
+
+  irAPagina(numero: number): void {
+    this.filtro = { ...this.filtro, pagina: numero };
+    this.listarUsuarios();
+  }
+
+  cambiarTamano(tamano: number): void {
+    this.filtro = { ...this.filtro, tamano, pagina: 0 };
+    this.listarUsuarios();
+  }
+
+  /** Ordena por la columna; un segundo clic invierte el sentido. */
+  ordenar(campo: string): void {
+    const descendente = this.filtro.orden === campo ? !this.filtro.descendente : false;
+    this.filtro = { ...this.filtro, orden: campo, descendente, pagina: 0 };
+    this.listarUsuarios();
+  }
+
+  ordenAria(campo: string): 'ascending' | 'descending' | 'none' {
+    if (this.filtro.orden !== campo) {
+      return 'none';
+    }
+    return this.filtro.descendente ? 'descending' : 'ascending';
+  }
+
+  hayFiltros(): boolean {
+    return !!(this.filtro.texto || this.filtro.rolId || this.filtro.estado);
+  }
+
+  limpiarFiltros(): void {
+    this.filtro = { ...this.filtro, texto: '', rolId: null, estado: '', pagina: 0 };
+    this.listarUsuarios();
+  }
+
+  esUsuarioActual(u: Usuario): boolean {
+    return u.id === this.auth.usuario?.id;
+  }
+
+  // --- HU-31 ---
+
+  pedirCambioEstado(u: Usuario): void {
+    this.usuarioCambiando = u;
+    this.motivo = '';
+    this.errorEstado = '';
+  }
+
+  @HostListener('document:keydown.escape')
+  cancelarCambioEstado(): void {
+    this.usuarioCambiando = null;
+  }
+
+  confirmarCambioEstado(): void {
+    const u = this.usuarioCambiando;
+    if (!u?.id) {
+      return;
+    }
+    const nuevo = u.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+    if (nuevo === 'INACTIVO' && this.motivo.trim().length < 5) {
+      this.errorEstado = 'Indique el motivo de la desactivación (mínimo 5 caracteres).';
+      return;
+    }
+    this.cambiandoEstado = true;
+    this.usuarioService.cambiarEstado(u.id, nuevo, this.motivo.trim()).subscribe({
+      next: () => {
+        this.cambiandoEstado = false;
+        this.usuarioCambiando = null;
+        this.mensajeExito = nuevo === 'INACTIVO'
+          ? `Se desactivó la cuenta ${u.nombreUsuario ?? u.correo}. Sus sesiones abiertas se cerraron.`
+          : `Se reactivó la cuenta ${u.nombreUsuario ?? u.correo}.`;
+        this.listarUsuarios();
+      },
+      error: (e: HttpErrorResponse) => {
+        this.cambiandoEstado = false;
+        this.errorEstado = mensajeDeError(e, 'No se pudo cambiar el estado de la cuenta.');
+      }
+    });
+  }
+
+  exportar(formato: FormatoReporte): void {
+    this.descargando = formato;
+    const { texto, rolId, estado } = this.filtro;
+    this.reportes.descargar('usuarios', formato, { texto, rolId, estado }).subscribe({
+      next: () => (this.descargando = null),
+      error: (e: HttpErrorResponse) => {
+        this.descargando = null;
+        // El cuerpo del error llega como Blob y se lee de forma asincrona.
+        void mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte.').then(m => (this.mensajeError = m));
+      }
+    });
   }
 
   nombreRol(id: number | null): string {
@@ -132,30 +278,14 @@ export class UsuariosComponent implements OnInit {
       area: usuario.area ?? '',
       turno: usuario.turno ?? ''
     };
-    this.estado = usuario.estado ?? 'ACTIVO';
     this.errores = {};
     this.mensajeError = '';
     this.mensajeExito = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  eliminar(usuario: Usuario): void {
-    if (usuario.id === this.auth.usuario?.id) {
-      this.mensajeError = 'No puede eliminar su propia cuenta.';
-      return;
-    }
-    if (!confirm(`¿Desea eliminar al usuario ${usuario.nombreUsuario ?? usuario.correo}?`)) {
-      return;
-    }
-    this.usuarioService.eliminar(usuario.id!).subscribe({
-      next: () => this.listarUsuarios(),
-      error: (e: HttpErrorResponse) => this.mostrarErrorServidor(e)
-    });
-  }
-
   limpiar(): void {
     this.form = this.formularioVacio();
-    this.estado = 'ACTIVO';
     this.idEditando = null;
     this.errores = {};
     this.mensajeError = '';
@@ -218,8 +348,7 @@ export class UsuariosComponent implements OnInit {
       telefono: f.telefono,
       area: f.area,
       turno: f.turno,
-      rolId: f.rolId ?? undefined,
-      estado: this.estado
+      rolId: f.rolId ?? undefined
     };
     if (f.password) {
       cambios.password = f.password;

@@ -9,7 +9,40 @@
     daria una cifra que no sirve para el balance.
   </p>
 
-  <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
+  <!-- HU-28: corte a fecha y exportacion -->
+  <form class="corte" (ngSubmit)="cargar()">
+    <label class="ui-campo">Valorizar al cierre del día
+      <input type="date" name="fechaCorte" [(ngModel)]="fechaCorte" [max]="hoy">
+    </label>
+    <button type="submit" class="ui-boton primario" [disabled]="cargando">
+      <i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Aplicar corte
+    </button>
+    <button type="button" class="ui-boton secundario" *ngIf="valorizacion?.fechaCorte" (click)="verHoy()">
+      Ver existencias de hoy
+    </button>
+    <span class="separador"></span>
+    <button type="button" class="ui-boton secundario" [disabled]="!valorizacion || descargando !== null" (click)="exportar('pdf')">
+      <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> PDF
+    </button>
+    <button type="button" class="ui-boton secundario" [disabled]="!valorizacion || descargando !== null" (click)="exportar('xlsx')">
+      <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Excel
+    </button>
+  </form>
+
+  <p class="ui-mensaje exito" aria-live="polite" *ngIf="mensajeDescarga">{{ mensajeDescarga }}</p>
+
+  <p class="ui-mensaje info" *ngIf="valorizacion?.fechaCorte">
+    <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+    Valorización reconstruida al cierre del {{ valorizacion?.fechaCorte | date:'dd/MM/yyyy' }}:
+    el stock de cada producto es el que tenía ese día, y el costo, el que dejó su último movimiento anterior.
+  </p>
+  <p class="ui-mensaje aviso" *ngIf="(valorizacion?.productosConCostoEstimado ?? 0) > 0">
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    {{ valorizacion?.productosConCostoEstimado }} producto(s) con costo estimado: su último movimiento
+    anterior al corte es de antes de que el sistema registrara el costo por movimiento, y se usó el costo vigente.
+  </p>
+
+  <p class="ui-mensaje peligro" role="alert" *ngIf="mensajeError">{{ mensajeError }}</p>
   <p class="ayuda" *ngIf="cargando">Calculando la valorizacion...</p>
 
   <ng-container *ngIf="valorizacion">
@@ -18,7 +51,7 @@
       <div class="tarjeta destacada">
         <span class="etiqueta">Valor total</span>
         <strong>S/ {{ valorizacion.valorTotal | number:'1.2-2' }}</strong>
-        <small>al costo promedio</small>
+        <small>{{ valorizacion.fechaCorte ? 'al ' + (valorizacion.fechaCorte | date:'dd/MM/yyyy') : 'al costo promedio, hoy' }}</small>
       </div>
       <div class="tarjeta">
         <span class="etiqueta">Unidades</span>
@@ -93,9 +126,6 @@
           <input type="checkbox" [(ngModel)]="soloReposicionEnDetalle">
           Mostrar solo los que necesitan reposicion
         </label>
-        <button type="button" class="secundario" (click)="descargarDetalle()">
-          Descargar CSV
-        </button>
       </div>
 
       <table>
@@ -120,7 +150,10 @@
             </td>
             <td>{{ p.categoria }}</td>
             <td class="numero">{{ p.stock | number }}</td>
-            <td class="numero">S/ {{ p.costoPromedio | number:'1.2-2' }}</td>
+            <td class="numero">
+              S/ {{ p.costoPromedio | number:'1.2-2' }}
+              <span class="ui-insignia aviso" *ngIf="p.costoEstimado" title="Costo vigente usado por falta de historia">estimado</span>
+            </td>
             <td class="numero"><strong>S/ {{ p.valor | number:'1.2-2' }}</strong></td>
           </tr>
           <tr *ngIf="detalle.length === 0">

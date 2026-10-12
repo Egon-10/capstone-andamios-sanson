@@ -3,7 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { Usuario, UsuarioActualizacion, UsuarioRegistro } from '../models/usuario';
+import { aParametros } from '../core/parametros';
+import { UsuarioOpcion } from '../models/auditoria';
+import { Pagina } from '../models/pagina';
+import { FiltroUsuarios, Perfil, Usuario, UsuarioActualizacion, UsuarioRegistro } from '../models/usuario';
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +17,19 @@ export class UsuarioService {
 
   constructor(private http: HttpClient) {}
 
-  listar(): Observable<Usuario[]> {
-    return this.http.get<Usuario[]>(this.apiUrl);
+  /** HU-30: búsqueda paginada en el servidor. */
+  buscar(filtro: FiltroUsuarios): Observable<Pagina<Usuario>> {
+    return this.http.get<Pagina<Usuario>>(this.apiUrl, { params: aParametros(filtro) });
+  }
+
+  /** Lista corta para los filtros de las bitácoras. */
+  opciones(): Observable<UsuarioOpcion[]> {
+    return this.http.get<UsuarioOpcion[]>(`${this.apiUrl}/opciones`);
+  }
+
+  /** HU-31: activa o desactiva una cuenta. */
+  cambiarEstado(id: number, estado: 'ACTIVO' | 'INACTIVO', motivo?: string): Observable<Usuario> {
+    return this.http.patch<Usuario>(`${this.apiUrl}/${id}/estado`, { estado, motivo: motivo || null });
   }
 
   buscarPorId(id: number): Observable<Usuario> {
@@ -32,8 +46,9 @@ export class UsuarioService {
     return this.http.patch<Usuario>(`${this.apiUrl}/${id}`, cambios);
   }
 
-  miPerfil(): Observable<Usuario> {
-    return this.http.get<Usuario>(`${this.apiUrl}/me`);
+  /** HU-34: perfil propio con el acceso anterior. */
+  miPerfil(): Observable<Perfil> {
+    return this.http.get<Perfil>(`${this.apiUrl}/me`);
   }
 
   actualizarMiPerfil(cambios: UsuarioActualizacion): Observable<Usuario> {

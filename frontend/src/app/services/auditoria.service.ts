@@ -1,33 +1,38 @@
-import { environment } from '../../environments/environment';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { Auditoria } from '../models/auditoria';
+import { environment } from '../../environments/environment';
+import { aParametros } from '../core/parametros';
+import { FiltroBitacora, RegistroAcceso, RegistroAuditoria } from '../models/auditoria';
+import { Pagina } from '../models/pagina';
 
-@Injectable({
-  providedIn: 'root'
-})
+/**
+ * HU-32 y HU-33: consulta de las bitácoras.
+ *
+ * Es solo lectura. El cliente ya no registra acciones: la auditoría la
+ * escribe el servidor al ejecutar cada operación, para que no se pueda omitir
+ * ni fabricar desde el navegador.
+ */
+@Injectable({ providedIn: 'root' })
 export class AuditoriaService {
 
-  private apiUrl =
-    `${environment.apiUrl}/auditoria`;
+  private readonly apiUrl = `${environment.apiUrl}`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
-  listar(): Observable<Auditoria[]> {
-    return this.http.get<Auditoria[]>(
-      this.apiUrl
-    );
+  /** HU-33: bitácora de acciones con filtros combinados. */
+  buscar(filtro: FiltroBitacora): Observable<Pagina<RegistroAuditoria>> {
+    return this.http.get<Pagina<RegistroAuditoria>>(`${this.apiUrl}/auditoria`, { params: aParametros(filtro) });
   }
 
-  crear(
-    auditoria: Auditoria
-  ): Observable<Auditoria> {
+  /** Últimas acciones, para el panel de inicio. */
+  ultimos(): Observable<RegistroAuditoria[]> {
+    return this.http.get<RegistroAuditoria[]>(`${this.apiUrl}/auditoria/ultimos`);
+  }
 
-    return this.http.post<Auditoria>(
-      this.apiUrl,
-      auditoria
-    );
+  /** HU-32: bitácora de accesos (solo administrador). */
+  accesos(filtro: FiltroBitacora): Observable<Pagina<RegistroAcceso>> {
+    return this.http.get<Pagina<RegistroAcceso>>(`${this.apiUrl}/accesos`, { params: aParametros(filtro) });
   }
 }

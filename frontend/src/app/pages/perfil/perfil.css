@@ -1,130 +1,114 @@
-.perfil-container{
-    width:100%;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:40px;
+.rejilla {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) 1fr;
+  gap: var(--espacio-5);
+  align-items: start;
 }
 
-.perfil-card{
-    width:500px;
-    background:white;
-    border-radius:20px;
-    padding:40px;
-    box-shadow:0 10px 30px rgba(0,0,0,.15);
+@media (max-width: 900px) {
+  .rejilla {
+    grid-template-columns: 1fr;
+  }
 }
 
-.avatar{
-    text-align:center;
-    margin-bottom:20px;
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-5);
 }
 
-.avatar i{
-    font-size:100px;
-    color:#06215b;
+.identidad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--espacio-2);
 }
 
-.perfil-card h2{
-    text-align:center;
-    margin-bottom:30px;
-    color:#1e293b;
+.avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: var(--color-primario);
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.campo{
-    display:flex;
-    flex-direction:column;
-    margin-bottom:20px;
+.identidad h2 {
+  font-size: 1.15rem;
+  margin-top: var(--espacio-2);
 }
 
-.campo label{
-    margin-bottom:8px;
-    font-weight:600;
-    color:#334155;
+.usuario {
+  color: var(--texto-tenue);
 }
 
-.campo input{
-    padding:12px;
-    border:1px solid #cbd5e1;
-    border-radius:10px;
-    font-size:15px;
-    transition:.3s;
+dl {
+  width: 100%;
+  margin-top: var(--espacio-4);
+  text-align: left;
+  border-top: 1px solid var(--borde);
 }
 
-.campo input:focus{
-    outline:none;
-    border-color:#2563eb;
-    box-shadow:0 0 5px rgba(37,99,235,.3);
+dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+  padding: var(--espacio-2) 0;
+  border-bottom: 1px solid var(--borde);
+  font-size: var(--texto-chico);
 }
 
-.btn-guardar{
-    width:100%;
-    padding:14px;
-    border:none;
-    border-radius:10px;
-    background:#2563eb;
-    color:white;
-    font-size:16px;
-    font-weight:600;
-    cursor:pointer;
-    transition:.3s;
+dt {
+  color: var(--texto-tenue);
 }
 
-.btn-guardar:hover{
-    background:#1d4ed8;
+dd {
+  font-weight: 600;
+  text-align: right;
 }
 
-.mensaje{
-    padding:12px;
-    border-radius:10px;
-    margin-bottom:20px;
-    text-align:center;
-    font-weight:600;
+.nota {
+  margin-top: var(--espacio-2);
+  font-size: var(--texto-chico);
+  color: var(--texto-tenue);
 }
 
-.error{
-    background:#fee2e2;
-    color:#dc2626;
+.formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--espacio-4);
 }
 
-.exito{
-    background:#dcfce7;
-    color:#16a34a;
+.clave,
+.mensajes,
+.formulario .ui-acciones {
+  grid-column: 1 / -1;
 }
 
-.input-password{
-    position: relative;
-    width: 100%;
+.clave {
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: var(--espacio-4);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--espacio-4);
 }
 
-.input-password input{
-    width: 100%;
-    padding: 14px 50px 14px 20px;
-    border: 1px solid #d1d5db;
-    border-radius: 20px;
-    font-size: 16px;
-    outline: none;
-    transition: 0.3s;
-    box-sizing: border-box;
+.clave legend {
+  padding: 0 var(--espacio-2);
+  font-weight: 700;
+  color: var(--texto-suave);
 }
 
-.input-password input:focus{
-    border-color: #2563eb;
-    box-shadow: 0 0 8px rgba(37,99,235,.2);
-}
-
-.toggle-password{
-    position: absolute;
-    top: 50%;
-    right: 15px;
-    transform: translateY(-50%);
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: 0;
-    color: #555;
-    font-size: 18px;
-}
-
-.toggle-password:hover{
-    color: #2563eb;
+.mostrar {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  font-size: var(--texto-chico);
+  color: var(--texto-suave);
 }

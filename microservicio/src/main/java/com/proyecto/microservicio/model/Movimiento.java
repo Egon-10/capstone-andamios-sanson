@@ -66,6 +66,14 @@ public class Movimiento {
     @Column(name = "saldo_resultante")
     private Integer saldoResultante;
 
+    /**
+     * HU-28: costo promedio con el que el movimiento dejó al producto. Junto
+     * con el saldo, permite valorizar el inventario a una fecha pasada.
+     * Los movimientos anteriores al Sprint 3 no lo tienen.
+     */
+    @Column(name = "costo_promedio_resultante", precision = 12, scale = 4)
+    private BigDecimal costoPromedioResultante;
+
     /** Asiento que este movimiento compensa, cuando es una anulación (HU-15). */
     @ManyToOne
     @JoinColumn(name = "movimiento_origen_id")
@@ -185,6 +193,14 @@ public class Movimiento {
 
     public void setSaldoResultante(Integer saldoResultante) {
         this.saldoResultante = saldoResultante;
+    }
+
+    public BigDecimal getCostoPromedioResultante() {
+        return costoPromedioResultante;
+    }
+
+    public void setCostoPromedioResultante(BigDecimal costoPromedioResultante) {
+        this.costoPromedioResultante = costoPromedioResultante;
     }
 
     public Movimiento getMovimientoOrigen() {

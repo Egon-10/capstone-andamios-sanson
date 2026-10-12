@@ -3,8 +3,10 @@ package com.proyecto.microservicio.config;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.proyecto.microservicio.model.Roles;
 import com.proyecto.microservicio.repository.TokenRevocadoRepository;
+import com.proyecto.microservicio.repository.UsuarioRepository;
 import com.proyecto.microservicio.security.JwtProperties;
 import com.proyecto.microservicio.security.JwtService;
+import com.proyecto.microservicio.security.SesionVigenteValidator;
 import com.proyecto.microservicio.security.TokenNoRevocadoValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -59,14 +61,27 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
 
                 // Perfil propio: cualquier usuario autenticado
-                .requestMatchers("/api/usuarios/me").authenticated()
+                .requestMatchers("/api/usuarios/me", "/api/usuarios/me/**").authenticated()
+
+                // Lista corta de usuarios para filtrar las bitacoras (HU-33)
+                .requestMatchers(HttpMethod.GET, "/api/usuarios/opciones").hasAnyRole(ADMIN, GERENTE)
+
+                // HU-32: la bitacora de accesos muestra IP e intentos fallidos:
+                // solo el administrador.
+                .requestMatchers("/api/accesos/**").hasRole(ADMIN)
 
                 // Administración de usuarios y roles
                 .requestMatchers("/api/usuarios/**", "/api/roles/**").hasRole(ADMIN)
 
                 // Auditoría: consulta restringida; el registro lo hace el propio servidor
                 .requestMatchers(HttpMethod.GET, "/api/auditoria/**").hasAnyRole(ADMIN, GERENTE)
-                .requestMatchers(HttpMethod.GET, "/api/reportes/usuarios", "/api/reportes/auditoria").hasAnyRole(ADMIN, GERENTE)
+                // HU-26 y HU-27: reportes. Cada uno exige el mismo rol que la
+                // consulta de la que sale, para que exportar no sea una forma de
+                // ver lo que la pantalla no muestra.
+                .requestMatchers(HttpMethod.GET, "/api/reportes/accesos").hasRole(ADMIN)
+                .requestMatchers(HttpMethod.GET, "/api/reportes/usuarios", "/api/reportes/auditoria",
+                        "/api/reportes/valorizacion").hasAnyRole(ADMIN, GERENTE)
+                .requestMatchers(HttpMethod.GET, "/api/reportes/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
 
                 // Catálogo: lectura para todos; escritura según rol
                 .requestMatchers(HttpMethod.DELETE, "/api/productos/**", "/api/proveedores/**", "/api/categorias/**").hasRole(ADMIN)
@@ -132,13 +147,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(JwtProperties propiedades, TokenRevocadoRepository revocados) {
+    public JwtDecoder jwtDecoder(JwtProperties propiedades, TokenRevocadoRepository revocados,
+                                 UsuarioRepository usuarios) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(propiedades.getClave())
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
                 JwtValidators.createDefaultWithIssuer(JwtProperties.EMISOR),
-                new TokenNoRevocadoValidator(revocados)));
+                new TokenNoRevocadoValidator(revocados),
+                new SesionVigenteValidator(usuarios)));
         return decoder;
     }
 

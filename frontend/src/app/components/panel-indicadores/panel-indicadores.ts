@@ -129,7 +129,7 @@ export class PanelIndicadoresComponent implements OnInit {
   }
 
   get sinMovimientos(): boolean {
-    return !!this.tendencia && this.tendencia.dias.every(d => d.entradas === 0 && d.salidas === 0);
+    return !!this.tendencia && (this.tendencia.dias ?? []).every(d => d.entradas === 0 && d.salidas === 0);
   }
 
   get grupoActivo(): GrupoDia | undefined {

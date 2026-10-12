@@ -57,7 +57,8 @@ class ProductoServiceSprint2Test {
         movimientos = mock(MovimientoRepository.class);
         ajustes = mock(AjusteInventarioRepository.class);
         kardex = mock(KardexService.class);
-        servicio = new ProductoService(productos, categorias, proveedores, movimientos, ajustes, kardex);
+        servicio = new ProductoService(productos, categorias, proveedores, movimientos, ajustes, kardex,
+                mock(AuditoriaService.class));
 
         marco = new Producto();
         marco.setId(1L);

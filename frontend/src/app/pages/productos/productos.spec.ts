@@ -6,7 +6,6 @@ import { ProductosComponent } from './productos';
 import { ProductoService } from '../../services/producto.service';
 import { CategoriaService } from '../../services/categoria.service';
 import { ProveedorService } from '../../services/proveedor.service';
-import { AuditoriaService } from '../../services/auditoria.service';
 import { Pagina, ProductoResumen } from '../../models/pagina';
 import { FichaProducto } from '../../models/ficha-producto';
 import { Producto } from '../../models/producto';
@@ -44,16 +43,13 @@ describe('ProductosComponent', () => {
     categorias.listar.and.returnValue(of([]));
     const proveedores = jasmine.createSpyObj('ProveedorService', ['listar']);
     proveedores.listar.and.returnValue(of([]));
-    const auditoria = jasmine.createSpyObj('AuditoriaService', ['crear']);
-    auditoria.crear.and.returnValue(of({}));
 
     TestBed.configureTestingModule({
       imports: [ProductosComponent],
       providers: [
         { provide: ProductoService, useValue: productos },
         { provide: CategoriaService, useValue: categorias },
-        { provide: ProveedorService, useValue: proveedores },
-        { provide: AuditoriaService, useValue: auditoria }
+        { provide: ProveedorService, useValue: proveedores }
       ]
     });
     fixture = TestBed.createComponent(ProductosComponent);

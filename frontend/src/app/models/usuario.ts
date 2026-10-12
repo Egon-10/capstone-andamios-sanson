@@ -46,3 +46,21 @@ export interface UsuarioActualizacion {
   password?: string;
   confirmarPassword?: string;
 }
+
+/** HU-30: filtros del listado de usuarios. */
+export interface FiltroUsuarios {
+  texto?: string;
+  rolId?: number | null;
+  estado?: string;
+  pagina?: number;
+  tamano?: number;
+  orden?: string;
+  descendente?: boolean;
+}
+
+/** HU-34: perfil propio con el acceso anterior. */
+export interface Perfil {
+  usuario: Usuario;
+  accesoAnterior?: string | null;
+  fallidosDesdeAnterior: number;
+}

@@ -23,9 +23,11 @@ import java.util.List;
 public class CategoriaService {
 
     private final CategoriaRepository repository;
+    private final AuditoriaService auditoria;
 
-    public CategoriaService(CategoriaRepository repository) {
+    public CategoriaService(CategoriaRepository repository, AuditoriaService auditoria) {
         this.repository = repository;
+        this.auditoria = auditoria;
     }
 
     /** Por omision solo las activas, que son las que se pueden asignar. */
@@ -51,7 +53,7 @@ public class CategoriaService {
         c.setDescripcion(limpiar(s.descripcion()));
         c.setActivo(true);
         c.setFechaCreacion(ZonaHoraria.ahora());
-        return repository.save(c);
+        return auditar(repository.save(c), "CATEGORIA_CREADA");
     }
 
     @Transactional
@@ -63,7 +65,7 @@ public class CategoriaService {
         }
         c.setNombre(nombre);
         c.setDescripcion(limpiar(s.descripcion()));
-        return repository.save(c);
+        return auditar(repository.save(c), "CATEGORIA_EDITADA");
     }
 
     /** Baja logica: la categoria deja de ofrecerse pero no se borra. */
@@ -71,14 +73,14 @@ public class CategoriaService {
     public Categoria darDeBaja(Long id) {
         Categoria c = obtener(id);
         c.setActivo(false);
-        return repository.save(c);
+        return auditar(repository.save(c), "CATEGORIA_BAJA");
     }
 
     @Transactional
     public Categoria reactivar(Long id) {
         Categoria c = obtener(id);
         c.setActivo(true);
-        return repository.save(c);
+        return auditar(repository.save(c), "CATEGORIA_REACTIVADA");
     }
 
     static String limpiar(String valor) {
@@ -87,5 +89,10 @@ public class CategoriaService {
         }
         String limpio = valor.trim();
         return limpio.isEmpty() ? null : limpio;
+    }
+
+    private Categoria auditar(Categoria guardado, String accion) {
+        auditoria.registrarComoUsuarioActual(accion, "Categoría " + guardado.getId() + ": " + guardado.getNombre());
+        return guardado;
     }
 }

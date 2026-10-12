@@ -22,8 +22,10 @@ export class InventarioService {
   constructor(private readonly http: HttpClient) {}
 
   /** HU-17: valor del inventario al costo promedio ponderado. */
-  valorizacion(): Observable<Valorizacion> {
-    return this.http.get<Valorizacion>(`${this.apiUrl}/valorizacion`);
+  /** HU-17 y HU-28: sin fecha, la valorización vigente; con fecha, al cierre de ese día. */
+  valorizacion(fecha?: string | null): Observable<Valorizacion> {
+    const params = fecha ? new HttpParams().set('fecha', fecha) : undefined;
+    return this.http.get<Valorizacion>(`${this.apiUrl}/valorizacion`, { params });
   }
 
   /** HU-20: productos que alcanzaron su umbral de reposición. */

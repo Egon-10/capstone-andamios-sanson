@@ -4,11 +4,13 @@ import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
 import { SesionInactividadService } from '../../core/sesion-inactividad.service';
+import { AlertaService } from '../../services/alerta.service';
+import { AlertasComponent } from '../alertas/alertas';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AlertasComponent],
   templateUrl: './layout.html',
   styleUrl: './layout.css'
 })
@@ -16,6 +18,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   private readonly auth = inject(AuthService);
   readonly inactividad = inject(SesionInactividadService);
+  private readonly alertas = inject(AlertaService);
 
   rol = '';
   usuarioNombre = '';
@@ -30,10 +33,12 @@ export class LayoutComponent implements OnInit, OnDestroy {
       this.usuarioRol = this.rol;
     }
     this.inactividad.iniciar();
+    this.alertas.iniciar();
   }
 
   ngOnDestroy(): void {
     this.inactividad.detener();
+    this.alertas.detener();
   }
 
   esAdministrador(): boolean {
@@ -54,6 +59,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   logout(): void {
     this.inactividad.detener();
+    this.alertas.detener();
     this.auth.cerrarSesion();
   }
 

@@ -8,6 +8,7 @@ import { MovimientoService } from '../../services/movimiento.service';
 import { MotivoService } from '../../services/motivo.service';
 import { Producto } from '../../models/producto';
 import { Motivo } from '../../models/motivo';
+import { AlertaService } from '../../services/alerta.service';
 
 /** CP-13 a CP-16: pantalla de movimientos (HU-12 a HU-15). */
 describe('MovimientosComponent', () => {
@@ -39,6 +40,7 @@ describe('MovimientosComponent', () => {
     TestBed.configureTestingModule({
       imports: [MovimientosComponent],
       providers: [
+        { provide: AlertaService, useValue: jasmine.createSpyObj('AlertaService', ['actualizar']) },
         { provide: ProductoService, useValue: productos },
         { provide: MovimientoService, useValue: movimientos },
         { provide: MotivoService, useValue: motivos }

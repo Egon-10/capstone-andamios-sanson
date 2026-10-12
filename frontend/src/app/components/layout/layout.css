@@ -339,3 +339,10 @@ nav a.active{
     color: #fff;
     cursor: pointer;
 }
+
+/* HU-29: la campana de alertas va junto al menú del usuario */
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}

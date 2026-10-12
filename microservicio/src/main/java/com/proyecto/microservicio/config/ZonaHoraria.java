@@ -25,4 +25,9 @@ public final class ZonaHoraria {
     public static LocalDateTime ahora() {
         return LocalDateTime.now(NEGOCIO);
     }
+
+    /** Fecha actual en la zona del negocio. */
+    public static java.time.LocalDate hoy() {
+        return java.time.LocalDate.now(NEGOCIO);
+    }
 }

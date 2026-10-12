@@ -1,5 +1,9 @@
 # Implantación en Azure (Azure for Students)
 
+> **Alternativa no adoptada.** Por el cambio CAM-13 (11/10/2026) el sistema se
+> implanta en la red local de la empresa: ver `docs/despliegue-red-local.md`.
+> Esta guía se conserva por si en el futuro se decide publicarlo en internet.
+
 Guía paso a paso para poner el sistema en producción en una máquina virtual de
 Azure con el crédito de estudiante, con HTTPS y respaldo diario. Usa el mismo
 `docker-compose.yml` que se prueba en cada pull request; lo único que se agrega

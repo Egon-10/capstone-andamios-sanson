@@ -58,7 +58,12 @@ public class SecurityConfig {
             HttpSecurity http, JwtAuthenticationConverter convertidor,
             @Value("${app.seguridad.limite-intentos-por-minuto:10}") int limitePorMinuto) {
         http
-            .csrf(csrf -> csrf.disable())
+            // La API no usa cookies de sesión: el token viaja en la cabecera
+            // Authorization y el navegador no lo envía por su cuenta, así que un
+            // sitio ajeno no puede forjar solicitudes autenticadas (CSRF). Por eso
+            // la API y el estado del servicio quedan fuera de la verificación de
+            // tokens CSRF; cualquier otra ruta la conserva.
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/actuator/**"))
             // HU-38: cabeceras de seguridad. La API solo devuelve JSON y
             // archivos, así que su política de contenido no permite cargar
             // nada ni ser incrustada en otro sitio.

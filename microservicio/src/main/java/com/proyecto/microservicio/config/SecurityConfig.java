@@ -63,7 +63,7 @@ public class SecurityConfig {
             // sitio ajeno no puede forjar solicitudes autenticadas (CSRF). Por eso
             // la API y el estado del servicio quedan fuera de la verificación de
             // tokens CSRF; cualquier otra ruta la conserva.
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/actuator/**"))
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/actuator/**")) // NOSONAR java:S4502 revisado: API sin cookies
             // HU-38: cabeceras de seguridad. La API solo devuelve JSON y
             // archivos, así que su política de contenido no permite cargar
             // nada ni ser incrustada en otro sitio.

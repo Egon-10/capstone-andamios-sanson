@@ -26,8 +26,14 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
     Falla 'Docker no esta instalado. Instale Docker Desktop (https://www.docker.com/products/docker-desktop/), reinicie la PC y vuelva a ejecutar este script.'
 }
 if (-not (DockerListo)) {
-    $escritorio = Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'
-    if (Test-Path $escritorio) { Write-Host 'Abriendo Docker Desktop...'; Start-Process $escritorio }
+    # Docker Desktop puede estar instalado para todos los usuarios o solo para el actual.
+    $escritorio = @(
+        (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\DockerDesktop\Docker Desktop.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Docker\Docker Desktop.exe')
+    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($escritorio) { Write-Host 'Abriendo Docker Desktop...'; Start-Process $escritorio }
+    else { Write-Host 'Abra Docker Desktop desde el menu Inicio.' }
     Write-Host 'Esperando a que Docker este listo (hasta 3 minutos)...'
     $limite = (Get-Date).AddMinutes(3)
     while (-not (DockerListo)) {

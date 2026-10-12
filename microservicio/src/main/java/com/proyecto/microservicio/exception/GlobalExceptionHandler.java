@@ -73,12 +73,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> cuerpoIlegible(HttpMessageNotReadableException ex) {
+    public ResponseEntity<ErrorResponse> cuerpoIlegible() {
         return respuesta(HttpStatus.BAD_REQUEST, "El cuerpo de la solicitud no tiene un formato válido", Map.of());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> accesoDenegado(AccessDeniedException ex) {
+    public ResponseEntity<ErrorResponse> accesoDenegado() {
         return respuesta(HttpStatus.FORBIDDEN, "No tiene permisos para realizar esta acción", Map.of());
     }
 

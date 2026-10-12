@@ -107,9 +107,8 @@ docker compose version
 ```bash
 git clone https://github.com/Egon-10/capstone-andamios-sanson.git
 cd capstone-andamios-sanson
-# Mientras los pull requests no estén integrados, use la rama del Sprint 4.
-# Después de integrarlos, use main.
-git checkout feature/sprint-4-seguridad-despliegue
+# La versión estable es la rama main (por defecto al clonar).
+git checkout main
 ```
 
 ---

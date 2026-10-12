@@ -6,6 +6,7 @@ import com.proyecto.microservicio.dto.LoginResponse;
 import com.proyecto.microservicio.dto.RefreshRequest;
 import com.proyecto.microservicio.security.OrigenSolicitud;
 import com.proyecto.microservicio.service.AuthService;
+import com.proyecto.microservicio.security.UsuarioAutenticado;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -37,14 +38,14 @@ public class AuthController {
     @PostMapping("/cambio-password")
     public LoginResponse cambiarPassword(@Valid @RequestBody CambioPasswordRequest solicitud,
                                          @AuthenticationPrincipal Jwt jwt) {
-        return service.cambiarPassword(Long.valueOf(jwt.getSubject()), solicitud, jwt.getId(), jwt.getExpiresAt());
+        return service.cambiarPassword(UsuarioAutenticado.id(jwt), solicitud, jwt.getId(), jwt.getExpiresAt());
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestBody(required = false) RefreshRequest solicitud,
                                        @AuthenticationPrincipal Jwt jwt) {
         service.logout(solicitud == null ? null : solicitud.refreshToken(),
-                jwt.getId(), jwt.getExpiresAt(), Long.valueOf(jwt.getSubject()));
+                jwt.getId(), jwt.getExpiresAt(), UsuarioAutenticado.id(jwt));
         return ResponseEntity.noContent().build();
     }
 }

@@ -114,10 +114,12 @@ para desarrollo**: antes de usar el sistema en la empresa hay que cambiarlas.
 
 ```
 .
-├── database/        # Volcado de la empresa y migraciones del esquema
-├── docs/            # Configuración de herramientas (SonarCloud)
-├── frontend/        # Aplicación web (Angular 20)
+├── database/        # Volcado de la empresa, migraciones y privilegios de la base
+├── docs/            # Guías de despliegue y configuración de SonarCloud
+├── frontend/        # Aplicación web (Angular 20) servida con Nginx
 ├── microservicio/   # API REST (Spring Boot 4.1 / Java 17)
+├── pruebas-sistema/ # Pruebas de sistema y aceptación (Playwright)
+├── docker-compose.yml, respaldo.sh, respaldo.ps1
 └── .github/
     └── workflows/   # Integración continua y análisis estático
 ```
@@ -126,7 +128,7 @@ para desarrollo**: antes de usar el sistema en la empresa hay que cambiarlas.
 
 | Pantalla | Para qué sirve | Quién entra |
 |---|---|---|
-| Dashboard | Indicadores de stock y movimientos | Todos |
+| Dashboard | Indicadores de gestión, tendencia de movimientos y stock crítico | Todos |
 | Productos | Catálogo con búsqueda paginada y ficha de detalle | Todos |
 | Movimientos | Registro de entradas y salidas, y anulación | Todos |
 | Kardex | Historial por producto con saldo acumulado | Todos |
@@ -134,14 +136,17 @@ para desarrollo**: antes de usar el sistema en la empresa hay que cambiarlas.
 | Valorización | Valor del inventario al costo promedio y reposición | Administrador, gerente |
 | Carga masiva | Alta de productos desde un archivo CSV | Administrador, gerente |
 | Categorías, Proveedores, Usuarios | Catálogos maestros | Según el rol |
-| Auditoría | Registro de acciones | Administrador, gerente |
+| Auditoría | Registro de acciones y de accesos | Administrador, gerente |
+| Reportes | Movimientos, stock crítico, valorización y bitácoras en PDF o Excel | Todos (cada rol ve los suyos) |
+| Mi perfil | Datos propios y cambio de contraseña | Todos |
 
 ## Stack tecnológico
 
 - **Frontend:** Angular 20 con TypeScript
 - **Backend:** Spring Boot 4.1, Java 17, Spring Data JPA, Spring Security
 - **Base de datos:** MySQL 8
-- **Pruebas:** JUnit 5 y Mockito (backend); Jasmine y Karma (frontend)
+- **Pruebas:** JUnit 5 y Mockito (backend); Jasmine y Karma (frontend); Playwright y axe-core (sistema y aceptación)
+- **Despliegue:** Docker Compose (MySQL, API y Nginx)
 
 ## Seguridad y roles
 
@@ -173,27 +178,40 @@ Dos separaciones de responsabilidad que conviene conocer:
 ## Pruebas
 
 ```bash
-# Backend: pruebas unitarias (todas menos la que necesita MySQL)
+# Backend: pruebas unitarias (sin las que necesitan MySQL)
 cd microservicio
-./mvnw test -Dtest='!MicroservicioApplicationTests'
+./mvnw test -Dtest='!MicroservicioApplicationTests,!*IT'
 
-# Frontend: 98 pruebas
+# Frontend: pruebas unitarias
 cd frontend
 npm test -- --watch=false
 ```
 
-`MicroservicioApplicationTests` queda fuera porque levanta el contexto
-completo de Spring y necesita MySQL en ejecución.
+`MicroservicioApplicationTests` y las pruebas `*IT` quedan fuera porque
+necesitan MySQL en ejecución; la integración continua las corre contra un
+MySQL 8 real.
 
-Cada pull request ejecuta en GitHub Actions, en un solo trabajo, las pruebas del
-backend, las del cliente y la carga de las tres migraciones contra un MySQL 8 real,
-cada una aplicada dos veces para comprobar que son idempotentes.
+Cada pull request ejecuta en GitHub Actions, en un solo trabajo: las pruebas
+unitarias del backend y del cliente, las migraciones de la base (cada una
+aplicada dos veces para comprobar que son idempotentes), las pruebas de
+integración contra MySQL, SonarCloud, un despliegue preliminar con
+`docker compose`, las pruebas de sistema y aceptación con Playwright
+(`pruebas-sistema/`), y la verificación de privilegios de la base y de
+respaldo y restauración.
 
 El análisis estático corre con **CodeQL** sobre Java y TypeScript al integrar a
 `develop` o `main`, y los hallazgos aparecen en la pestaña **Security → Code scanning**.
 **SonarCloud** añade calidad, deuda técnica y cobertura, pero necesita configurarse una
 vez: los pasos están en [`docs/sonarcloud.md`](docs/sonarcloud.md). Mientras falte el
 secreto `SONAR_TOKEN`, ese análisis se omite con un aviso y no hace fallar la ejecución.
+
+## Despliegue
+
+El sistema se implanta en una PC de la empresa y se usa solo dentro de su red
+local (CAM-13). Guía paso a paso:
+[`docs/despliegue-red-local.md`](docs/despliegue-red-local.md). La referencia
+general (actualización, respaldo y restauración) está en
+[`docs/despliegue.md`](docs/despliegue.md).
 
 ## Equipo
 

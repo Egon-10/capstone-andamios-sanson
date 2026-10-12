@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
@@ -36,8 +36,10 @@ describe('Política de contraseñas (CP-38)', () => {
 
 describe('Contraseña temporal en el cliente (CP-37)', () => {
   let router: Router;
-  const ruta = {} as ActivatedRouteSnapshot;
   const estado = {} as RouterStateSnapshot;
+  // loginGuard y cambioObligatorioGuard no leen la ruta ni el estado: se
+  // invocan sin argumentos, igual que los declara su implementación.
+  const sinArgumentos = (guard: CanActivateFn) => guard as unknown as () => ReturnType<CanActivateFn>;
 
   function sesion(debeCambiar: boolean): void {
     localStorage.setItem('accessToken', 'token');
@@ -57,16 +59,16 @@ describe('Contraseña temporal en el cliente (CP-37)', () => {
     sesion(true);
     const r = TestBed.runInInjectionContext(() => authGuard({ data: {} } as unknown as ActivatedRouteSnapshot, estado));
     expect(router.serializeUrl(r as UrlTree)).toBe('/cambiar-password');
-    const l = TestBed.runInInjectionContext(() => loginGuard(ruta, estado));
+    const l = TestBed.runInInjectionContext(() => sinArgumentos(loginGuard)());
     expect(router.serializeUrl(l as UrlTree)).toBe('/cambiar-password');
   });
 
   it('la pantalla de cambio obligatorio solo se abre con contraseña temporal', () => {
-    expect(router.serializeUrl(TestBed.runInInjectionContext(() => cambioObligatorioGuard(ruta, estado)) as UrlTree)).toBe('/login');
+    expect(router.serializeUrl(TestBed.runInInjectionContext(() => sinArgumentos(cambioObligatorioGuard)()) as UrlTree)).toBe('/login');
     sesion(false);
-    expect(router.serializeUrl(TestBed.runInInjectionContext(() => cambioObligatorioGuard(ruta, estado)) as UrlTree)).toBe('/dashboard');
+    expect(router.serializeUrl(TestBed.runInInjectionContext(() => sinArgumentos(cambioObligatorioGuard)()) as UrlTree)).toBe('/dashboard');
     sesion(true);
-    expect(TestBed.runInInjectionContext(() => cambioObligatorioGuard(ruta, estado))).toBeTrue();
+    expect(TestBed.runInInjectionContext(() => sinArgumentos(cambioObligatorioGuard)())).toBeTrue();
   });
 
   it('el cambio de contraseña guarda la sesión nueva que devuelve el servidor', () => {

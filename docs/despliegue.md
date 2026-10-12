@@ -4,6 +4,12 @@ Guía para instalar, actualizar, respaldar y restaurar el sistema en el servidor
 de la empresa. El mismo procedimiento se ejecuta en la integración continua en
 cada cambio («despliegue preliminar»), de modo que la guía está probada.
 
+> **Implantación en Andamios Sansón (CAM-13):** el sistema se instala en una PC
+> de la empresa y se usa solo dentro de su red local. Los pasos completos para
+> ese caso (Windows o Ubuntu, IP fija, firewall, respaldo programado) están en
+> [`despliegue-red-local.md`](despliegue-red-local.md). Esta guía es la
+> referencia general para un servidor Linux.
+
 ## 1. Requisitos del servidor
 
 | Recurso | Mínimo | Recomendado |
@@ -56,10 +62,16 @@ Antes de entregar el sistema, el administrador debe:
 
 ### HTTPS
 
-En producción el sistema debe publicarse con HTTPS. La opción más simple es un
-proxy con certificado delante del puerto 8080 (por ejemplo Caddy o el balanceador
-del proveedor del VPS). La API ya envía `Strict-Transport-Security`, que el
-navegador aplica en cuanto la conexión es HTTPS.
+En la implantación adoptada (red local, CAM-13) el sistema no se publica en
+internet y se usa por HTTP dentro de la red de la empresa; la falta de cifrado
+es un riesgo aceptado y se mitiga con wifi protegido y red separada para
+visitas (ver `despliegue-red-local.md`, sección 11).
+
+Si en el futuro se publicara en internet, debe hacerse con HTTPS:
+`docker-compose.https.yml` agrega un proxy Caddy que obtiene el certificado
+automáticamente (ver `despliegue-azure.md`). La API ya envía
+`Strict-Transport-Security`, que el navegador aplica en cuanto la conexión es
+HTTPS.
 
 ## 3. Actualización a una versión nueva
 

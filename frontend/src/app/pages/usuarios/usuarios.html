@@ -1,131 +1,126 @@
-<div class="contenedor">
-  <h1>Gestión de Usuarios</h1>
+<div class="ui-pagina">
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-users" aria-hidden="true"></i> Gestión de usuarios</h1>
+      <p class="ui-subtitulo">Cuentas, roles y acceso al sistema. Las contraseñas solo las conoce cada persona.</p>
+    </div>
+  </header>
 
-  <div class="formulario">
-    <h2>{{ editando ? 'Editar Usuario' : 'Nuevo Usuario' }}</h2>
+  <section class="ui-tarjeta formulario" aria-labelledby="titulo-formulario">
+    <h2 class="ui-tarjeta-titulo" id="titulo-formulario">{{ editando ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+    <p class="ui-ayuda">Los campos con * son obligatorios.</p>
 
     <div class="campos-grid">
-
-      <div class="campo">
-        <h5>Nombres *</h5>
-        <input type="text" placeholder="Nombres" maxlength="60"
-               [class.invalido]="errores['nombres']"
+      <label class="ui-campo" for="u-nombres">Nombres *
+        <input id="u-nombres" type="text" maxlength="60" autocomplete="off"
+               [attr.aria-invalid]="!!errores['nombres'] || null" [attr.aria-describedby]="errores['nombres'] ? 'error-nombres' : null"
                [(ngModel)]="form.nombres" (input)="limpiarError('nombres')">
-        <small class="error-campo" *ngIf="errores['nombres']">{{ errores['nombres'] }}</small>
-      </div>
-
-      <div class="campo">
-        <h5>Apellidos *</h5>
-        <input type="text" placeholder="Apellidos" maxlength="60"
-               [class.invalido]="errores['apellidos']"
+        <small class="ui-error-campo" [id]="'error-nombres'" *ngIf="errores['nombres']">{{ errores['nombres'] }}</small>
+      </label>
+      <label class="ui-campo" for="u-apellidos">Apellidos *
+        <input id="u-apellidos" type="text" maxlength="60" autocomplete="off"
+               [attr.aria-invalid]="!!errores['apellidos'] || null" [attr.aria-describedby]="errores['apellidos'] ? 'error-apellidos' : null"
                [(ngModel)]="form.apellidos" (input)="limpiarError('apellidos')">
-        <small class="error-campo" *ngIf="errores['apellidos']">{{ errores['apellidos'] }}</small>
-      </div>
-
-      <div class="campo">
-        <h5>Tipo de documento *</h5>
-        <select [(ngModel)]="form.tipoDocumento" [disabled]="editando"
+        <small class="ui-error-campo" [id]="'error-apellidos'" *ngIf="errores['apellidos']">{{ errores['apellidos'] }}</small>
+      </label>
+      <label class="ui-campo" for="u-tipoDocumento">Tipo de documento *
+        <select id="u-tipoDocumento" [(ngModel)]="form.tipoDocumento" [disabled]="editando"
                 (ngModelChange)="limpiarError('tipoDocumento')">
           <option *ngFor="let t of tiposDocumento" [value]="t.valor">{{ t.texto }}</option>
         </select>
-        <small class="error-campo" *ngIf="errores['tipoDocumento']">{{ errores['tipoDocumento'] }}</small>
-      </div>
-
-      <div class="campo">
-        <h5>Número de documento *</h5>
-        <input type="text" placeholder="Número de documento" maxlength="20" [disabled]="editando"
-               [class.invalido]="errores['numeroDocumento']"
+        <small class="ui-error-campo" [id]="'error-tipoDocumento'" *ngIf="errores['tipoDocumento']">{{ errores['tipoDocumento'] }}</small>
+      </label>
+      <label class="ui-campo" for="u-numeroDocumento">Número de documento *
+        <input id="u-numeroDocumento" type="text" maxlength="20" [disabled]="editando" autocomplete="off"
+               [attr.aria-invalid]="!!errores['numeroDocumento'] || null" [attr.aria-describedby]="errores['numeroDocumento'] ? 'error-numeroDocumento' : null"
                [(ngModel)]="form.numeroDocumento" (input)="limpiarError('numeroDocumento')">
-        <small class="error-campo" *ngIf="errores['numeroDocumento']">{{ errores['numeroDocumento'] }}</small>
-      </div>
-
-      <div class="campo">
-        <h5>Correo electrónico *</h5>
-        <input type="email" placeholder="correo@empresa.com" maxlength="100"
-               [class.invalido]="errores['correo']"
+        <small class="ui-error-campo" [id]="'error-numeroDocumento'" *ngIf="errores['numeroDocumento']">{{ errores['numeroDocumento'] }}</small>
+      </label>
+      <label class="ui-campo" for="u-correo">Correo electrónico *
+        <input id="u-correo" type="email" placeholder="correo@empresa.com" maxlength="100" autocomplete="off"
+               [attr.aria-invalid]="!!errores['correo'] || null" [attr.aria-describedby]="errores['correo'] ? 'error-correo' : null"
                [(ngModel)]="form.correo" (input)="limpiarError('correo')">
-        <small class="error-campo" *ngIf="errores['correo']">{{ errores['correo'] }}</small>
-      </div>
-
-      <div class="campo">
-        <h5>Teléfono</h5>
-        <input type="text" placeholder="Teléfono" maxlength="15" inputmode="numeric"
-               [class.invalido]="errores['telefono']"
+        <small class="ui-error-campo" [id]="'error-correo'" *ngIf="errores['correo']">{{ errores['correo'] }}</small>
+      </label>
+      <label class="ui-campo" for="u-telefono">Teléfono
+        <input id="u-telefono" type="text" maxlength="15" inputmode="numeric" autocomplete="off"
+               [attr.aria-invalid]="!!errores['telefono'] || null" [attr.aria-describedby]="errores['telefono'] ? 'error-telefono' : null"
                [(ngModel)]="form.telefono" (input)="limpiarError('telefono')">
-        <small class="error-campo" *ngIf="errores['telefono']">{{ errores['telefono'] }}</small>
-      </div>
-
-      <div class="campo">
-        <h5>Nombre de usuario *</h5>
-        <input type="text" placeholder="Nombre de usuario" maxlength="30" [disabled]="editando"
-               autocomplete="off"
-               [class.invalido]="errores['nombreUsuario']"
+        <small class="ui-error-campo" [id]="'error-telefono'" *ngIf="errores['telefono']">{{ errores['telefono'] }}</small>
+      </label>
+      <label class="ui-campo" for="u-nombreUsuario">Nombre de usuario *
+        <input id="u-nombreUsuario" type="text" maxlength="30" [disabled]="editando" autocomplete="off"
+               [attr.aria-invalid]="!!errores['nombreUsuario'] || null" [attr.aria-describedby]="errores['nombreUsuario'] ? 'error-nombreUsuario' : null"
                [(ngModel)]="form.nombreUsuario" (input)="limpiarError('nombreUsuario')">
-        <small class="error-campo" *ngIf="errores['nombreUsuario']">{{ errores['nombreUsuario'] }}</small>
-      </div>
-
-      <div class="campo">
-        <h5>{{ editando ? 'Nueva contraseña (opcional)' : 'Contraseña *' }}</h5>
-        <div class="input-password">
-          <input [type]="mostrarPassword ? 'text' : 'password'" placeholder="Contraseña"
-                 autocomplete="new-password"
-                 [class.invalido]="errores['password']"
+        <small class="ui-error-campo" [id]="'error-nombreUsuario'" *ngIf="errores['nombreUsuario']">{{ errores['nombreUsuario'] }}</small>
+      </label>
+      <label class="ui-campo" for="u-password" *ngIf="!editando">Contraseña *
+        <span class="input-password">
+          <input id="u-password" [type]="mostrarPassword ? 'text' : 'password'" autocomplete="new-password"
+                 [attr.aria-invalid]="!!errores['password'] || null" [attr.aria-describedby]="errores['password'] ? 'error-password' : null"
                  [(ngModel)]="form.password" (input)="limpiarError('password')">
           <button type="button" class="toggle-password" (click)="mostrarPassword = !mostrarPassword"
-                  [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
-            <i class="fas" [class.fa-eye]="!mostrarPassword" [class.fa-eye-slash]="mostrarPassword"></i>
+                  [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                  [attr.aria-pressed]="mostrarPassword">
+            <i class="fa-solid" [class.fa-eye]="!mostrarPassword" [class.fa-eye-slash]="mostrarPassword" aria-hidden="true"></i>
           </button>
-        </div>
-        <small class="error-campo" *ngIf="errores['password']">{{ errores['password'] }}</small>
-      </div>
-
-      <div class="campo">
-        <h5>{{ editando ? 'Confirmar nueva contraseña' : 'Confirmar contraseña *' }}</h5>
-        <input [type]="mostrarPassword ? 'text' : 'password'" placeholder="Confirmar contraseña"
-               autocomplete="new-password"
-               [class.invalido]="errores['confirmarPassword']"
+        </span>
+        <small class="ui-error-campo" [id]="'error-password'" *ngIf="errores['password']">{{ errores['password'] }}</small>
+      </label>
+      <label class="ui-campo" for="u-confirmarPassword" *ngIf="!editando">Confirmar contraseña *
+        <input id="u-confirmarPassword" [type]="mostrarPassword ? 'text' : 'password'" autocomplete="new-password"
+               [attr.aria-invalid]="!!errores['confirmarPassword'] || null" [attr.aria-describedby]="errores['confirmarPassword'] ? 'error-confirmarPassword' : null"
                [(ngModel)]="form.confirmarPassword" (input)="limpiarError('confirmarPassword')">
-        <small class="error-campo" *ngIf="errores['confirmarPassword']">{{ errores['confirmarPassword'] }}</small>
+        <small class="ui-error-campo" [id]="'error-confirmarPassword'" *ngIf="errores['confirmarPassword']">{{ errores['confirmarPassword'] }}</small>
+      </label>
+
+      <div class="politica" *ngIf="!editando">
+        <app-politica-contrasena [clave]="form.password" [usuario]="form.nombreUsuario" [documento]="form.numeroDocumento"></app-politica-contrasena>
       </div>
 
-      <div class="campo">
-        <h5>Rol *</h5>
-        <select [(ngModel)]="form.rolId" (ngModelChange)="limpiarError('rolId')" [class.invalido]="errores['rolId']">
+      <p class="nota-edicion" *ngIf="editando">
+        La contraseña no se cambia aquí: use <strong>Restablecer contraseña</strong> en la lista, que genera una temporal
+        y obliga a la persona a cambiarla al ingresar.
+      </p>
+
+      <label class="ui-campo" for="u-rolId">Rol *
+        <select id="u-rolId" [(ngModel)]="form.rolId" (ngModelChange)="limpiarError('rolId')"
+                [attr.aria-invalid]="!!errores['rolId'] || null" [attr.aria-describedby]="errores['rolId'] ? 'error-rolId' : null">
           <option [ngValue]="null">Seleccione un rol</option>
           <option *ngFor="let rol of roles" [ngValue]="rol.id">{{ rol.nombre }}</option>
         </select>
-        <small class="error-campo" *ngIf="errores['rolId']">{{ errores['rolId'] }}</small>
-      </div>
-
-      <div class="campo">
-        <h5>Área *</h5>
-        <select [(ngModel)]="form.area" (ngModelChange)="limpiarError('area')" [class.invalido]="errores['area']">
+        <small class="ui-error-campo" [id]="'error-rolId'" *ngIf="errores['rolId']">{{ errores['rolId'] }}</small>
+      </label>
+      <label class="ui-campo" for="u-area">Área *
+        <select id="u-area" [(ngModel)]="form.area" (ngModelChange)="limpiarError('area')"
+                [attr.aria-invalid]="!!errores['area'] || null" [attr.aria-describedby]="errores['area'] ? 'error-area' : null">
           <option value="">Seleccione el área</option>
           <option *ngFor="let a of areas" [value]="a.valor">{{ a.texto }}</option>
         </select>
-        <small class="error-campo" *ngIf="errores['area']">{{ errores['area'] }}</small>
-      </div>
-
-      <div class="campo">
-        <h5>Turno</h5>
-        <select [(ngModel)]="form.turno">
+        <small class="ui-error-campo" [id]="'error-area'" *ngIf="errores['area']">{{ errores['area'] }}</small>
+      </label>
+      <label class="ui-campo" for="u-turno">Turno
+        <select id="u-turno" [(ngModel)]="form.turno">
           <option value="">Sin turno asignado</option>
           <option *ngFor="let t of turnos" [value]="t.valor">{{ t.texto }}</option>
         </select>
-      </div>
-
+      </label>
     </div>
 
-    <p class="mensaje-error" *ngIf="mensajeError">{{ mensajeError }}</p>
-    <p class="mensaje-exito" *ngIf="mensajeExito">{{ mensajeExito }}</p>
+    <p class="ui-mensaje peligro" role="alert" *ngIf="mensajeError">
+      <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
+    </p>
+    <output class="ui-mensaje exito" *ngIf="mensajeExito">
+      <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ mensajeExito }}
+    </output>
 
-    <div class="botones">
-      <button class="guardar" (click)="guardar()" [disabled]="guardando">
-        {{ guardando ? 'Guardando...' : 'Guardar' }}
+    <div class="ui-acciones">
+      <button type="button" class="ui-boton primario guardar" (click)="guardar()" [disabled]="guardando">
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> {{ guardando ? 'Guardando…' : 'Guardar' }}
       </button>
-      <button class="cancelar" (click)="limpiar()">Cancelar</button>
+      <button type="button" class="ui-boton secundario cancelar" (click)="limpiar()">Cancelar</button>
     </div>
-  </div>
+  </section>
 
   <!-- HU-30: listado con búsqueda, filtros y paginación -->
   <section class="ui-tarjeta listado" aria-labelledby="titulo-listado">
@@ -207,11 +202,23 @@
                 <i class="fa-solid" [class.fa-circle-check]="u.estado === 'ACTIVO'" [class.fa-ban]="u.estado !== 'ACTIVO'" aria-hidden="true"></i>
                 {{ u.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
               </span>
+              <span class="ui-insignia aviso" *ngIf="u.bloqueado" [title]="'Bloqueada por intentos fallidos'">
+                <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                Bloqueada hasta {{ u.bloqueadoHasta | date:'HH:mm' }}
+              </span>
+              <span class="ui-insignia info" *ngIf="u.debeCambiarPassword">
+                <i class="fa-solid fa-key" aria-hidden="true"></i> Clave temporal
+              </span>
             </td>
             <td class="tenue">{{ u.fechaCreacion ? (u.fechaCreacion | date:'dd/MM/yyyy') : '—' }}</td>
             <td class="acciones-fila">
               <button type="button" class="ui-boton secundario chico" (click)="editar(u)"
                       [attr.aria-label]="'Editar a ' + (u.nombreUsuario || u.correo)">Editar</button>
+              <button type="button" class="ui-boton secundario chico" *ngIf="u.bloqueado" (click)="desbloquear(u)"
+                      [attr.aria-label]="'Desbloquear a ' + (u.nombreUsuario || u.correo)">Desbloquear</button>
+              <button type="button" class="ui-boton secundario chico" *ngIf="!esUsuarioActual(u) && u.estado === 'ACTIVO'"
+                      (click)="pedirRestablecimiento(u)"
+                      [attr.aria-label]="'Restablecer la contraseña de ' + (u.nombreUsuario || u.correo)">Restablecer contraseña</button>
               <button type="button" class="ui-boton chico" *ngIf="!esUsuarioActual(u)"
                       [class.peligro]="u.estado === 'ACTIVO'" [class.secundario]="u.estado !== 'ACTIVO'"
                       (click)="pedirCambioEstado(u)"
@@ -248,6 +255,38 @@
           {{ cambiandoEstado ? 'Guardando…' : (u.estado === 'ACTIVO' ? 'Desactivar cuenta' : 'Reactivar cuenta') }}
         </button>
       </div>
+    </dialog>
+  </div>
+  <!-- HU-36: restablecimiento de contraseña -->
+  <div class="ui-velo" *ngIf="usuarioRestableciendo as u">
+    <dialog class="ui-dialogo" open aria-modal="true" [attr.aria-labelledby]="restablecimiento ? 'titulo-temporal' : 'titulo-restablecer'">
+      <ng-container *ngIf="!restablecimiento; else temporalGenerada">
+        <h2 id="titulo-restablecer">Restablecer la contraseña de {{ u.nombreUsuario || u.correo }}</h2>
+        <p>
+          Se generará una <strong>contraseña temporal</strong>. La contraseña actual dejará de funcionar,
+          sus sesiones abiertas se cerrarán y deberá crear una nueva al ingresar.
+        </p>
+        <p class="ui-mensaje peligro" role="alert" *ngIf="errorRestablecer">{{ errorRestablecer }}</p>
+        <div class="ui-acciones">
+          <button type="button" class="ui-boton secundario" (click)="cerrarRestablecimiento()">Cancelar</button>
+          <button type="button" class="ui-boton primario" [disabled]="restableciendo" (click)="confirmarRestablecimiento()">
+            {{ restableciendo ? 'Generando…' : 'Generar contraseña temporal' }}
+          </button>
+        </div>
+      </ng-container>
+      <ng-template #temporalGenerada>
+        <h2 id="titulo-temporal">Contraseña temporal de {{ restablecimiento?.nombreUsuario }}</h2>
+        <p>Entréguela a la persona por un medio seguro. <strong>No se volverá a mostrar.</strong></p>
+        <div class="temporal">
+          <code>{{ restablecimiento?.passwordTemporal }}</code>
+          <button type="button" class="ui-boton secundario chico" (click)="copiarTemporal()">
+            <i class="fa-regular fa-copy" aria-hidden="true"></i> {{ copiado ? 'Copiada' : 'Copiar' }}
+          </button>
+        </div>
+        <div class="ui-acciones">
+          <button type="button" class="ui-boton primario" (click)="cerrarRestablecimiento()">Listo</button>
+        </div>
+      </ng-template>
     </dialog>
   </div>
 </div>

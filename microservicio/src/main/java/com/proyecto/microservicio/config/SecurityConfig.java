@@ -4,7 +4,9 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.proyecto.microservicio.model.Roles;
 import com.proyecto.microservicio.repository.TokenRevocadoRepository;
 import com.proyecto.microservicio.repository.UsuarioRepository;
+import com.proyecto.microservicio.security.ContextoSesionFilter;
 import com.proyecto.microservicio.security.JwtProperties;
+import com.proyecto.microservicio.security.LimiteSolicitudesFilter;
 import com.proyecto.microservicio.security.JwtService;
 import com.proyecto.microservicio.security.SesionVigenteValidator;
 import com.proyecto.microservicio.security.TokenNoRevocadoValidator;
@@ -27,7 +29,9 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -50,15 +54,32 @@ public class SecurityConfig {
     private static final String MOVIMIENTOS = "/api/movimientos/**";
 
     @Bean
-    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, JwtAuthenticationConverter convertidor) throws Exception {
+    public SecurityFilterChain cadenaDeFiltros(
+            HttpSecurity http, JwtAuthenticationConverter convertidor,
+            @Value("${app.seguridad.limite-intentos-por-minuto:10}") int limitePorMinuto) {
         http
             .csrf(csrf -> csrf.disable())
+            // HU-38: cabeceras de seguridad. La API solo devuelve JSON y
+            // archivos, así que su política de contenido no permite cargar
+            // nada ni ser incrustada en otro sitio.
+            .headers(h -> h
+                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; frame-ancestors 'none'"))
+                .frameOptions(f -> f.deny())
+                .referrerPolicy(r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000)))
+            // HU-38: límite de intentos por origen en las rutas de autenticación.
+            .addFilterBefore(new LimiteSolicitudesFilter(limitePorMinuto, 60), BearerTokenAuthenticationFilter.class)
+            // HU-36 y HU-41: usuario en los registros y restricción de la
+            // sesión con contraseña temporal.
+            .addFilterAfter(new ContextoSesionFilter(), BearerTokenAuthenticationFilter.class)
             .cors(Customizer.withDefaults())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/refresh").permitAll()
                 .requestMatchers("/error").permitAll()
+                // HU-41: estado del servicio para el orquestador de contenedores.
+                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
 
                 // Perfil propio: cualquier usuario autenticado
                 .requestMatchers("/api/usuarios/me", "/api/usuarios/me/**").authenticated()

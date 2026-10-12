@@ -1,3 +1,4 @@
+import { RespuestaLogin } from '../../models/respuesta-login';
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
@@ -29,7 +30,7 @@ describe('PerfilComponent', () => {
     servicio = jasmine.createSpyObj('UsuarioService', ['miPerfil', 'actualizarMiPerfil']);
     servicio.miPerfil.and.returnValue(of(perfil));
     servicio.actualizarMiPerfil.and.returnValue(of({ ...perfil.usuario, telefono: '999888777' }));
-    auth = jasmine.createSpyObj('AuthService', ['actualizarUsuario']);
+    auth = jasmine.createSpyObj('AuthService', ['actualizarUsuario', 'cambiarPassword']);
     TestBed.configureTestingModule({
       imports: [PerfilComponent],
       providers: [{ provide: UsuarioService, useValue: servicio }, { provide: AuthService, useValue: auth }]
@@ -64,9 +65,8 @@ describe('PerfilComponent', () => {
     const c = crear().componentInstance;
     c.correo = 'no-es-correo';
     c.telefono = 'abc';
-    c.password = 'corta';
     c.guardar();
-    expect(Object.keys(c.errores)).toEqual(jasmine.arrayContaining(['correo', 'telefono', 'password', 'confirmarPassword']));
+    expect(Object.keys(c.errores)).toEqual(jasmine.arrayContaining(['correo', 'telefono']));
     expect(servicio.actualizarMiPerfil).not.toHaveBeenCalled();
   });
 
@@ -86,5 +86,47 @@ describe('PerfilComponent', () => {
   it('en el primer acceso no muestra advertencias', () => {
     servicio.miPerfil.and.returnValue(of({ ...perfil, accesoAnterior: null, fallidosDesdeAnterior: 0 }));
     expect(crear().nativeElement.textContent).toContain('primer inicio de sesión');
+  });
+
+  it('CP-38: cambia la contraseña con la actual y una nueva que cumple la política', () => {
+    auth.cambiarPassword.and.returnValue(of({} as RespuestaLogin));
+    const c = crear().componentInstance;
+    c.actual = 'Clave#Actual2026';
+    c.nueva = 'Nueva#Clave2026';
+    c.confirmacion = 'Nueva#Clave2026';
+    c.cambiarPassword();
+    expect(auth.cambiarPassword).toHaveBeenCalledWith('Clave#Actual2026', 'Nueva#Clave2026', 'Nueva#Clave2026');
+    expect(c.mensajePassword).toContain('otros equipos');
+    expect(c.nueva).toBe('');
+  });
+
+  it('CP-38: no envía una contraseña débil, distinta de su confirmación o igual a la actual', () => {
+    const c = crear().componentInstance;
+    c.actual = 'Clave#Actual2026';
+    c.nueva = 'debil';
+    c.confirmacion = 'debil';
+    c.cambiarPassword();
+    expect(c.errorPassword).toContain('requisitos');
+    c.nueva = 'Nueva#Clave2026';
+    c.confirmacion = 'Nueva#Clave2027';
+    c.cambiarPassword();
+    expect(c.errorPassword).toContain('no coinciden');
+    c.nueva = c.confirmacion = 'Clave#Actual2026';
+    c.cambiarPassword();
+    expect(c.errorPassword).toContain('distinta');
+    c.actual = '';
+    c.cambiarPassword();
+    expect(c.errorPassword).toContain('actual');
+    expect(auth.cambiarPassword).not.toHaveBeenCalled();
+  });
+
+  it('CP-38: muestra el rechazo del servidor (contraseña actual incorrecta)', () => {
+    auth.cambiarPassword.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 422, error: { estado: 422, mensaje: 'x', errores: { actual: 'La contraseña actual no es correcta' } } })));
+    const c = crear().componentInstance;
+    c.actual = 'Otra#Clave2026';
+    c.nueva = c.confirmacion = 'Nueva#Clave2026';
+    c.cambiarPassword();
+    expect(c.errorPassword).toBe('La contraseña actual no es correcta');
   });
 });

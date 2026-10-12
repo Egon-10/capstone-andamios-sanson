@@ -42,7 +42,7 @@ public record UsuarioRegistroRequest(
         String nombreUsuario,
 
         @NotBlank(message = "Ingrese la contraseña")
-        @Pattern(regexp = ValidacionUsuario.PASSWORD, message = ValidacionUsuario.MENSAJE_PASSWORD)
+        @Pattern(regexp = ValidacionUsuario.PATRON_CLAVE, message = ValidacionUsuario.MENSAJE_CLAVE)
         String password,
 
         @NotBlank(message = "Confirme la contraseña")

@@ -1,320 +1,152 @@
-<div class="dashboard-container">
+<div class="ui-pagina">
 
-    <div class="dashboard-header">
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo">Bienvenido {{ nombreUsuario }}</h1>
+      <p class="ui-subtitulo">Sistema de Gestión de Inventario de Andamios</p>
+    </div>
+    <time class="fecha" [attr.datetime]="hoy | date:'yyyy-MM-dd'">
+      <i class="fa-regular fa-calendar" aria-hidden="true"></i> {{ hoy | date:'dd/MM/yyyy' }}
+    </time>
+  </header>
 
+  <!-- Resumen general -->
+  <section aria-labelledby="titulo-resumen">
+    <h2 id="titulo-resumen" class="ui-visualmente-oculto">Resumen general</h2>
+    <app-estado-vista [estado]="estadoResumen" textoCargando="Cargando el resumen…"
+                      textoError="No se pudo cargar el resumen." textoVacio="No hay datos de resumen."
+                      (reintentar)="cargarResumen()"></app-estado-vista>
+
+    @if (estadoResumen === 'listo' && resumen) {
+      <ul class="resumen">
+        @for (t of tarjetas; track t.clave) {
+          <li class="ui-tarjeta indicador" [attr.data-tono]="t.tono">
+            <span class="icono" aria-hidden="true"><i class="fa-solid {{ t.icono }}"></i></span>
+            <span class="dato">
+              <span class="etiqueta">{{ t.titulo }}</span>
+              <strong class="valor">{{ resumen[t.clave] | number }}</strong>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- HU-23 a HU-25: panel de indicadores de gestión -->
+  <app-panel-indicadores></app-panel-indicadores>
+
+  <!-- Gráficas -->
+  <div class="graficas">
+    <section class="ui-tarjeta grafica" aria-labelledby="g-categorias">
+      <h2 id="g-categorias" class="ui-tarjeta-titulo">Distribución de productos por categoría</h2>
+      @if (erroresGrafica.categorias) { <p class="ui-mensaje peligro" role="alert">No se pudo cargar esta gráfica.</p> }
+      <div class="lienzo"><canvas #lienzoCategorias>Gráfica de productos por categoría.</canvas></div>
+    </section>
+
+    <section class="ui-tarjeta grafica" aria-labelledby="g-movimientos">
+      <h2 id="g-movimientos" class="ui-tarjeta-titulo">Entradas vs. salidas</h2>
+      @if (erroresGrafica.movimientos) { <p class="ui-mensaje peligro" role="alert">No se pudo cargar esta gráfica.</p> }
+      <div class="lienzo"><canvas #lienzoMovimientos>Gráfica de entradas frente a salidas.</canvas></div>
+    </section>
+
+    <section class="ui-tarjeta grafica" aria-labelledby="g-stock">
+      <h2 id="g-stock" class="ui-tarjeta-titulo">Productos con mayor stock</h2>
+      @if (erroresGrafica.stock) { <p class="ui-mensaje peligro" role="alert">No se pudo cargar esta gráfica.</p> }
+      <div class="lienzo"><canvas #lienzoStock>Gráfica de los cinco productos con mayor stock.</canvas></div>
+    </section>
+
+    <section class="ui-tarjeta grafica" aria-labelledby="g-critico">
+      <h2 id="g-critico" class="ui-tarjeta-titulo">Productos en stock crítico</h2>
+      @if (erroresGrafica.critico) { <p class="ui-mensaje peligro" role="alert">No se pudo cargar esta gráfica.</p> }
+      <div class="lienzo"><canvas #lienzoCritico>Gráfica de stock actual frente a stock mínimo.</canvas></div>
+    </section>
+
+    <section class="ui-tarjeta grafica ancha" aria-labelledby="g-semana">
+      <div class="semana">
         <div>
-            <h1>
-                Bienvenido {{ usuario?.nombre || 'Usuario' }}
-            </h1>
-
-            <p>
-                Sistema de Gestión de Inventario de Andamios
-            </p>
+          <h2 id="g-semana" class="ui-tarjeta-titulo">Movimientos semanales</h2>
+          <p class="rango" aria-live="polite">
+            Semana del {{ inicioSemana | date:'dd/MM/yyyy' }} al {{ finSemana | date:'dd/MM/yyyy' }}
+          </p>
         </div>
-
-        <div class="fecha">
-            {{ today | date:'dd/MM/yyyy' }}
+        <div class="ui-acciones">
+          <button type="button" class="ui-boton secundario chico" (click)="cambiarSemana(-1)">
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Anterior
+          </button>
+          <button type="button" class="ui-boton secundario chico" (click)="cambiarSemana(0)" [disabled]="semana === 0">
+            <i class="fa-solid fa-calendar-day" aria-hidden="true"></i> Semana actual
+          </button>
+          <button type="button" class="ui-boton secundario chico" (click)="cambiarSemana(1)">
+            Siguiente <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          </button>
         </div>
-
-    </div>
-
-    <div *ngIf="error" class="error">
-
-        {{ error }}
-
-    </div>
-
-    <div *ngIf="cargando" class="loading">
-
-        Cargando información...
-
-    </div>
-
-    <!-- HU-23 a HU-25: panel de indicadores de gestión -->
-    <app-panel-indicadores></app-panel-indicadores>
-
-    <ng-container *ngIf="!cargando">
-
-        <!-- TARJETAS -->
-
-        <div class="cards">
-
-            <div class="card productos">
-
-                <span class="titulo">
-                    Productos
-                </span>
-
-                <span class="valor">
-                    {{ resumen?.totalProductos }}
-                </span>
-
-            </div>
-
-            <div class="card categorias">
-
-                <span class="titulo">
-                    Categorías
-                </span>
-
-                <span class="valor">
-                    {{ resumen?.totalCategorias }}
-                </span>
-
-            </div>
-
-            <div class="card proveedores">
-
-                <span class="titulo">
-                    Proveedores
-                </span>
-
-                <span class="valor">
-                    {{ resumen?.totalProveedores }}
-                </span>
-
-            </div>
-
-            <div class="card usuarios">
-
-                <span class="titulo">
-                    Usuarios
-                </span>
-
-                <span class="valor">
-                    {{ resumen?.totalUsuarios }}
-                </span>
-
-            </div>
-
-            <div class="card stock">
-
-                <span class="titulo">
-                    Stock Total
-                </span>
-
-                <span class="valor">
-                    {{ resumen?.stockTotal }}
-                </span>
-
-            </div>
-
-        </div>
-
-        <div class="graficas-container">
-
-    <div class="grafica-card">
-        <canvas id="graficaCategorias"></canvas>
-    </div>
-
-    <div class="grafica-card">
-        <canvas id="graficaMovimientos"></canvas>
-    </div>
-
-    <div class="grafica-card">
-        <canvas id="graficaStock"></canvas>
-    </div>
-
-    <div class="grafica-card">
-        <canvas id="graficaStockCritico"></canvas>
-    </div>
-
-    <!-- CARD DE MOVIMIENTOS SEMANALES -->
-    <div class="grafica-card full-width">
-
-        <div class="header-semana">
-
-    <button
-        class="btn-semana"
-        (click)="semanaAnterior()">
-
-        <i class="fas fa-chevron-left"></i>
-        Anterior
-
-    </button>
-
-    <div class="titulo-semana">
-
-        <h3>
-            Movimientos Semanales
-        </h3>
-
-        <span>
-            Semana del
-            {{ fechaInicioSemana }}
-            al
-            {{ fechaFinSemana }}
-        </span>
-
-    </div>
-
-    <button
-        class="btn-semana actual"
-        (click)="irSemanaActual()">
-
-        <i class="fas fa-calendar-day"></i>
-        Semana actual
-
-    </button>
-
-    <button
-        class="btn-semana"
-        (click)="semanaSiguiente()">
-
-        Siguiente
-        <i class="fas fa-chevron-right"></i>
-
-    </button>
-
-</div>
-
-        <canvas id="graficaSemana"></canvas>
-
-    </div>
-
-</div>
-
-
-        <!-- MOVIMIENTOS -->
-
-        <div class="movimientos-container">
-
-            <div class="titulo-tabla">
-
-                Últimos movimientos
-
-            </div>
-
-            <div class="filtros-dashboard">
-
-    <div class="grupo-filtro">
-
-        <label>Desde</label>
-
-        <input
-            type="date"
-            [(ngModel)]="fechaInicioDashboard"
-            (change)="aplicarFiltrosDashboard()">
-
-    </div>
-
-    <div class="grupo-filtro">
-
-        <label>Hasta</label>
-
-        <input
-            type="date"
-            [(ngModel)]="fechaFinDashboard"
-            (change)="aplicarFiltrosDashboard()">
-
-    </div>
-
-    <div class="grupo-filtro">
-
-        <label>Tipo</label>
-
-        <select
-            [(ngModel)]="tipoMovimientoDashboard"
-            (change)="aplicarFiltrosDashboard()">
-
-            <option value="">
-                Todos
-            </option>
-
-            <option value="ENTRADA">
-                Entradas
-            </option>
-
-            <option value="SALIDA">
-                Salidas
-            </option>
-
+      </div>
+      @if (erroresGrafica.semana) { <p class="ui-mensaje peligro" role="alert">No se pudo cargar esta gráfica.</p> }
+      <div class="lienzo"><canvas #lienzoSemana>Gráfica de entradas y salidas por día de la semana.</canvas></div>
+    </section>
+  </div>
+
+  <!-- Últimos movimientos -->
+  <section class="ui-tarjeta" aria-labelledby="titulo-movimientos">
+    <h2 id="titulo-movimientos" class="ui-tarjeta-titulo">Últimos movimientos</h2>
+
+    <div class="ui-filtros filtros">
+      <label class="ui-campo">Desde
+        <input type="date" name="desde" [(ngModel)]="filtro.desde" (ngModelChange)="aplicarFiltros()">
+      </label>
+      <label class="ui-campo">Hasta
+        <input type="date" name="hasta" [(ngModel)]="filtro.hasta" (ngModelChange)="aplicarFiltros()">
+      </label>
+      <label class="ui-campo">Tipo
+        <select name="tipo" [(ngModel)]="filtro.tipo" (ngModelChange)="aplicarFiltros()">
+          <option value="">Todos</option>
+          <option value="ENTRADA">Entradas</option>
+          <option value="SALIDA">Salidas</option>
         </select>
-
+      </label>
+      @if (hayFiltros) {
+        <button type="button" class="ui-boton fantasma" (click)="limpiarFiltros()">Quitar filtros</button>
+      }
     </div>
 
-</div>
+    @if (rangoInvertido) {
+      <p class="ui-mensaje aviso" role="alert">La fecha «Desde» es posterior a «Hasta».</p>
+    }
 
-            <table>
+    <app-estado-vista [estado]="estadoTabla" textoCargando="Cargando los movimientos…"
+                      textoError="No se pudieron cargar los movimientos."
+                      [textoVacio]="hayFiltros ? 'Ningún movimiento coincide con los filtros.' : 'No existen movimientos registrados.'"
+                      (reintentar)="cargarMovimientos()"></app-estado-vista>
 
-                <thead>
-
-                    <tr>
-
-                        <th>ID</th>
-                        <th>Producto</th>
-                        <th>Tipo</th>
-                        <th>Cantidad</th>
-                        <th>Usuario</th>
-                        <th>Fecha</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    <tr *ngFor="let movimiento of movimientos">
-
-                        <td>
-                            {{ movimiento.id }}
-                        </td>
-
-                        <td>
-                            {{ movimiento.producto }}
-                        </td>
-
-                        <td>
-
-                            <span
-                                class="badge"
-                                [ngClass]="{
-                                    'entrada': movimiento.tipo === 'ENTRADA',
-                                    'salida': movimiento.tipo === 'SALIDA'
-                                }">
-
-                                {{ movimiento.tipo }}
-
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            {{ movimiento.cantidad }}
-
-                        </td>
-
-                        <td>
-
-                            {{ movimiento.usuario }}
-
-                        </td>
-
-                        <td>
-
-                            {{ movimiento.fecha | date:'dd/MM/yyyy HH:mm' }}
-
-                        </td>
-
-                    </tr>
-
-                    <tr *ngIf="movimientos.length === 0">
-
-                        <td colspan="6" class="sin-datos">
-
-                            No existen movimientos registrados.
-
-                        </td>
-
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    </ng-container>
+    @if (estadoTabla === 'listo') {
+      <div class="ui-tabla-contenedor">
+        <table class="ui-tabla">
+          <caption class="ui-visualmente-oculto">Últimos movimientos de inventario</caption>
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Producto</th>
+              <th scope="col">Tipo</th>
+              <th scope="col" class="numero">Cantidad</th>
+              <th scope="col">Usuario</th>
+              <th scope="col">Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of movimientosFiltrados; track m.id ?? $index) {
+              <tr>
+                <td class="tenue">{{ m.id }}</td>
+                <td>{{ m.producto }}</td>
+                <td><span class="ui-insignia {{ insignia(m.tipo) }}">{{ m.tipo }}</span></td>
+                <td class="numero">{{ m.cantidad | number }}</td>
+                <td>{{ m.usuario }}</td>
+                <td>{{ m.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
 
 </div>

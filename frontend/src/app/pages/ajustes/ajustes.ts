@@ -8,6 +8,9 @@ import { Ajuste } from '../../models/ajuste';
 import { ProductoService } from '../../services/producto.service';
 import { AjusteService } from '../../services/ajuste.service';
 import { AlertaService } from '../../services/alerta.service';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+
+type EstadoVista = EstadoVistaComponent['estado'];
 
 /**
  * HU-16: ajustes de inventario por conteo fisico.
@@ -25,7 +28,7 @@ import { AlertaService } from '../../services/alerta.service';
 @Component({
   selector: 'app-ajustes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, EstadoVistaComponent],
   templateUrl: './ajustes.html',
   styleUrl: './ajustes.css'
 })
@@ -48,6 +51,10 @@ export class AjustesComponent implements OnInit {
   mensajeExito = '';
   errorCampo: { [campo: string]: string } = {};
   guardando = false;
+
+  /** HU-40: estado de la consulta de conteos, distinto de los errores del formulario. */
+  cargando = false;
+  errorCarga = '';
 
   /** HU-29: aprobar un ajuste mueve el stock: se actualizan las alertas. */
   private readonly alertas = inject(AlertaService);
@@ -76,11 +83,30 @@ export class AjustesComponent implements OnInit {
   }
 
   listar(): void {
+    this.cargando = true;
+    this.errorCarga = '';
     this.ajusteService.listar(this.filtroEstado || undefined).subscribe({
-      next: data => (this.ajustes = data),
-      error: (e: HttpErrorResponse) =>
-        this.mostrarError(e, 'No se pudieron cargar los ajustes')
+      next: data => {
+        this.cargando = false;
+        this.ajustes = data;
+      },
+      error: (e: HttpErrorResponse) => {
+        this.cargando = false;
+        this.mostrarError(e, 'No se pudieron cargar los ajustes');
+        this.errorCarga = this.mensajeError;
+      }
     });
+  }
+
+  /** HU-40: lo que muestra la lista de conteos (cargando, error, vacio o la tabla). */
+  get estadoVista(): EstadoVista {
+    if (this.cargando) {
+      return 'cargando';
+    }
+    if (this.errorCarga) {
+      return 'error';
+    }
+    return this.ajustes.length === 0 ? 'vacio' : 'listo';
   }
 
   /** Diferencia entre lo contado y lo que el sistema tiene registrado. */

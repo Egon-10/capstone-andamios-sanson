@@ -58,6 +58,24 @@ describe('ValorizacionComponent', () => {
     expect(c.porReponer).toEqual([]);
   });
 
+  it('HU-40: si la primera carga falla muestra el error y reintentar vuelve a calcular', () => {
+    inventario.valorizacion.and.returnValue(throwError(() =>
+      new HttpErrorResponse({ status: 500, error: { mensaje: 'Error interno' } })));
+    const fixture = TestBed.createComponent(ValorizacionComponent);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+
+    expect(fixture.componentInstance.estadoVista).toBe('error');
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('No se pudo calcular la valorización');
+
+    inventario.valorizacion.and.returnValue(of(valorizacion));
+    (Array.from(el.querySelectorAll('button')).find(b => b.textContent?.includes('Reintentar')) as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.estadoVista).toBe('listo');
+    expect(el.textContent).toContain('41,840.00');
+  });
+
   it('usa un mensaje por omision si el servidor no envia uno', () => {
     inventario.valorizacion.and.returnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
     const c = crear();

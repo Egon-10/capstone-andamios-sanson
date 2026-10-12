@@ -1,72 +1,45 @@
-<div class="login-page">
+<main class="contenedor">
+  <section class="ui-tarjeta tarjeta" aria-labelledby="titulo-login">
+    <img src="images/logoempresa.png" class="logo" alt="Andamios Sansón">
+    <div>
+      <h1 id="titulo-login">Iniciar sesión</h1>
+      <p class="explicacion">Sistema de Inventario · Bienvenido nuevamente</p>
+    </div>
 
-    <div class="login-left">
+    @if (mensajeAviso && !mensajeError) {
+      <p class="ui-mensaje aviso" role="alert">
+        <i class="fa-solid fa-clock" aria-hidden="true"></i> {{ mensajeAviso }}
+      </p>
+    }
 
-        <img src="images/logoempresa.png"
-             class="logo"
-             alt="Logo">
+    <form (ngSubmit)="iniciarSesion()" novalidate>
+      <label class="ui-campo" for="login-correo">Correo o nombre de usuario</label>
+      <input id="login-correo" class="entrada" type="text" name="correo" autocomplete="username"
+             [(ngModel)]="loginData.correo" [attr.aria-invalid]="!!mensajeError || null"
+             [attr.aria-describedby]="mensajeError ? 'login-error' : null">
 
-        <h1>Sistema de Inventario</h1>
+      <label class="ui-campo" for="login-password">Contraseña</label>
+      <div class="clave">
+        <input id="login-password" class="entrada" [type]="mostrarPassword ? 'text' : 'password'" name="password"
+               autocomplete="current-password" [(ngModel)]="loginData.password"
+               [attr.aria-invalid]="!!mensajeError || null"
+               [attr.aria-describedby]="mensajeError ? 'login-error' : null">
+        <button type="button" class="ui-boton fantasma ver" (click)="mostrarPassword = !mostrarPassword"
+                [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                [attr.aria-pressed]="mostrarPassword" aria-controls="login-password">
+          <i class="fa-solid" [class.fa-eye]="!mostrarPassword" [class.fa-eye-slash]="mostrarPassword" aria-hidden="true"></i>
+        </button>
+      </div>
 
-        <p>
-            Gestión eficiente de productos,
-            movimientos y usuarios.
+      @if (mensajeError) {
+        <p id="login-error" class="ui-mensaje peligro" role="alert">
+          <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
         </p>
+      }
 
-    </div>
-
-    <div class="login-right">
-
-        <div class="login-card">
-
-            <img src="images/userimage.png"
-                 class="avatar"
-                 alt="Usuario">
-
-            <h2>Iniciar Sesión</h2>
-
-            <p class="subtitulo">
-                Bienvenido nuevamente
-            </p>
-
-            <form (ngSubmit)="iniciarSesion()">
-
-    <input
-        type="text"
-        name="correo"
-        placeholder="Correo o nombre de usuario"
-        autocomplete="username"
-        [(ngModel)]="loginData.correo">
-
-    <input
-        type="password"
-        name="password"
-        placeholder="Contraseña"
-        autocomplete="current-password"
-        [(ngModel)]="loginData.password">
-
-    <button type="submit" [disabled]="enviando">
-        {{ enviando ? 'Ingresando...' : 'Ingresar' }}
-    </button>
-
-</form>
-
-            <p class="aviso"
-               *ngIf="mensajeAviso && !mensajeError">
-
-                {{ mensajeAviso }}
-
-            </p>
-
-            <p class="error"
-               *ngIf="mensajeError">
-
-                {{ mensajeError }}
-
-            </p>
-
-        </div>
-
-    </div>
-
-</div>
+      <button type="submit" class="ui-boton primario" [disabled]="enviando">
+        {{ enviando ? 'Ingresando…' : 'Ingresar' }}
+      </button>
+    </form>
+  </section>
+</main>

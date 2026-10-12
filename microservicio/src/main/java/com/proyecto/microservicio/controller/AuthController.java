@@ -1,5 +1,6 @@
 package com.proyecto.microservicio.controller;
 
+import com.proyecto.microservicio.dto.CambioPasswordRequest;
 import com.proyecto.microservicio.dto.LoginRequest;
 import com.proyecto.microservicio.dto.LoginResponse;
 import com.proyecto.microservicio.dto.RefreshRequest;
@@ -30,6 +31,13 @@ public class AuthController {
     @PostMapping("/refresh")
     public LoginResponse renovar(@Valid @RequestBody RefreshRequest solicitud) {
         return service.renovar(solicitud.refreshToken());
+    }
+
+    /** HU-37: cambio de la contraseña propia; devuelve la sesión nueva. */
+    @PostMapping("/cambio-password")
+    public LoginResponse cambiarPassword(@Valid @RequestBody CambioPasswordRequest solicitud,
+                                         @AuthenticationPrincipal Jwt jwt) {
+        return service.cambiarPassword(Long.valueOf(jwt.getSubject()), solicitud, jwt.getId(), jwt.getExpiresAt());
     }
 
     @PostMapping("/logout")

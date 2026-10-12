@@ -74,22 +74,6 @@
               @if (errores['telefono']) { <span class="ui-error-campo">{{ errores['telefono'] }}</span> }
             </label>
 
-            <fieldset class="clave">
-              <legend>Cambiar contraseña <span class="ui-ayuda">(opcional)</span></legend>
-              <label class="ui-campo">Nueva contraseña
-                <input [type]="mostrarPassword ? 'text' : 'password'" name="password" [(ngModel)]="password"
-                       autocomplete="new-password" [attr.aria-invalid]="!!errores['password']">
-                @if (errores['password']) { <span class="ui-error-campo">{{ errores['password'] }}</span> }
-              </label>
-              <label class="ui-campo">Confirmar contraseña
-                <input [type]="mostrarPassword ? 'text' : 'password'" name="confirmarPassword" [(ngModel)]="confirmarPassword"
-                       autocomplete="new-password" [attr.aria-invalid]="!!errores['confirmarPassword']">
-                @if (errores['confirmarPassword']) { <span class="ui-error-campo">{{ errores['confirmarPassword'] }}</span> }
-              </label>
-              <label class="mostrar">
-                <input type="checkbox" name="mostrar" [(ngModel)]="mostrarPassword"> Mostrar contraseña
-              </label>
-            </fieldset>
 
             <div aria-live="polite" class="mensajes">
               @if (mensajeError) { <p class="ui-mensaje peligro" role="alert">{{ mensajeError }}</p> }
@@ -101,6 +85,41 @@
                 {{ guardando ? 'Guardando…' : 'Guardar cambios' }}
               </button>
               <button type="button" class="ui-boton secundario" (click)="descartar()">Descartar</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- HU-37: cambio de contraseña -->
+        <section class="ui-tarjeta" aria-labelledby="titulo-clave">
+          <h2 id="titulo-clave" class="ui-tarjeta-titulo">Cambiar contraseña</h2>
+          <form class="formulario" (ngSubmit)="cambiarPassword()" novalidate>
+            <label class="ui-campo">Contraseña actual *
+              <input [type]="mostrarPassword ? 'text' : 'password'" name="actual" [(ngModel)]="actual"
+                     autocomplete="current-password">
+            </label>
+            <span></span>
+            <label class="ui-campo">Nueva contraseña *
+              <input [type]="mostrarPassword ? 'text' : 'password'" name="nueva" [(ngModel)]="nueva"
+                     autocomplete="new-password" aria-describedby="requisitos-clave">
+            </label>
+            <label class="ui-campo">Confirmar nueva contraseña *
+              <input [type]="mostrarPassword ? 'text' : 'password'" name="confirmacion" [(ngModel)]="confirmacion"
+                     autocomplete="new-password">
+            </label>
+            <div class="completo" id="requisitos-clave">
+              <app-politica-contrasena [clave]="nueva" [usuario]="u.nombreUsuario" [documento]="u.numeroDocumento"></app-politica-contrasena>
+            </div>
+            <label class="mostrar completo">
+              <input type="checkbox" name="mostrarPassword" [(ngModel)]="mostrarPassword"> Mostrar contraseñas
+            </label>
+            <div aria-live="polite" class="mensajes">
+              @if (errorPassword) { <p class="ui-mensaje peligro" role="alert">{{ errorPassword }}</p> }
+              @if (mensajePassword) { <p class="ui-mensaje exito">{{ mensajePassword }}</p> }
+            </div>
+            <div class="ui-acciones">
+              <button type="submit" class="ui-boton primario" [disabled]="cambiandoPassword">
+                {{ cambiandoPassword ? 'Cambiando…' : 'Cambiar contraseña' }}
+              </button>
             </div>
           </form>
         </section>

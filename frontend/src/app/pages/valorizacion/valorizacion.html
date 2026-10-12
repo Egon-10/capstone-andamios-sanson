@@ -1,67 +1,84 @@
-<div class="contenedor">
+<div class="ui-pagina">
 
-  <h1>Valorizacion del inventario</h1>
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-coins" aria-hidden="true"></i> Valorización del inventario</h1>
+      <p class="ui-subtitulo explicacion">
+        El inventario se valoriza al <strong>costo promedio ponderado</strong>, que se recalcula en cada ingreso de
+        mercadería. No se usa el precio de venta: valorizar al precio sobreestimaría el inventario en el margen
+        comercial y daría una cifra que no sirve para el balance.
+      </p>
+    </div>
+  </header>
 
-  <p class="explicacion">
-    El inventario se valoriza al <strong>costo promedio ponderado</strong>, que
-    se recalcula en cada ingreso de mercaderia. No se usa el precio de venta:
-    valorizar al precio sobreestimaria el inventario en el margen comercial y
-    daria una cifra que no sirve para el balance.
-  </p>
-
-  <!-- HU-28: corte a fecha y exportacion -->
-  <form class="corte" (ngSubmit)="cargar()">
-    <label class="ui-campo">Valorizar al cierre del día
-      <input type="date" name="fechaCorte" [(ngModel)]="fechaCorte" [max]="hoy">
+  <!-- HU-28: corte a fecha y exportación -->
+  <form class="ui-tarjeta corte" (ngSubmit)="cargar()" aria-label="Fecha de corte y exportación">
+    <label class="ui-campo" for="fechaCorte">Valorizar al cierre del día
+      <input id="fechaCorte" type="date" name="fechaCorte" [(ngModel)]="fechaCorte" [max]="hoy">
     </label>
     <button type="submit" class="ui-boton primario" [disabled]="cargando">
       <i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Aplicar corte
     </button>
-    <button type="button" class="ui-boton secundario" *ngIf="valorizacion?.fechaCorte" (click)="verHoy()">
-      Ver existencias de hoy
-    </button>
+    @if (valorizacion?.fechaCorte) {
+      <button type="button" class="ui-boton secundario" (click)="verHoy()">Ver existencias de hoy</button>
+    }
     <span class="separador"></span>
     <button type="button" class="ui-boton secundario" [disabled]="!valorizacion || descargando !== null" (click)="exportar('pdf')">
-      <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> PDF
+      <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> {{ descargando === 'pdf' ? 'Generando…' : 'PDF' }}
     </button>
     <button type="button" class="ui-boton secundario" [disabled]="!valorizacion || descargando !== null" (click)="exportar('xlsx')">
-      <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Excel
+      <i class="fa-solid fa-file-excel" aria-hidden="true"></i> {{ descargando === 'xlsx' ? 'Generando…' : 'Excel' }}
     </button>
   </form>
 
-  <p class="ui-mensaje exito" aria-live="polite" *ngIf="mensajeDescarga">{{ mensajeDescarga }}</p>
+  @if (mensajeDescarga) {
+    <output class="ui-mensaje exito">
+      <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ mensajeDescarga }}
+    </output>
+  }
+  @if (valorizacion?.fechaCorte) {
+    <p class="ui-mensaje info">
+      <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+      Valorización reconstruida al cierre del {{ valorizacion?.fechaCorte | date:'dd/MM/yyyy' }}:
+      el stock de cada producto es el que tenía ese día, y el costo, el que dejó su último movimiento anterior.
+    </p>
+  }
+  @if ((valorizacion?.productosConCostoEstimado ?? 0) > 0) {
+    <p class="ui-mensaje aviso">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+      {{ valorizacion?.productosConCostoEstimado }} producto(s) con costo estimado: su último movimiento
+      anterior al corte es de antes de que el sistema registrara el costo por movimiento, y se usó el costo vigente.
+    </p>
+  }
+  @if (mensajeError && estadoVista !== 'error') {
+    <p class="ui-mensaje peligro" role="alert">
+      <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ mensajeError }}
+    </p>
+  }
 
-  <p class="ui-mensaje info" *ngIf="valorizacion?.fechaCorte">
-    <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
-    Valorización reconstruida al cierre del {{ valorizacion?.fechaCorte | date:'dd/MM/yyyy' }}:
-    el stock de cada producto es el que tenía ese día, y el costo, el que dejó su último movimiento anterior.
-  </p>
-  <p class="ui-mensaje aviso" *ngIf="(valorizacion?.productosConCostoEstimado ?? 0) > 0">
-    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-    {{ valorizacion?.productosConCostoEstimado }} producto(s) con costo estimado: su último movimiento
-    anterior al corte es de antes de que el sistema registrara el costo por movimiento, y se usó el costo vigente.
-  </p>
+  @if (estadoVista !== 'listo') {
+    <app-estado-vista [estado]="estadoVista" textoCargando="Calculando la valorización…"
+                      textoError="No se pudo calcular la valorización." [detalle]="mensajeError"
+                      (reintentar)="cargar()"></app-estado-vista>
+  }
 
-  <p class="ui-mensaje peligro" role="alert" *ngIf="mensajeError">{{ mensajeError }}</p>
-  <p class="ayuda" *ngIf="cargando">Calculando la valorizacion...</p>
-
-  <ng-container *ngIf="valorizacion">
+  @if (valorizacion; as v) {
 
     <div class="tarjetas">
       <div class="tarjeta destacada">
         <span class="etiqueta">Valor total</span>
-        <strong>S/ {{ valorizacion.valorTotal | number:'1.2-2' }}</strong>
-        <small>{{ valorizacion.fechaCorte ? 'al ' + (valorizacion.fechaCorte | date:'dd/MM/yyyy') : 'al costo promedio, hoy' }}</small>
+        <strong>S/ {{ v.valorTotal | number:'1.2-2' }}</strong>
+        <small>{{ v.fechaCorte ? 'al ' + (v.fechaCorte | date:'dd/MM/yyyy') : 'al costo promedio, hoy' }}</small>
       </div>
       <div class="tarjeta">
         <span class="etiqueta">Unidades</span>
-        <strong>{{ valorizacion.unidadesTotales | number }}</strong>
+        <strong>{{ v.unidadesTotales | number }}</strong>
         <small>en stock</small>
       </div>
       <div class="tarjeta">
         <span class="etiqueta">Productos</span>
-        <strong>{{ valorizacion.productosContados }}</strong>
-        <small>activos en el catalogo</small>
+        <strong>{{ v.productosContados }}</strong>
+        <small>activos en el catálogo</small>
       </div>
       <div class="tarjeta" [class.alerta]="porReponer.length > 0">
         <span class="etiqueta">Por reponer</span>
@@ -70,142 +87,150 @@
       </div>
     </div>
 
-    <div class="pestanas">
-      <button type="button" [class.activa]="vista === 'resumen'" (click)="vista = 'resumen'">
-        Por categoria
-      </button>
-      <button type="button" [class.activa]="vista === 'detalle'" (click)="vista = 'detalle'">
-        Por producto
-      </button>
-      <button type="button" [class.activa]="vista === 'reposicion'" (click)="vista = 'reposicion'">
-        Reposicion ({{ porReponer.length }})
-      </button>
-    </div>
-
-    <!-- Resumen por categoria -->
-    <table *ngIf="vista === 'resumen'">
-      <thead>
-        <tr>
-          <th>Categoria</th>
-          <th class="numero">Productos</th>
-          <th class="numero">Unidades</th>
-          <th class="numero">Valor</th>
-          <th>Participacion</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let c of valorizacion.porCategoria">
-          <td>{{ c.categoria }}</td>
-          <td class="numero">{{ c.productos }}</td>
-          <td class="numero">{{ c.unidades | number }}</td>
-          <td class="numero"><strong>S/ {{ c.valor | number:'1.2-2' }}</strong></td>
-          <td class="participacion">
-            <div class="barra">
-              <div class="relleno" [style.width.%]="c.participacion"></div>
-            </div>
-            <span>{{ c.participacion | number:'1.1-1' }} %</span>
-          </td>
-        </tr>
-      </tbody>
-      <tfoot>
-        <tr>
-          <td><strong>Total</strong></td>
-          <td class="numero">{{ valorizacion.productosContados }}</td>
-          <td class="numero">{{ valorizacion.unidadesTotales | number }}</td>
-          <td class="numero"><strong>S/ {{ valorizacion.valorTotal | number:'1.2-2' }}</strong></td>
-          <td></td>
-        </tr>
-      </tfoot>
-    </table>
-
-    <!-- Detalle por producto -->
-    <ng-container *ngIf="vista === 'detalle'">
-
-      <div class="barra-acciones">
-        <label class="casilla">
-          <input type="checkbox" [(ngModel)]="soloReposicionEnDetalle">
-          Mostrar solo los que necesitan reposicion
-        </label>
+    <section class="ui-tarjeta vistas" aria-label="Detalle de la valorización">
+      <div class="ui-pestanas" role="tablist" aria-label="Vista">
+        <button type="button" role="tab" [attr.aria-selected]="vista === 'resumen'" [class.activa]="vista === 'resumen'"
+                (click)="vista = 'resumen'">Por categoría</button>
+        <button type="button" role="tab" [attr.aria-selected]="vista === 'detalle'" [class.activa]="vista === 'detalle'"
+                (click)="vista = 'detalle'">Por producto</button>
+        <button type="button" role="tab" [attr.aria-selected]="vista === 'reposicion'" [class.activa]="vista === 'reposicion'"
+                (click)="vista = 'reposicion'">Reposición ({{ porReponer.length }})</button>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Producto</th>
-            <th>Categoria</th>
-            <th class="numero">Stock</th>
-            <th class="numero">Costo prom.</th>
-            <th class="numero">Valorizado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of detalle" [class.fila-reposicion]="p.necesitaReposicion">
-            <td>{{ p.sku }}</td>
-            <td>
-              {{ p.producto }}
-              <small class="aviso-reposicion" *ngIf="p.necesitaReposicion">
-                alcanzo su umbral de reposicion
-              </small>
-            </td>
-            <td>{{ p.categoria }}</td>
-            <td class="numero">{{ p.stock | number }}</td>
-            <td class="numero">
-              S/ {{ p.costoPromedio | number:'1.2-2' }}
-              <span class="ui-insignia aviso" *ngIf="p.costoEstimado" title="Costo vigente usado por falta de historia">estimado</span>
-            </td>
-            <td class="numero"><strong>S/ {{ p.valor | number:'1.2-2' }}</strong></td>
-          </tr>
-          <tr *ngIf="detalle.length === 0">
-            <td colspan="6" class="vacio">No hay productos que mostrar.</td>
-          </tr>
-        </tbody>
-      </table>
+      @switch (vista) {
+        @case ('resumen') {
+          <div class="ui-tabla-contenedor">
+            <table class="ui-tabla">
+              <caption class="ui-visualmente-oculto">Valorización por categoría</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Categoría</th>
+                  <th scope="col" class="numero">Productos</th>
+                  <th scope="col" class="numero">Unidades</th>
+                  <th scope="col" class="numero">Valor</th>
+                  <th scope="col">Participación</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of v.porCategoria; track c.categoria) {
+                  <tr>
+                    <td>{{ c.categoria }}</td>
+                    <td class="numero">{{ c.productos }}</td>
+                    <td class="numero">{{ c.unidades | number }}</td>
+                    <td class="numero"><strong>S/ {{ c.valor | number:'1.2-2' }}</strong></td>
+                    <td class="participacion">
+                      <span class="barra" aria-hidden="true"><span class="relleno" [style.width.%]="c.participacion"></span></span>
+                      <span>{{ c.participacion | number:'1.1-1' }} %</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td><strong>Total</strong></td>
+                  <td class="numero">{{ v.productosContados }}</td>
+                  <td class="numero">{{ v.unidadesTotales | number }}</td>
+                  <td class="numero"><strong>S/ {{ v.valorTotal | number:'1.2-2' }}</strong></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
 
-    </ng-container>
+        @case ('detalle') {
+          <label class="casilla">
+            <input type="checkbox" name="soloReposicion" [(ngModel)]="soloReposicionEnDetalle">
+            Mostrar solo los que necesitan reposición
+          </label>
 
-    <!-- Reposicion (HU-20) -->
-    <ng-container *ngIf="vista === 'reposicion'">
+          @if (detalle.length === 0) {
+            <app-estado-vista estado="vacio" textoVacio="No hay productos que mostrar."
+                              [detalle]="soloReposicionEnDetalle ? 'Ningún producto alcanzó su umbral de reposición.' : ''"></app-estado-vista>
+          } @else {
+            <div class="ui-tabla-contenedor">
+              <table class="ui-tabla">
+                <caption class="ui-visualmente-oculto">Valorización por producto</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">SKU</th>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Categoría</th>
+                    <th scope="col" class="numero">Stock</th>
+                    <th scope="col" class="numero">Costo prom.</th>
+                    <th scope="col" class="numero">Valorizado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of detalle; track p.productoId) {
+                    <tr [class.fila-reposicion]="p.necesitaReposicion">
+                      <td class="sku">{{ p.sku }}</td>
+                      <td>
+                        {{ p.producto }}
+                        @if (p.necesitaReposicion) {
+                          <span class="ui-insignia aviso"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Reponer</span>
+                        }
+                      </td>
+                      <td>{{ p.categoria }}</td>
+                      <td class="numero">{{ p.stock | number }}</td>
+                      <td class="numero">
+                        S/ {{ p.costoPromedio | number:'1.2-2' }}
+                        @if (p.costoEstimado) {
+                          <span class="ui-insignia aviso" title="Costo vigente usado por falta de historia">estimado</span>
+                        }
+                      </td>
+                      <td class="numero"><strong>S/ {{ p.valor | number:'1.2-2' }}</strong></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
 
-      <p class="explicacion" *ngIf="porReponer.length > 0">
-        Estos productos alcanzaron o bajaron de su punto de reposicion. El valor
-        que figura es el de las existencias que quedan, no el de la compra:
-        sirve para ver cuanto inventario queda comprometido, no cuanto gastar.
-      </p>
-
-      <table *ngIf="porReponer.length > 0">
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Producto</th>
-            <th>Categoria</th>
-            <th class="numero">Stock</th>
-            <th class="numero">Valorizado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of porReponer" class="fila-reposicion">
-            <td>{{ p.sku }}</td>
-            <td>{{ p.producto }}</td>
-            <td>{{ p.categoria }}</td>
-            <td class="numero"><strong>{{ p.stock | number }}</strong></td>
-            <td class="numero">S/ {{ p.valor | number:'1.2-2' }}</td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colspan="4"><strong>Valor de las existencias por reponer</strong></td>
-            <td class="numero"><strong>S/ {{ valorPorReponer | number:'1.2-2' }}</strong></td>
-          </tr>
-        </tfoot>
-      </table>
-
-      <p class="vacio" *ngIf="porReponer.length === 0">
-        Ningun producto alcanzo su umbral de reposicion.
-      </p>
-
-    </ng-container>
-
-  </ng-container>
-
+        @case ('reposicion') {
+          @if (porReponer.length === 0) {
+            <app-estado-vista estado="vacio" textoVacio="Ningún producto alcanzó su umbral de reposición."></app-estado-vista>
+          } @else {
+            <p class="ui-ayuda">
+              Estos productos alcanzaron o bajaron de su punto de reposición. El valor que figura es el de las
+              existencias que quedan, no el de la compra: sirve para ver cuánto inventario queda comprometido,
+              no cuánto gastar.
+            </p>
+            <div class="ui-tabla-contenedor">
+              <table class="ui-tabla">
+                <caption class="ui-visualmente-oculto">Productos por reponer</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">SKU</th>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Categoría</th>
+                    <th scope="col" class="numero">Stock</th>
+                    <th scope="col" class="numero">Valorizado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of porReponer; track p.productoId) {
+                    <tr class="fila-reposicion">
+                      <td class="sku">{{ p.sku }}</td>
+                      <td>{{ p.producto }}</td>
+                      <td>{{ p.categoria }}</td>
+                      <td class="numero"><strong>{{ p.stock | number }}</strong></td>
+                      <td class="numero">S/ {{ p.valor | number:'1.2-2' }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="4"><strong>Valor de las existencias por reponer</strong></td>
+                    <td class="numero"><strong>S/ {{ valorPorReponer | number:'1.2-2' }}</strong></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          }
+        }
+      }
+    </section>
+  }
 </div>

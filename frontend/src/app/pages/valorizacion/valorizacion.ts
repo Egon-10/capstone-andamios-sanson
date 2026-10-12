@@ -8,6 +8,7 @@ import { InventarioService } from '../../services/inventario.service';
 import { FormatoReporte, ReporteService } from '../../services/reporte.service';
 import { mensajeDeError, mensajeDeErrorEnBlob } from '../../core/errores';
 import { hoyEnLima } from '../reportes/reportes';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
 
 /**
  * HU-17 y HU-20: valorizacion del inventario y productos por reponer.
@@ -24,7 +25,7 @@ import { hoyEnLima } from '../reportes/reportes';
 @Component({
   selector: 'app-valorizacion',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, EstadoVistaComponent],
   templateUrl: './valorizacion.html',
   styleUrl: './valorizacion.css'
 })
@@ -100,6 +101,17 @@ export class ValorizacionComponent implements OnInit {
         void mensajeDeErrorEnBlob(e, 'No se pudo generar el reporte').then(m => (this.mensajeError = m));
       }
     });
+  }
+
+  /** HU-40: la primera carga muestra su estado; una recarga deja visibles los datos anteriores. */
+  get estadoVista(): 'cargando' | 'error' | 'listo' {
+    if (this.valorizacion) {
+      return 'listo';
+    }
+    if (this.cargando) {
+      return 'cargando';
+    }
+    return this.mensajeError ? 'error' : 'listo';
   }
 
   /** Detalle, filtrado a lo que necesita reposicion cuando se pide. */

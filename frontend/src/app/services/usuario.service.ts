@@ -6,7 +6,7 @@ import { environment } from '../../environments/environment';
 import { aParametros } from '../core/parametros';
 import { UsuarioOpcion } from '../models/auditoria';
 import { Pagina } from '../models/pagina';
-import { FiltroUsuarios, Perfil, Usuario, UsuarioActualizacion, UsuarioRegistro } from '../models/usuario';
+import { FiltroUsuarios, Perfil, Restablecimiento, Usuario, UsuarioActualizacion, UsuarioRegistro } from '../models/usuario';
 
 @Injectable({
   providedIn: 'root'
@@ -25,6 +25,16 @@ export class UsuarioService {
   /** Lista corta para los filtros de las bitácoras. */
   opciones(): Observable<UsuarioOpcion[]> {
     return this.http.get<UsuarioOpcion[]>(`${this.apiUrl}/opciones`);
+  }
+
+  /** HU-36: genera una contraseña temporal para otro usuario. */
+  restablecerPassword(id: number): Observable<Restablecimiento> {
+    return this.http.post<Restablecimiento>(`${this.apiUrl}/${id}/restablecimiento-password`, {});
+  }
+
+  /** HU-35: levanta el bloqueo por intentos fallidos. */
+  desbloquear(id: number): Observable<Usuario> {
+    return this.http.post<Usuario>(`${this.apiUrl}/${id}/desbloqueo`, {});
   }
 
   /** HU-31: activa o desactiva una cuenta. */

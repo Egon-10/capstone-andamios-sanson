@@ -8,6 +8,9 @@ Scripts de la base de datos del sistema web de control de inventario de
 | `01-inventario_andamios.sql` | Volcado entregado por la empresa (phpMyAdmin / MariaDB 10.4, 28-06-2026): estructura, catálogo de productos, proveedores, categorías, roles, usuarios y movimientos registrados. |
 | `02-sprint1-seguridad.sql` | Migración del Sprint 1: campos de la HU-43, SKU de productos, tablas de sesión y restricciones de unicidad. |
 | `03-sprint2-movimientos.sql` | Migración del Sprint 2: catálogo de motivos tipificados, estado y costo de los movimientos, saldo del kardex, costo promedio y umbrales de los productos, columna de versión para el bloqueo optimista, tabla de ajustes de inventario y detalle de auditoría. |
+| `04-sprint3-reportes-accesos.sql` | Migración del Sprint 3: costo promedio resultante de cada movimiento (valorización a fecha), bitácora de accesos, invalidación de sesiones al desactivar una cuenta e índices de las consultas de reportes. |
+| `05-sprint4-seguridad.sql` | Migración del Sprint 4: intentos fallidos, bloqueo temporal y contraseña temporal de las cuentas. |
+| `99-privilegios-aplicacion.sh` | Solo para el despliegue con contenedores: deja a la cuenta de la aplicación con privilegios mínimos (bitácoras de solo inserción, sin DDL). |
 
 ## Cómo cargarla en local
 

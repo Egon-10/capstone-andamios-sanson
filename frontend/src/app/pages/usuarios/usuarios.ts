@@ -6,7 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { Rol } from '../../models/rol';
 import { ErrorApi } from '../../models/respuesta-login';
-import { FiltroUsuarios, Usuario, UsuarioActualizacion, UsuarioRegistro } from '../../models/usuario';
+import { FiltroUsuarios, Restablecimiento, Usuario, UsuarioActualizacion, UsuarioRegistro } from '../../models/usuario';
 import { Pagina } from '../../models/pagina';
 import { RolService } from '../../services/rol.service';
 import { UsuarioService } from '../../services/usuario.service';
@@ -15,16 +15,19 @@ import { FormatoReporte, ReporteService } from '../../services/reporte.service';
 import { mensajeDeError, mensajeDeErrorEnBlob } from '../../core/errores';
 import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
 import { PaginacionComponent } from '../../components/paginacion/paginacion';
+import { PoliticaContrasenaComponent } from '../../components/politica-contrasena/politica-contrasena';
+import { faltas } from '../../core/politica-contrasena';
 
 const SOLO_LETRAS = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$/;
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
 
 /**
  * HU-43: registro de usuarios (12 campos y turno, CAM-02).
  * HU-07: edición parcial mediante PATCH.
  * HU-30: listado con búsqueda, filtros, orden y paginación en el servidor.
  * HU-31: activación y desactivación con confirmación y motivo.
+ * HU-35: desbloqueo manual. HU-36: restablecimiento con contraseña temporal.
+ * HU-37: la contraseña inicial cumple la política de complejidad.
  * Las validaciones del cliente replican las del servidor, que es quien decide.
  */
 @Component({
@@ -34,7 +37,8 @@ const PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
     CommonModule,
     FormsModule,
     EstadoVistaComponent,
-    PaginacionComponent
+    PaginacionComponent,
+    PoliticaContrasenaComponent
   ],
   templateUrl: './usuarios.html',
   styleUrl: './usuarios.css'
@@ -80,6 +84,13 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   errorEstado = '';
 
   descargando: FormatoReporte | null = null;
+
+  // --- HU-36: restablecimiento ---
+  usuarioRestableciendo: Usuario | null = null;
+  restablecimiento: Restablecimiento | null = null;
+  restableciendo = false;
+  errorRestablecer = '';
+  copiado = false;
 
   form: UsuarioRegistro = this.formularioVacio();
   idEditando: number | null = null;
@@ -182,6 +193,66 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   @HostListener('document:keydown.escape')
   cancelarCambioEstado(): void {
     this.usuarioCambiando = null;
+    if (!this.restablecimiento) {
+      this.usuarioRestableciendo = null;
+    }
+  }
+
+  // --- HU-36 ---
+
+  pedirRestablecimiento(u: Usuario): void {
+    this.usuarioRestableciendo = u;
+    this.restablecimiento = null;
+    this.errorRestablecer = '';
+    this.copiado = false;
+  }
+
+  confirmarRestablecimiento(): void {
+    const u = this.usuarioRestableciendo;
+    if (!u?.id) {
+      return;
+    }
+    this.restableciendo = true;
+    this.usuarioService.restablecerPassword(u.id).subscribe({
+      next: r => {
+        this.restableciendo = false;
+        this.restablecimiento = r;
+        this.listarUsuarios();
+      },
+      error: (e: HttpErrorResponse) => {
+        this.restableciendo = false;
+        this.errorRestablecer = mensajeDeError(e, 'No se pudo restablecer la contraseña.');
+      }
+    });
+  }
+
+  copiarTemporal(): void {
+    const clave = this.restablecimiento?.passwordTemporal;
+    if (!clave) {
+      return;
+    }
+    navigator.clipboard?.writeText(clave).then(() => (this.copiado = true), () => (this.copiado = false));
+  }
+
+  /** Al cerrar, la contraseña temporal se descarta de la memoria de la pantalla. */
+  cerrarRestablecimiento(): void {
+    this.usuarioRestableciendo = null;
+    this.restablecimiento = null;
+  }
+
+  // --- HU-35 ---
+
+  desbloquear(u: Usuario): void {
+    if (!u.id) {
+      return;
+    }
+    this.usuarioService.desbloquear(u.id).subscribe({
+      next: () => {
+        this.mensajeExito = `Se desbloqueó la cuenta ${u.nombreUsuario ?? u.correo}.`;
+        this.listarUsuarios();
+      },
+      error: (e: HttpErrorResponse) => (this.mensajeError = mensajeDeError(e, 'No se pudo desbloquear la cuenta.'))
+    });
   }
 
   confirmarCambioEstado(): void {
@@ -328,9 +399,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       }
     }
 
-    const exigePassword = !this.editando || f.password.length > 0;
-    if (exigePassword && !PASSWORD.test(f.password)) {
-      e['password'] = 'Mínimo 8 caracteres, con mayúscula, minúscula y número.';
+    // HU-37: la contraseña solo se fija al crear la cuenta; después se restablece.
+    const exigePassword = !this.editando;
+    if (exigePassword && faltas(f.password, f.nombreUsuario, f.numeroDocumento).length > 0) {
+      e['password'] = 'La contraseña no cumple todos los requisitos de la lista.';
     }
     if (exigePassword && f.password !== f.confirmarPassword) {
       e['confirmarPassword'] = 'La contraseña y su confirmación no coinciden.';
@@ -338,7 +410,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     return e;
   }
 
-  /** Solo se envían los campos editables; la contraseña, únicamente si se escribió una nueva. */
+  /** Solo se envían los campos editables; la contraseña no se edita aquí (HU-36). */
   private cambios(): UsuarioActualizacion {
     const f = this.form;
     const cambios: UsuarioActualizacion = {
@@ -350,10 +422,6 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       turno: f.turno,
       rolId: f.rolId ?? undefined
     };
-    if (f.password) {
-      cambios.password = f.password;
-      cambios.confirmarPassword = f.confirmarPassword;
-    }
     return cambios;
   }
 

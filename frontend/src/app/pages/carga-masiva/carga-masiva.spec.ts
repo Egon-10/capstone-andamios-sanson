@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 
@@ -9,6 +9,7 @@ import { ProductoService } from '../../services/producto.service';
 describe('CargaMasivaComponent', () => {
   let productos: jasmine.SpyObj<ProductoService>;
   let c: CargaMasivaComponent;
+  let fixture: ComponentFixture<CargaMasivaComponent>;
   const archivo = new File(['sku;nombre'], 'productos.csv', { type: 'text/csv' });
 
   function evento(archivos: File[] | null): Event {
@@ -24,7 +25,7 @@ describe('CargaMasivaComponent', () => {
       imports: [CargaMasivaComponent],
       providers: [{ provide: ProductoService, useValue: productos }]
     });
-    const fixture = TestBed.createComponent(CargaMasivaComponent);
+    fixture = TestBed.createComponent(CargaMasivaComponent);
     c = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -85,6 +86,40 @@ describe('CargaMasivaComponent', () => {
     c.seleccionar(evento([archivo]));
     c.cargar();
     expect(c.mensajeError).toBe('No se pudo procesar el archivo');
+  });
+
+  it('HU-40: si el servidor falla muestra el error y reintentar repite la misma simulacion', () => {
+    productos.cargaMasiva.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+    c.seleccionar(evento([archivo]));
+    c.simular();
+    fixture.detectChanges();
+
+    expect(c.estadoVista).toBe('error');
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('app-estado-vista [role="alert"]');
+    expect(alerta.textContent).toContain('No se pudo procesar el archivo');
+
+    productos.cargaMasiva.and.returnValue(of({ simulacion: true, filasLeidas: 1, aceptadas: 1, errores: [], skusCargados: [] }));
+    alerta.querySelector('button')!.click();
+    fixture.detectChanges();
+
+    expect(productos.cargaMasiva.calls.mostRecent().args).toEqual([archivo, 'TODO_O_NADA', true]);
+    expect(c.estadoVista).toBe('listo');
+    expect(fixture.nativeElement.textContent).toContain('Resultado de la simulación');
+  });
+
+  it('HU-40: un archivo sin filas se informa como vacio y la falta de archivo no ofrece reintentar', () => {
+    c.simular();
+    fixture.detectChanges();
+    expect(c.estadoVista).toBe('listo');
+    expect(fixture.nativeElement.querySelector('app-estado-vista [role="alert"]')).toBeNull();
+
+    productos.cargaMasiva.and.returnValue(of({ simulacion: true, filasLeidas: 0, errores: [], skusCargados: [] }));
+    c.seleccionar(evento([archivo]));
+    c.simular();
+    fixture.detectChanges();
+
+    expect(c.estadoVista).toBe('vacio');
+    expect(fixture.nativeElement.textContent).toContain('El archivo no tiene filas de datos');
   });
 
   it('descarga una plantilla con las columnas que espera el servidor', async () => {

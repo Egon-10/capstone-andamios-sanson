@@ -3,6 +3,7 @@ package com.proyecto.microservicio.controller;
 import com.proyecto.microservicio.dto.CambioEstadoRequest;
 import com.proyecto.microservicio.dto.PaginaResponse;
 import com.proyecto.microservicio.dto.PerfilResponse;
+import com.proyecto.microservicio.dto.RestablecimientoResponse;
 import com.proyecto.microservicio.dto.UsuarioActualizacionRequest;
 import com.proyecto.microservicio.dto.UsuarioOpcion;
 import com.proyecto.microservicio.dto.UsuarioRegistroRequest;
@@ -51,6 +52,24 @@ public class UsuarioController {
     @GetMapping("/me")
     public PerfilResponse miPerfil(@AuthenticationPrincipal Jwt jwt) {
         return service.perfil(idDe(jwt));
+    }
+
+    /**
+     * HU-36: genera una contraseña temporal. La respuesta no se guarda en
+     * cachés: contiene una credencial.
+     */
+    @PostMapping("/{id}/restablecimiento-password")
+    public ResponseEntity<RestablecimientoResponse> restablecerPassword(@PathVariable Long id,
+                                                                        @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok()
+                .cacheControl(org.springframework.http.CacheControl.noStore())
+                .body(service.restablecerPassword(id, idDe(jwt)));
+    }
+
+    /** HU-35: desbloqueo manual de la cuenta. */
+    @PostMapping("/{id}/desbloqueo")
+    public UsuarioResponse desbloquear(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return service.desbloquear(id, idDe(jwt));
     }
 
     /** HU-31: activa o desactiva una cuenta. */

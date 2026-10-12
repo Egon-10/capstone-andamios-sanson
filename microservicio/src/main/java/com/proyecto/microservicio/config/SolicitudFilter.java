@@ -71,7 +71,8 @@ public class SolicitudFilter extends OncePerRequestFilter {
      * salto de línea codificado podría simular una línea de registro falsa.
      */
     public static String limpiar(String valor) {
-        return valor == null ? "" : valor.replaceAll("[\\r\\n\\t]", "_");
+        if (valor == null) return "";
+        return valor.replace('\t', '_').replace('\r', '_').replace('\n', '_');
     }
 
     private static void registrar(String metodo, String ruta, int estado, long ms) {

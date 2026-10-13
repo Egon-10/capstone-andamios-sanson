@@ -32,7 +32,8 @@ cd capstone-andamios-sanson
 ### 2. Crear y cargar la base de datos
 
 Los scripts están en `database/` y se ejecutan **en orden**: el `01` trae los datos
-de la empresa, el `02` aplica el esquema del Sprint 1 y el `03` el del Sprint 2.
+de la empresa y del `02` al `05` aplican el esquema de los Sprints 1 a 4
+(`99-privilegios-aplicacion.sh` solo se usa en el despliegue con Docker).
 
 Las migraciones son idempotentes: se pueden volver a ejecutar sin romper nada, lo
 que también sirve para completar una ejecución que quedó a medias.
@@ -45,18 +46,22 @@ mysql -u root -p -e "CREATE DATABASE inventario_andamios CHARACTER SET utf8mb4 C
 mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/01-inventario_andamios.sql
 mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/02-sprint1-seguridad.sql
 mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/03-sprint2-movimientos.sql
+mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/04-sprint3-reportes-accesos.sql
+mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/05-sprint4-seguridad.sql
 ```
 
 En **Windows con PowerShell**, el redirector `<` no existe, así que hay que usar `cmd /c`
 y la ruta completa del cliente (ajústela a su instalación):
 
 ```powershell
-$mysql = "C:\Program Files\MySQL\MySQL Server 9.7\bin\mysql.exe"
+$mysql = "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"   # o C:\xampp\mysql\bin\mysql.exe
 
 & $mysql -u root -p -e "CREATE DATABASE inventario_andamios CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
 cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\01-inventario_andamios.sql"
 cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\02-sprint1-seguridad.sql"
 cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\03-sprint2-movimientos.sql"
+cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\04-sprint3-reportes-accesos.sql"
+cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\05-sprint4-seguridad.sql"
 ```
 
 También puede importarlos desde MySQL Workbench o phpMyAdmin, siempre en ese orden.

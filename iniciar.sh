@@ -39,6 +39,13 @@ grep -v -E '^(CORS_ORIGENES|PUERTO_WEB)=' .env > .env.tmp || true
 { cat .env.tmp; echo "PUERTO_WEB=${PUERTO}"; echo "CORS_ORIGENES=${origenes}"; } > .env
 rm -f .env.tmp
 
+# En Codespaces, Docker convive con dos firewalls (iptables e iptables-legacy).
+# El legacy puede traer la politica FORWARD en DROP y bloquear el trafico entre
+# contenedores: el backend no alcanza a MySQL ("Connect timed out").
+if [ -n "${CODESPACE_NAME:-}" ] && command -v iptables-legacy >/dev/null; then
+  sudo iptables-legacy -P FORWARD ACCEPT 2>/dev/null || true
+fi
+
 echo "Levantando el sistema (la primera vez tarda entre 5 y 15 minutos)..."
 docker compose up -d --build
 

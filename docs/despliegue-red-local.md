@@ -8,6 +8,18 @@ servidor.
 
 Tiempo estimado: 45 a 60 minutos.
 
+> **Atajo en Windows.** Con Docker Desktop instalado (paso 3) y el proyecto
+> descargado (paso 4), el script `iniciar.ps1` hace los pasos 5 y 6 de una vez:
+> crea el `.env` con contraseñas aleatorias, detecta la IP de la PC, levanta
+> los contenedores y pide permiso para abrir el puerto solo a la red local.
+>
+> ```powershell
+> powershell -ExecutionPolicy Bypass -File .\iniciar.ps1
+> ```
+>
+> Al terminar muestra la dirección para las demás PCs y celulares. Para
+> detener el sistema: `.\iniciar.ps1 -Detener`.
+
 ```
   Celulares y PCs del personal ──wifi / cable──▶  PC servidor (Docker)
   http://192.168.1.50:8080                         ├─ frontend (Nginx)  :8080
@@ -82,9 +94,8 @@ En **PowerShell** (Windows) o una terminal (Ubuntu):
 cd $HOME
 git clone https://github.com/Egon-10/capstone-andamios-sanson.git
 cd capstone-andamios-sanson
-# Mientras los pull requests no estén integrados, use la rama del Sprint 4.
-# Después de integrarlos, use main.
-git checkout feature/sprint-4-seguridad-despliegue
+# La versión estable es la rama main (por defecto al clonar).
+git checkout main
 ```
 
 ---

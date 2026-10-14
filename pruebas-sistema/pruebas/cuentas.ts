@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { APIRequestContext, Page, expect } from '@playwright/test';
 
 /** Cuenta de prueba creada por la CI para esta ejecución. */
@@ -49,5 +50,5 @@ export function fechaLima(dias = 0): string {
 
 /** Valor único corto para nombres y documentos de esta ejecución. */
 export function unico(): string {
-  return Date.now().toString(36).slice(-5) + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  return Date.now().toString(36).slice(-5) + randomInt(1000).toString().padStart(3, '0');
 }

@@ -90,7 +90,7 @@ jobs:
 
       - name: Backend - publicar reporte de pruebas
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: reporte-pruebas-backend
           path: microservicio/target/surefire-reports/
@@ -342,7 +342,7 @@ jobs:
 
       - name: Analizar con SonarCloud
         if: steps.sonar.outputs.configurado == 'si'
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -405,7 +405,7 @@ jobs:
 
       - name: Pruebas de sistema - guardar evidencias
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: pruebas-sistema
           path: pruebas-sistema/resultados/

@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { test, expect, Page, Browser } from '@playwright/test';
 import { cuentas, entrar, unico } from './cuentas';
 
@@ -61,7 +62,7 @@ test.describe('Usuarios y seguridad de cuentas', () => {
     const usuario = `e2e_${id}`;
     await page.locator('#u-nombres').fill('Prueba');
     await page.locator('#u-apellidos').fill('Sistema');
-    await page.locator('#u-numeroDocumento').fill(String(70_000_000 + Math.floor(Math.random() * 9_999_999)));
+    await page.locator('#u-numeroDocumento').fill(String(randomInt(70_000_000, 79_999_999)));
     await page.locator('#u-correo').fill(`${usuario}@prueba.pe`);
     await page.locator('#u-nombreUsuario').fill(usuario);
     await page.locator('#u-rolId').selectOption({ label: 'ENCARGADO' });
@@ -94,7 +95,7 @@ test.describe('Usuarios y seguridad de cuentas', () => {
     const clave = `Inicial#${id}W3`;
     await page.locator('#u-nombres').fill('Temporal');
     await page.locator('#u-apellidos').fill('Sistema');
-    await page.locator('#u-numeroDocumento').fill(String(60_000_000 + Math.floor(Math.random() * 9_999_999)));
+    await page.locator('#u-numeroDocumento').fill(String(randomInt(60_000_000, 69_999_999)));
     await page.locator('#u-correo').fill(`${usuario}@prueba.pe`);
     await page.locator('#u-nombreUsuario').fill(usuario);
     await page.locator('#u-password').fill(clave);

@@ -51,7 +51,7 @@ public class SolicitudFilter extends OncePerRequestFilter {
             cadena.doFilter(solicitud, respuesta);
         } finally {
             long ms = (System.nanoTime() - inicio) / 1_000_000;
-            registrar(solicitud.getMethod(), solicitud.getRequestURI(), respuesta.getStatus(), ms);
+            registrar(limpiar(solicitud.getMethod()), limpiar(solicitud.getRequestURI()), respuesta.getStatus(), ms);
             MDC.remove(CLAVE_SOLICITUD);
             MDC.remove(CLAVE_USUARIO);
         }
@@ -63,6 +63,16 @@ public class SolicitudFilter extends OncePerRequestFilter {
             return recibido;
         }
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Quita los saltos de línea y tabulaciones de un valor enviado por el
+     * cliente antes de escribirlo en el registro: sin esto, una ruta con un
+     * salto de línea codificado podría simular una línea de registro falsa.
+     */
+    public static String limpiar(String valor) {
+        if (valor == null) return "";
+        return valor.replace('\t', '_').replace('\r', '_').replace('\n', '_');
     }
 
     private static void registrar(String metodo, String ruta, int estado, long ms) {

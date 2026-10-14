@@ -9,6 +9,7 @@ import com.proyecto.microservicio.dto.UsuarioOpcion;
 import com.proyecto.microservicio.dto.UsuarioRegistroRequest;
 import com.proyecto.microservicio.dto.UsuarioResponse;
 import com.proyecto.microservicio.service.UsuarioService;
+import com.proyecto.microservicio.security.UsuarioAutenticado;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -111,6 +112,6 @@ public class UsuarioController {
     }
 
     private static Long idDe(Jwt jwt) {
-        return Long.valueOf(jwt.getSubject());
+        return UsuarioAutenticado.id(jwt);
     }
 }

@@ -6,7 +6,6 @@ import { ProductosComponent } from './productos';
 import { ProductoService } from '../../services/producto.service';
 import { CategoriaService } from '../../services/categoria.service';
 import { ProveedorService } from '../../services/proveedor.service';
-import { AuditoriaService } from '../../services/auditoria.service';
 import { Pagina, ProductoResumen } from '../../models/pagina';
 import { FichaProducto } from '../../models/ficha-producto';
 import { Producto } from '../../models/producto';
@@ -44,16 +43,13 @@ describe('ProductosComponent', () => {
     categorias.listar.and.returnValue(of([]));
     const proveedores = jasmine.createSpyObj('ProveedorService', ['listar']);
     proveedores.listar.and.returnValue(of([]));
-    const auditoria = jasmine.createSpyObj('AuditoriaService', ['crear']);
-    auditoria.crear.and.returnValue(of({}));
 
     TestBed.configureTestingModule({
       imports: [ProductosComponent],
       providers: [
         { provide: ProductoService, useValue: productos },
         { provide: CategoriaService, useValue: categorias },
-        { provide: ProveedorService, useValue: proveedores },
-        { provide: AuditoriaService, useValue: auditoria }
+        { provide: ProveedorService, useValue: proveedores }
       ]
     });
     fixture = TestBed.createComponent(ProductosComponent);
@@ -214,5 +210,43 @@ describe('ProductosComponent', () => {
     c.editar({ id: 1 });
     expect(c.mensajeError).toBe('No encontrado');
     expect(c.editando).toBeFalse();
+  });
+
+  it('HU-40: si falla la consulta muestra el error y reintentar vuelve a consultar', () => {
+    productos.buscar.and.returnValue(throwError(() => error({ mensaje: 'Sin conexion' })));
+    c.aplicarFiltros();
+    fixture.detectChanges();
+
+    expect(c.estadoLista).toBe('error');
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('app-estado-vista [role="alert"]');
+    expect(alerta.textContent).toContain('No se pudo cargar el catálogo.');
+    expect(alerta.textContent).toContain('Sin conexion');
+    expect(fixture.nativeElement.querySelector('table')).toBeNull();
+
+    productos.buscar.and.returnValue(of(pagina(0, 1)));
+    productos.buscar.calls.reset();
+    alerta.querySelector('button')!.click();
+    fixture.detectChanges();
+
+    expect(productos.buscar).toHaveBeenCalledTimes(1);
+    expect(c.estadoLista).toBe('listo');
+    expect(c.mensajeError).toBe('');
+    expect(fixture.nativeElement.querySelector('table')).not.toBeNull();
+  });
+
+  it('HU-40: distingue un catalogo vacio de una busqueda sin resultados', () => {
+    const vacia: Pagina<ProductoResumen> = { ...pagina(0, 1), contenido: [], totalElementos: 0 };
+    productos.buscar.and.returnValue(of(vacia));
+    c.aplicarFiltros();
+    fixture.detectChanges();
+
+    expect(c.estadoLista).toBe('vacio');
+    expect(fixture.nativeElement.textContent).toContain('Aún no hay productos registrados.');
+
+    c.textoBusqueda = 'zzz';
+    c.aplicarFiltros();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Ningún producto coincide con los filtros.');
   });
 });

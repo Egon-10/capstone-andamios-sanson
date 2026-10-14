@@ -1,18 +1,26 @@
 package com.proyecto.microservicio.service;
 
 import com.proyecto.microservicio.dto.ValorizacionResponse;
+import com.proyecto.microservicio.config.ZonaHoraria;
+import com.proyecto.microservicio.exception.ReglaNegocioException;
+import com.proyecto.microservicio.model.ValorizacionCorteDTO;
 import com.proyecto.microservicio.model.ValorizacionProductoDTO;
 import com.proyecto.microservicio.repository.ProductoRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/** CP-18: valorización del inventario al costo promedio ponderado. */
+/**
+ * CP-18: valorización del inventario al costo promedio ponderado.
+ * CP-29: valorización con corte a una fecha pasada (HU-28).
+ */
 class ValorizacionServiceTest {
 
     private static ValorizacionProductoDTO fila(Long id, String sku, String nombre,
@@ -117,5 +125,84 @@ class ValorizacionServiceTest {
 
         assertEquals("Sin categoria", r.porCategoria().get(0).categoria());
         assertFalse(r.detalle().get(0).necesitaReposicion());
+    }
+
+    // --- HU-28: valorizacion con corte a fecha ---
+
+    private static ValorizacionCorteDTO corte(Long id, Integer stock, String historico,
+                                              String vigente, long posteriores) {
+        ValorizacionCorteDTO f = mock(ValorizacionCorteDTO.class);
+        when(f.getProductoId()).thenReturn(id);
+        when(f.getSku()).thenReturn("SKU-" + id);
+        when(f.getProducto()).thenReturn("Producto " + id);
+        when(f.getCategoria()).thenReturn("Andamios");
+        when(f.getStock()).thenReturn(stock);
+        when(f.getStockMinimo()).thenReturn(10);
+        // Mockito devuelve 0 para un Integer sin configurar: se fija null a
+        // proposito para que mande el stock minimo, como en un producto real.
+        when(f.getPuntoReposicion()).thenReturn(null);
+        when(f.getCostoHistorico()).thenReturn(historico == null ? null : new BigDecimal(historico));
+        when(f.getCostoVigente()).thenReturn(new BigDecimal(vigente));
+        when(f.getMovimientosPosteriores()).thenReturn(posteriores);
+        return f;
+    }
+
+    @Test
+    @DisplayName("CP-29: valoriza al corte con el costo que dejo el ultimo movimiento anterior")
+    void valorizaAlCorte() {
+        LocalDate dia = ZonaHoraria.hoy().minusDays(10);
+        List<ValorizacionCorteDTO> filas = List.of(
+                // Costo guardado por el movimiento anterior al corte: es exacto.
+                corte(1L, 100, "250.0000", "300.0000", 3),
+                // Sin costo guardado y sin movimientos posteriores: el vigente es exacto.
+                corte(2L, 40, null, "200.0000", 0),
+                // Sin costo guardado y con movimientos posteriores: se informa como estimado.
+                corte(3L, 5, null, "92.0000", 2));
+
+        ProductoRepository repositorio = mock(ProductoRepository.class);
+        when(repositorio.obtenerValorizacionAlCorte(dia.plusDays(1).atStartOfDay())).thenReturn(filas);
+
+        ValorizacionResponse r = new ValorizacionService(repositorio).calcularAlCorte(dia);
+
+        // 100 x 250 + 40 x 200 + 5 x 92 = 25000 + 8000 + 460
+        assertEquals(0, new BigDecimal("33460.00").compareTo(r.valorTotal()));
+        assertEquals(dia, r.fechaCorte());
+        assertEquals(1, r.productosConCostoEstimado());
+        assertFalse(r.detalle().get(0).costoEstimado());
+        assertFalse(r.detalle().get(1).costoEstimado());
+        assertTrue(r.detalle().get(2).costoEstimado());
+        assertTrue(r.detalle().get(2).necesitaReposicion());
+    }
+
+    @Test
+    @DisplayName("CP-29: el corte es exclusivo: incluye todo el dia indicado")
+    void elCorteIncluyeElDia() {
+        LocalDate dia = ZonaHoraria.hoy().minusDays(1);
+        ProductoRepository repositorio = mock(ProductoRepository.class);
+        when(repositorio.obtenerValorizacionAlCorte(any())).thenReturn(List.of());
+
+        new ValorizacionService(repositorio).calcularAlCorte(dia);
+
+        verify(repositorio).obtenerValorizacionAlCorte(LocalDateTime.of(ZonaHoraria.hoy(), java.time.LocalTime.MIDNIGHT));
+    }
+
+    @Test
+    @DisplayName("CP-29: el dia en curso no cerro y se valoriza con los datos vigentes")
+    void hoyEsLaValorizacionActual() {
+        ProductoRepository repositorio = mock(ProductoRepository.class);
+        when(repositorio.obtenerValorizacion()).thenReturn(List.of());
+
+        ValorizacionResponse r = new ValorizacionService(repositorio).calcularAlCorte(ZonaHoraria.hoy());
+
+        assertNull(r.fechaCorte());
+        verify(repositorio, never()).obtenerValorizacionAlCorte(any());
+    }
+
+    @Test
+    @DisplayName("CP-29: rechaza una fecha de corte futura")
+    void rechazaFechaFutura() {
+        ValorizacionService servicio = new ValorizacionService(mock(ProductoRepository.class));
+        LocalDate manana = ZonaHoraria.hoy().plusDays(1);
+        assertThrows(ReglaNegocioException.class, () -> servicio.calcularAlCorte(manana));
     }
 }

@@ -1,127 +1,154 @@
-<div class="contenedor">
-
-  <h1>Auditoría del Sistema</h1>
-  <div class="filtros">
-
-    <div class="grupo-filtro">
-
-        <label>Desde</label>
-
-        <input
-            type="date"
-            [(ngModel)]="fechaInicio"
-            (change)="aplicarFiltros()">
-
+<section class="ui-pagina">
+  <header class="ui-cabecera">
+    <div>
+      <h1 class="ui-titulo"><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i> Auditoría</h1>
+      <p class="ui-subtitulo">Quién hizo qué y cuándo. Los registros los escribe el servidor y no se pueden modificar.</p>
     </div>
-
-    <div class="grupo-filtro">
-
-        <label>Hasta</label>
-
-        <input
-            type="date"
-            [(ngModel)]="fechaFin"
-            (change)="aplicarFiltros()">
-
+    <div class="ui-acciones">
+      <button type="button" class="ui-boton secundario" [disabled]="descargando !== null" (click)="exportar('pdf')">
+        <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> PDF
+      </button>
+      <button type="button" class="ui-boton secundario" [disabled]="descargando !== null" (click)="exportar('xlsx')">
+        <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Excel
+      </button>
     </div>
+  </header>
 
-    <div class="grupo-filtro">
-
-        <label>Buscar acción</label>
-
-        <input
-            type="text"
-            placeholder="Buscar..."
-            [(ngModel)]="textoBusqueda"
-            (input)="aplicarFiltros()">
-
+  @if (esAdministrador) {
+    <div class="ui-pestanas" role="tablist" aria-label="Bitácoras">
+      <button type="button" role="tab" id="tab-acciones" [attr.aria-selected]="vista === 'acciones'"
+              aria-controls="panel-bitacora" (click)="cambiarVista('acciones')">
+        <i class="fa-solid fa-list-check" aria-hidden="true"></i> Acciones
+      </button>
+      <button type="button" role="tab" id="tab-accesos" [attr.aria-selected]="vista === 'accesos'"
+              aria-controls="panel-bitacora" (click)="cambiarVista('accesos')">
+        <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Accesos
+      </button>
     </div>
-    <div class="grupo-filtro">
+  }
 
-    <label>Tipo de acción</label>
+  <div class="ui-tarjeta panel" id="panel-bitacora" [attr.role]="esAdministrador ? 'tabpanel' : null"
+       [attr.aria-labelledby]="esAdministrador ? (vista === 'acciones' ? 'tab-acciones' : 'tab-accesos') : null">
 
-    <select
-        [(ngModel)]="tipoAccionFiltro"
-        (change)="aplicarFiltros()">
+    <form class="ui-filtros" (ngSubmit)="buscar()">
+      <label class="ui-campo">{{ vista === 'acciones' ? 'Buscar en acción o detalle' : 'Usuario escrito o IP' }}
+        <input type="search" name="texto" [(ngModel)]="filtro.texto" (ngModelChange)="escribir()"
+               [placeholder]="vista === 'acciones' ? 'Ej.: anulado, producto' : 'Ej.: admin, 192.168'">
+      </label>
+      <label class="ui-campo">Usuario
+        <select name="usuario" [(ngModel)]="filtro.usuarioId" (ngModelChange)="buscar()">
+          <option [ngValue]="null">Todos</option>
+          @for (u of usuarios; track u.id) { <option [ngValue]="u.id">{{ u.nombre }}</option> }
+        </select>
+      </label>
+      @if (vista === 'accesos') {
+        <label class="ui-campo">Resultado
+          <select name="resultado" [(ngModel)]="filtro.resultado" (ngModelChange)="buscar()">
+            <option value="">Todos</option>
+            <option value="EXITOSO">Exitosos</option>
+            <option value="FALLIDO">Fallidos</option>
+            <option value="BLOQUEADO">Bloqueados</option>
+          </select>
+        </label>
+      }
+      <label class="ui-campo">Desde
+        <input type="date" name="desde" [(ngModel)]="filtro.desde" [max]="filtro.hasta || hoy" (change)="buscar()">
+      </label>
+      <label class="ui-campo">Hasta
+        <input type="date" name="hasta" [(ngModel)]="filtro.hasta" [min]="filtro.desde ?? ''" [max]="hoy" (change)="buscar()">
+      </label>
+      <div class="botones-filtro">
+        <button type="submit" class="ui-boton primario"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar</button>
+        @if (hayFiltros()) {
+          <button type="button" class="ui-boton fantasma" (click)="limpiar()">Quitar filtros</button>
+        }
+      </div>
+    </form>
 
-        <option value="">
-            Todas
-        </option>
+    @if (errorFiltro) {
+      <p class="ui-mensaje peligro" role="alert">{{ errorFiltro }}</p>
+    }
 
-        <option value="CREÓ">
-            Crear
-        </option>
+    <app-estado-vista [estado]="estado" textoCargando="Consultando la bitácora…"
+                      textoError="No se pudo consultar la bitácora." [detalle]="estado === 'error' ? error : (hayFiltros() ? 'Ningún registro coincide con los filtros.' : '')"
+                      textoVacio="No hay registros." (reintentar)="consultar()"></app-estado-vista>
 
-        <option value="EDITÓ">
-            Editar
-        </option>
+    @if (estado === 'listo' && vista === 'acciones' && acciones) {
+      <div class="ui-tabla-contenedor">
+        <table class="ui-tabla">
+          <caption class="ui-visualmente-oculto">Bitácora de acciones</caption>
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Usuario</th>
+              <th scope="col">Acción</th>
+              <th scope="col">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of acciones.contenido; track r.id) {
+              <tr>
+                <td class="fecha">{{ r.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  {{ r.usuario }}
+                  @if (r.nombreUsuario) { <div class="tenue">{{ r.nombreUsuario }}</div> }
+                </td>
+                <td><span class="ui-insignia">{{ accionLegible(r.accion) }}</span></td>
+                <td class="detalle">
+                  @if (r.detalle) {
+                    <span [class.recortado]="expandido !== r.id">{{ r.detalle }}</span>
+                    @if (r.detalle.length > 90) {
+                      <button type="button" class="ui-boton fantasma chico" (click)="alternarDetalle(r.id)"
+                              [attr.aria-expanded]="expandido === r.id">
+                        {{ expandido === r.id ? 'Ver menos' : 'Ver todo' }}
+                      </button>
+                    }
+                  } @else { <span class="tenue">—</span> }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginacion [pagina]="acciones" unidad="registros" (cambiar)="irAPagina($event)"
+                      (cambiarTamanoPagina)="cambiarTamano($event)"></app-paginacion>
+    }
 
-        <option value="ELIMINÓ">
-            Eliminar
-        </option>
-
-    </select>
-
-</div>
-
-<div class="grupo-filtro">
-
-    <label>Orden</label>
-
-    <select
-        [(ngModel)]="ordenFecha"
-        (change)="aplicarFiltros()">
-
-        <option value="ASC">
-            Más antiguo primero
-        </option>
-
-        <option value="DESC">
-            Más reciente primero
-        </option>
-
-    </select>
-
-</div>
-
-</div>
-
-  <table>
-
-    <thead>
-
-      <tr>
-
-        <th>ID</th>
-        <th>Acción</th>
-        <th>Fecha</th>
-        <th>Usuario</th>
-        <th>Rol</th>
-
-      </tr>
-
-    </thead>
-
-    <tbody>
-
-      <tr
-        *ngFor="let a of auditoriasFiltradas">
-
-        <td>{{a.id}}</td>
-
-        <td>{{a.accion}}</td>
-
-        <td>{{a.fecha}}</td>
-
-        <td>{{ a.usuario?.nombre }}</td>
-        <td>
-  {{ a.usuario?.rol?.nombre }}
-</td>
-
-      </tr>
-
-    </tbody>
-
-  </table>
-
-</div>
+    @if (estado === 'listo' && vista === 'accesos' && accesos) {
+      <div class="ui-tabla-contenedor">
+        <table class="ui-tabla">
+          <caption class="ui-visualmente-oculto">Bitácora de accesos</caption>
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Usuario escrito</th>
+              <th scope="col">Cuenta</th>
+              <th scope="col">Resultado</th>
+              <th scope="col">Motivo</th>
+              <th scope="col">IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of accesos.contenido; track a.id) {
+              <tr>
+                <td class="fecha">{{ a.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                <td><code>{{ a.identificador }}</code></td>
+                <td>{{ a.usuario || 'Sin cuenta' }}</td>
+                <td>
+                  <span class="ui-insignia" [class]="'ui-insignia ' + claseResultado(a.resultado)">
+                    <i class="fa-solid" [class]="'fa-solid ' + iconoResultado(a.resultado)" aria-hidden="true"></i>
+                    {{ textoResultado(a.resultado) }}
+                  </span>
+                </td>
+                <td>{{ a.motivo || '—' }}</td>
+                <td class="tenue" [title]="a.agente || ''">{{ a.ip || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginacion [pagina]="accesos" unidad="intentos" (cambiar)="irAPagina($event)"
+                      (cambiarTamanoPagina)="cambiarTamano($event)"></app-paginacion>
+    }
+  </div>
+</section>

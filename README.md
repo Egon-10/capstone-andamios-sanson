@@ -32,7 +32,8 @@ cd capstone-andamios-sanson
 ### 2. Crear y cargar la base de datos
 
 Los scripts están en `database/` y se ejecutan **en orden**: el `01` trae los datos
-de la empresa, el `02` aplica el esquema del Sprint 1 y el `03` el del Sprint 2.
+de la empresa y del `02` al `05` aplican el esquema de los Sprints 1 a 4
+(`99-privilegios-aplicacion.sh` solo se usa en el despliegue con Docker).
 
 Las migraciones son idempotentes: se pueden volver a ejecutar sin romper nada, lo
 que también sirve para completar una ejecución que quedó a medias.
@@ -45,18 +46,22 @@ mysql -u root -p -e "CREATE DATABASE inventario_andamios CHARACTER SET utf8mb4 C
 mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/01-inventario_andamios.sql
 mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/02-sprint1-seguridad.sql
 mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/03-sprint2-movimientos.sql
+mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/04-sprint3-reportes-accesos.sql
+mysql -u root -p --default-character-set=utf8mb4 inventario_andamios < database/05-sprint4-seguridad.sql
 ```
 
 En **Windows con PowerShell**, el redirector `<` no existe, así que hay que usar `cmd /c`
 y la ruta completa del cliente (ajústela a su instalación):
 
 ```powershell
-$mysql = "C:\Program Files\MySQL\MySQL Server 9.7\bin\mysql.exe"
+$mysql = "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"   # o C:\xampp\mysql\bin\mysql.exe
 
 & $mysql -u root -p -e "CREATE DATABASE inventario_andamios CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
 cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\01-inventario_andamios.sql"
 cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\02-sprint1-seguridad.sql"
 cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\03-sprint2-movimientos.sql"
+cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\04-sprint3-reportes-accesos.sql"
+cmd /c "`"$mysql`" -u root -p --default-character-set=utf8mb4 inventario_andamios < database\05-sprint4-seguridad.sql"
 ```
 
 También puede importarlos desde MySQL Workbench o phpMyAdmin, siempre en ese orden.
@@ -114,10 +119,12 @@ para desarrollo**: antes de usar el sistema en la empresa hay que cambiarlas.
 
 ```
 .
-├── database/        # Volcado de la empresa y migraciones del esquema
-├── docs/            # Configuración de herramientas (SonarCloud)
-├── frontend/        # Aplicación web (Angular 20)
+├── database/        # Volcado de la empresa, migraciones y privilegios de la base
+├── docs/            # Guías de despliegue y configuración de SonarCloud
+├── frontend/        # Aplicación web (Angular 20) servida con Nginx
 ├── microservicio/   # API REST (Spring Boot 4.1 / Java 17)
+├── pruebas-sistema/ # Pruebas de sistema y aceptación (Playwright)
+├── docker-compose.yml, respaldo.sh, respaldo.ps1
 └── .github/
     └── workflows/   # Integración continua y análisis estático
 ```
@@ -126,7 +133,7 @@ para desarrollo**: antes de usar el sistema en la empresa hay que cambiarlas.
 
 | Pantalla | Para qué sirve | Quién entra |
 |---|---|---|
-| Dashboard | Indicadores de stock y movimientos | Todos |
+| Dashboard | Indicadores de gestión, tendencia de movimientos y stock crítico | Todos |
 | Productos | Catálogo con búsqueda paginada y ficha de detalle | Todos |
 | Movimientos | Registro de entradas y salidas, y anulación | Todos |
 | Kardex | Historial por producto con saldo acumulado | Todos |
@@ -134,14 +141,17 @@ para desarrollo**: antes de usar el sistema en la empresa hay que cambiarlas.
 | Valorización | Valor del inventario al costo promedio y reposición | Administrador, gerente |
 | Carga masiva | Alta de productos desde un archivo CSV | Administrador, gerente |
 | Categorías, Proveedores, Usuarios | Catálogos maestros | Según el rol |
-| Auditoría | Registro de acciones | Administrador, gerente |
+| Auditoría | Registro de acciones y de accesos | Administrador, gerente |
+| Reportes | Movimientos, stock crítico, valorización y bitácoras en PDF o Excel | Todos (cada rol ve los suyos) |
+| Mi perfil | Datos propios y cambio de contraseña | Todos |
 
 ## Stack tecnológico
 
 - **Frontend:** Angular 20 con TypeScript
 - **Backend:** Spring Boot 4.1, Java 17, Spring Data JPA, Spring Security
 - **Base de datos:** MySQL 8
-- **Pruebas:** JUnit 5 y Mockito (backend); Jasmine y Karma (frontend)
+- **Pruebas:** JUnit 5 y Mockito (backend); Jasmine y Karma (frontend); Playwright y axe-core (sistema y aceptación)
+- **Despliegue:** Docker Compose (MySQL, API y Nginx)
 
 ## Seguridad y roles
 
@@ -173,27 +183,40 @@ Dos separaciones de responsabilidad que conviene conocer:
 ## Pruebas
 
 ```bash
-# Backend: pruebas unitarias (todas menos la que necesita MySQL)
+# Backend: pruebas unitarias (sin las que necesitan MySQL)
 cd microservicio
-./mvnw test -Dtest='!MicroservicioApplicationTests'
+./mvnw test -Dtest='!MicroservicioApplicationTests,!*IT'
 
-# Frontend: 98 pruebas
+# Frontend: pruebas unitarias
 cd frontend
 npm test -- --watch=false
 ```
 
-`MicroservicioApplicationTests` queda fuera porque levanta el contexto
-completo de Spring y necesita MySQL en ejecución.
+`MicroservicioApplicationTests` y las pruebas `*IT` quedan fuera porque
+necesitan MySQL en ejecución; la integración continua las corre contra un
+MySQL 8 real.
 
-Cada pull request ejecuta en GitHub Actions, en un solo trabajo, las pruebas del
-backend, las del cliente y la carga de las tres migraciones contra un MySQL 8 real,
-cada una aplicada dos veces para comprobar que son idempotentes.
+Cada pull request ejecuta en GitHub Actions, en un solo trabajo: las pruebas
+unitarias del backend y del cliente, las migraciones de la base (cada una
+aplicada dos veces para comprobar que son idempotentes), las pruebas de
+integración contra MySQL, SonarCloud, un despliegue preliminar con
+`docker compose`, las pruebas de sistema y aceptación con Playwright
+(`pruebas-sistema/`), y la verificación de privilegios de la base y de
+respaldo y restauración.
 
 El análisis estático corre con **CodeQL** sobre Java y TypeScript al integrar a
 `develop` o `main`, y los hallazgos aparecen en la pestaña **Security → Code scanning**.
 **SonarCloud** añade calidad, deuda técnica y cobertura, pero necesita configurarse una
 vez: los pasos están en [`docs/sonarcloud.md`](docs/sonarcloud.md). Mientras falte el
 secreto `SONAR_TOKEN`, ese análisis se omite con un aviso y no hace fallar la ejecución.
+
+## Despliegue
+
+El sistema se implanta en una PC de la empresa y se usa solo dentro de su red
+local (CAM-13). Guía paso a paso:
+[`docs/despliegue-red-local.md`](docs/despliegue-red-local.md). La referencia
+general (actualización, respaldo y restauración) está en
+[`docs/despliegue.md`](docs/despliegue.md).
 
 ## Equipo
 

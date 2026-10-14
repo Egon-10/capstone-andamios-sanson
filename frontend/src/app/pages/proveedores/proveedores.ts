@@ -1,17 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { AuditoriaService }
-from '../../services/auditoria.service';
 import { Proveedor } from '../../models/proveedor';
 import { ProveedorService } from '../../services/proveedor.service';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+
+type EstadoVista = 'cargando' | 'error' | 'vacio' | 'listo';
 
 @Component({
   selector: 'app-proveedores',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    EstadoVistaComponent
   ],
   templateUrl: './proveedores.html',
   styleUrl: './proveedores.css'
@@ -29,11 +32,15 @@ export class ProveedoresComponent implements OnInit {
   };
 
   editando = false;
-mensajeError = '';
+  mensajeError = '';
+
+  /** HU-40: la lista se está consultando, o no se pudo consultar. */
+  cargando = true;
+  errorCarga = '';
+
   constructor(
     
-    private proveedorService: ProveedorService,
-  private auditoriaService: AuditoriaService
+    private proveedorService: ProveedorService
   ) {}
 
   ngOnInit(): void {
@@ -41,13 +48,35 @@ mensajeError = '';
   }
 
   listar(): void {
+    this.cargando = true;
+    this.errorCarga = '';
 
     this.proveedorService
       .listar()
-      .subscribe(data => {
-
-        this.proveedores = data;
+      .subscribe({
+        next: data => {
+          this.proveedores = data;
+          this.cargando = false;
+        },
+        error: (e: HttpErrorResponse) => {
+          this.cargando = false;
+          this.errorCarga = e.error?.mensaje || 'Revise su conexión e intente de nuevo.';
+        }
       });
+  }
+
+  /**
+   * HU-40: estado de la lista. Al recargar tras guardar o eliminar se mantiene
+   * la tabla visible para que no parpadee ni se pierda el foco.
+   */
+  get estadoLista(): EstadoVista {
+    if (this.errorCarga) {
+      return 'error';
+    }
+    if (this.cargando && this.proveedores.length === 0) {
+      return 'cargando';
+    }
+    return this.proveedores.length === 0 ? 'vacio' : 'listo';
   }
 
   guardar(): void {
@@ -162,10 +191,6 @@ mensajeError = '';
       )
       .subscribe(() => {
 
-        this.registrarAuditoria(
-          'EDITÓ el proveedor: ' +
-          this.proveedor.nombre
-        );
 
         this.listar();
 
@@ -179,10 +204,6 @@ mensajeError = '';
       .crear(this.proveedor)
       .subscribe(() => {
 
-        this.registrarAuditoria(
-          'CREÓ el proveedor: ' +
-          this.proveedor.nombre
-        );
 
         this.listar();
 
@@ -204,11 +225,6 @@ mensajeError = '';
 
   eliminar(id: number): void {
 
-  const proveedorEliminar =
-    this.proveedores.find(
-      p => p.id === id
-    );
-
   if (confirm(
     '¿Desea eliminar este proveedor?'
   )) {
@@ -217,10 +233,6 @@ mensajeError = '';
       .eliminar(id)
       .subscribe(() => {
 
-        this.registrarAuditoria(
-          'ELIMINÓ el proveedor: ' +
-          proveedorEliminar?.nombre
-        );
 
         this.listar();
 
@@ -245,30 +257,6 @@ mensajeError = '';
   this.mensajeError = '';
 }
 
-registrarAuditoria(
-  accion: string
-): void {
+// La auditoria del catalogo la registra el servidor (correccion DEF-01).
 
-  const usuarioGuardado =
-    localStorage.getItem('usuario');
-
-  if (!usuarioGuardado) return;
-
-  const usuario =
-    JSON.parse(usuarioGuardado);
-
-  const auditoria = {
-
-    accion: accion,
-
-    usuario: {
-      id: usuario.id
-    }
-
-  };
-
-  this.auditoriaService
-    .crear(auditoria as any)
-    .subscribe();
-}
 }

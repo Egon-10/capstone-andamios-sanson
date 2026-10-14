@@ -5,6 +5,9 @@ import { of, throwError } from 'rxjs';
 import { ValorizacionComponent } from './valorizacion';
 import { InventarioService } from '../../services/inventario.service';
 import { Valorizacion } from '../../models/valorizacion';
+import { ReporteService } from '../../services/reporte.service';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 /** CP-18: pantalla de valorización (HU-17) y reposición (HU-20). */
 describe('ValorizacionComponent', () => {
@@ -33,7 +36,7 @@ describe('ValorizacionComponent', () => {
     inventario.porReponer.and.returnValue(of([valorizacion.detalle[1]]));
     TestBed.configureTestingModule({
       imports: [ValorizacionComponent],
-      providers: [{ provide: InventarioService, useValue: inventario }]
+      providers: [{ provide: InventarioService, useValue: inventario }, provideHttpClient(), provideHttpClientTesting()]
     });
   });
 
@@ -53,6 +56,24 @@ describe('ValorizacionComponent', () => {
 
     expect(c.mensajeError).toBe('No tiene permisos');
     expect(c.porReponer).toEqual([]);
+  });
+
+  it('HU-40: si la primera carga falla muestra el error y reintentar vuelve a calcular', () => {
+    inventario.valorizacion.and.returnValue(throwError(() =>
+      new HttpErrorResponse({ status: 500, error: { mensaje: 'Error interno' } })));
+    const fixture = TestBed.createComponent(ValorizacionComponent);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+
+    expect(fixture.componentInstance.estadoVista).toBe('error');
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('No se pudo calcular la valorización');
+
+    inventario.valorizacion.and.returnValue(of(valorizacion));
+    (Array.from(el.querySelectorAll('button')).find(b => b.textContent?.includes('Reintentar')) as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.estadoVista).toBe('listo');
+    expect(el.textContent).toContain('41,840.00');
   });
 
   it('usa un mensaje por omision si el servidor no envia uno', () => {
@@ -79,31 +100,37 @@ describe('ValorizacionComponent', () => {
     expect(c.valorPorReponer).toBe(1840);
   });
 
-  it('exporta el detalle a CSV escapando las comillas', async () => {
+  it('CP-29: carga la valorizacion al corte elegido', () => {
     const c = crear();
-    let contenido: Blob | undefined;
-    spyOn(URL, 'createObjectURL').and.callFake((b: Blob | MediaSource) => {
-      contenido = b as Blob;
-      return 'blob:prueba';
-    });
-    spyOn(URL, 'revokeObjectURL');
-    const clic = spyOn(HTMLAnchorElement.prototype, 'click');
-
-    c.descargarDetalle();
-
-    expect(clic).toHaveBeenCalled();
-    const texto = await contenido!.text();
-    expect(texto).toContain('"SKU";"Producto"');
-    expect(texto).toContain('"Marco ""doble"""');
-    expect(texto).toContain('"Si"');
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:prueba');
+    c.fechaCorte = '2026-09-30';
+    c.cargar();
+    expect(inventario.valorizacion).toHaveBeenCalledWith('2026-09-30');
   });
 
-  it('no exporta nada si no hay detalle', () => {
+  it('CP-29: no pide una fecha de corte futura', () => {
     const c = crear();
-    c.valorizacion = { ...valorizacion, detalle: [] };
-    const crearUrl = spyOn(URL, 'createObjectURL');
-    c.descargarDetalle();
-    expect(crearUrl).not.toHaveBeenCalled();
+    inventario.valorizacion.calls.reset();
+    c.fechaCorte = '2999-01-01';
+    c.cargar();
+    expect(inventario.valorizacion).not.toHaveBeenCalled();
+    expect(c.mensajeError).toContain('posterior a hoy');
+  });
+
+  it('CP-29: volver a hoy quita el corte', () => {
+    const c = crear();
+    c.fechaCorte = '2026-09-30';
+    c.verHoy();
+    expect(c.fechaCorte).toBe('');
+    expect(inventario.valorizacion).toHaveBeenCalledWith(null);
+  });
+
+  it('CP-27: exporta la valorizacion con el mismo corte', () => {
+    const reportes = TestBed.inject(ReporteService);
+    spyOn(reportes, 'descargar').and.returnValue(of('reporte-valorizacion.pdf'));
+    const c = crear();
+    c.valorizacion = { ...valorizacion, fechaCorte: '2026-09-30' };
+    c.exportar('pdf');
+    expect(reportes.descargar).toHaveBeenCalledWith('valorizacion', 'pdf', { fecha: '2026-09-30' });
+    expect(c.mensajeDescarga).toContain('reporte-valorizacion.pdf');
   });
 });

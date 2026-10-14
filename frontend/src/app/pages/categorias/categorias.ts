@@ -1,17 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { AuditoriaService }
-from '../../services/auditoria.service';
 import { Categoria } from '../../models/categoria';
 import { CategoriaService } from '../../services/categoria.service';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+
+type EstadoVista = 'cargando' | 'error' | 'vacio' | 'listo';
 
 @Component({
   selector: 'app-categorias',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    EstadoVistaComponent
   ],
   templateUrl: './categorias.html',
   styleUrl: './categorias.css'
@@ -27,9 +30,12 @@ export class CategoriasComponent implements OnInit {
   editando = false;
   mensajeError = '';
 
+  /** HU-40: la lista se está consultando, o no se pudo consultar. */
+  cargando = true;
+  errorCarga = '';
+
   constructor(
-    private categoriaService: CategoriaService,
-    private auditoriaService: AuditoriaService
+    private categoriaService: CategoriaService
   ) {}
 
   ngOnInit(): void {
@@ -37,13 +43,35 @@ export class CategoriasComponent implements OnInit {
   }
 
   listar(): void {
+    this.cargando = true;
+    this.errorCarga = '';
 
     this.categoriaService
       .listar()
-      .subscribe(data => {
-
-        this.categorias = data;
+      .subscribe({
+        next: data => {
+          this.categorias = data;
+          this.cargando = false;
+        },
+        error: (e: HttpErrorResponse) => {
+          this.cargando = false;
+          this.errorCarga = e.error?.mensaje || 'Revise su conexión e intente de nuevo.';
+        }
       });
+  }
+
+  /**
+   * HU-40: estado de la lista. Al recargar tras guardar o eliminar se mantiene
+   * la tabla visible para que no parpadee ni se pierda el foco.
+   */
+  get estadoLista(): EstadoVista {
+    if (this.errorCarga) {
+      return 'error';
+    }
+    if (this.cargando && this.categorias.length === 0) {
+      return 'cargando';
+    }
+    return this.categorias.length === 0 ? 'vacio' : 'listo';
   }
 
   guardar(): void {
@@ -67,10 +95,6 @@ export class CategoriasComponent implements OnInit {
       )
       .subscribe(() => {
 
-    this.registrarAuditoria(
-      'EDITÓ la categoría: ' +
-      this.categoria.nombre
-    );
 
     this.listar();
 
@@ -83,10 +107,6 @@ export class CategoriasComponent implements OnInit {
       .crear(this.categoria)
       .subscribe(() => {
 
-    this.registrarAuditoria(
-      'CREÓ la categoría: ' +
-      this.categoria.nombre
-    );
 
     this.listar();
 
@@ -105,10 +125,7 @@ export class CategoriasComponent implements OnInit {
   }
 
   eliminar(id: number): void {
-    const categoriaEliminar =
-  this.categorias.find(
-    c => c.id === id
-  );
+
 
     if (confirm('¿Desea eliminar esta categoría?')) {
 
@@ -116,10 +133,6 @@ export class CategoriasComponent implements OnInit {
         .eliminar(id)
         .subscribe(() => {
 
-    this.registrarAuditoria(
-      'ELIMINÓ la categoría: ' +
-      categoriaEliminar?.nombre
-    );
 
     this.listar();
 });
@@ -136,27 +149,6 @@ export class CategoriasComponent implements OnInit {
 
   this.mensajeError = '';
 }
-registrarAuditoria(
-  accion: string
-): void {
+// La auditoria del catalogo la registra el servidor (correccion DEF-01).
 
-  const usuarioGuardado =
-    localStorage.getItem('usuario');
-
-  if (!usuarioGuardado) return;
-
-  const usuario =
-    JSON.parse(usuarioGuardado);
-
-  const auditoria = {
-    accion: accion,
-    usuario: {
-      id: usuario.id
-    }
-  };
-
-  this.auditoriaService
-    .crear(auditoria as any)
-    .subscribe();
-}
 }

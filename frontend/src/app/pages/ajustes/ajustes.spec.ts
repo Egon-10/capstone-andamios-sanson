@@ -6,6 +6,7 @@ import { AjustesComponent } from './ajustes';
 import { ProductoService } from '../../services/producto.service';
 import { AjusteService } from '../../services/ajuste.service';
 import { Producto } from '../../models/producto';
+import { AlertaService } from '../../services/alerta.service';
 
 /** CP-17: pantalla de ajustes por conteo físico (HU-16). */
 describe('AjustesComponent', () => {
@@ -36,6 +37,7 @@ describe('AjustesComponent', () => {
     TestBed.configureTestingModule({
       imports: [AjustesComponent],
       providers: [
+        { provide: AlertaService, useValue: jasmine.createSpyObj('AlertaService', ['actualizar']) },
         { provide: ProductoService, useValue: productos },
         { provide: AjusteService, useValue: ajustes }
       ]
@@ -75,6 +77,35 @@ describe('AjustesComponent', () => {
     ajustes.listar.and.returnValue(throwError(() => error({ mensaje: 'Sin conexion' })));
     crear();
     expect(c.mensajeError).toBe('Sin conexion');
+  });
+
+  it('HU-40: si la lista no carga muestra el error y reintentar vuelve a consultar', () => {
+    ajustes.listar.and.returnValue(throwError(() => error({ mensaje: 'Sin conexion' })));
+    crear();
+
+    expect(c.estadoVista).toBe('error');
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('app-estado-vista [role="alert"]');
+    expect(alerta.textContent).toContain('Sin conexion');
+
+    ajustes.listar.and.returnValue(of([{ id: 9, estado: 'PENDIENTE' }]));
+    alerta.querySelector('button')!.click();
+    fixture.detectChanges();
+
+    expect(ajustes.listar).toHaveBeenCalledTimes(2);
+    expect(c.estadoVista).toBe('listo');
+    expect(fixture.nativeElement.querySelector('table')).not.toBeNull();
+  });
+
+  it('HU-40: distingue la lista sin conteos de la que no tiene pendientes', () => {
+    crear();
+    expect(c.estadoVista).toBe('vacio');
+    expect(fixture.nativeElement.textContent).toContain('Todavía no hay conteos registrados');
+
+    c.filtroEstado = 'PENDIENTE';
+    c.listar();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('No hay conteos pendientes de aprobación');
   });
 
   it('calcula la diferencia en vivo con su sentido', () => {

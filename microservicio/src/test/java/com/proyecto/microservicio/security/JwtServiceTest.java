@@ -110,4 +110,15 @@ class JwtServiceTest {
         JwtProperties sinSecreto = new JwtProperties("", 15, 30);
         assertEquals(32, sinSecreto.getClave().getEncoded().length);
     }
+
+    @Test
+    @DisplayName("CP-37: el token marca la sesión abierta con contraseña temporal")
+    void marcaContrasenaTemporal() {
+        JwtService servicio = new JwtService(encoder, propiedades);
+        assertEquals(Boolean.FALSE, decoder.decode(servicio.generarTokenAcceso(usuario))
+                .getClaimAsBoolean(JwtService.CLAIM_CONTRASENA_TEMPORAL));
+        usuario.setDebeCambiarPassword(true);
+        assertEquals(Boolean.TRUE, decoder.decode(servicio.generarTokenAcceso(usuario))
+                .getClaimAsBoolean(JwtService.CLAIM_CONTRASENA_TEMPORAL));
+    }
 }

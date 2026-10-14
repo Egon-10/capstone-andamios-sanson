@@ -38,7 +38,7 @@ public record UsuarioActualizacionRequest(
         @Pattern(regexp = "ACTIVO|INACTIVO", message = "Estado no válido")
         String estado,
 
-        @Pattern(regexp = ValidacionUsuario.PASSWORD, message = ValidacionUsuario.MENSAJE_PASSWORD)
+        @Pattern(regexp = ValidacionUsuario.PATRON_CLAVE, message = ValidacionUsuario.MENSAJE_CLAVE)
         String password,
 
         String confirmarPassword) {

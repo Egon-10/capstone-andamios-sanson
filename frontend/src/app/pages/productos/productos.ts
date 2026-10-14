@@ -3,8 +3,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ErrorApi } from '../../models/respuesta-login';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuditoriaService }
-from '../../services/auditoria.service';
 import { Producto } from '../../models/producto';
 import { Categoria } from '../../models/categoria';
 import { Proveedor } from '../../models/proveedor';
@@ -14,13 +12,17 @@ import { Pagina, ProductoResumen } from '../../models/pagina';
 import { FichaProducto } from '../../models/ficha-producto';
 import { CategoriaService } from '../../services/categoria.service';
 import { ProveedorService } from '../../services/proveedor.service';
+import { EstadoVistaComponent } from '../../components/estado-vista/estado-vista';
+
+type EstadoVista = 'cargando' | 'error' | 'vacio' | 'listo';
 
 @Component({
   selector: 'app-productos',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    EstadoVistaComponent
   ],
   templateUrl: './productos.html',
   styleUrl: './productos.css'
@@ -38,6 +40,17 @@ export class ProductosComponent implements OnInit {
    */
   pagina?: Pagina<ProductoResumen>;
   cargandoLista = false;
+
+  /** HU-40: motivo por el que no se pudo consultar el catálogo. */
+  errorCarga = '';
+
+  /** Columnas que el servidor sabe ordenar. */
+  readonly columnasOrdenables = [
+    { campo: 'sku', titulo: 'SKU', numero: false },
+    { campo: 'nombre', titulo: 'Nombre', numero: false },
+    { campo: 'precio', titulo: 'Precio', numero: true },
+    { campo: 'stock', titulo: 'Stock', numero: true }
+  ];
 
   textoBusqueda = '';
   categoriaFiltro?: number;
@@ -80,8 +93,7 @@ export class ProductosComponent implements OnInit {
   constructor(
   private readonly productoService: ProductoService,
   private readonly categoriaService: CategoriaService,
-  private readonly proveedorService: ProveedorService,
-  private readonly auditoriaService: AuditoriaService
+  private readonly proveedorService: ProveedorService
 ) {}
 
   ngOnInit(): void {
@@ -114,6 +126,11 @@ export class ProductosComponent implements OnInit {
     }
 
     this.cargandoLista = true;
+    // El error de carga anterior también se reflejó en mensajeError: se retira con él.
+    if (this.errorCarga && this.mensajeError === this.errorCarga) {
+      this.mensajeError = '';
+    }
+    this.errorCarga = '';
     this.productoService
       .buscar({
         q: this.textoBusqueda.trim() || undefined,
@@ -133,10 +150,48 @@ export class ProductosComponent implements OnInit {
         },
         error: (e: HttpErrorResponse) => {
           this.cargandoLista = false;
-          this.mensajeError = e.error?.mensaje || 'No se pudo cargar el catalogo';
+          this.errorCarga = e.error?.mensaje || 'Revise su conexión e intente de nuevo.';
+          this.mensajeError = this.errorCarga;
         }
       });
   }
+
+  /**
+   * HU-40: estado de la lista. Mientras se recarga una página que ya tiene
+   * filas se mantiene la tabla (con aviso de actualización) para no perder el
+   * foco del encabezado o botón que el usuario acaba de pulsar.
+   */
+  get estadoLista(): EstadoVista {
+    if (this.errorCarga) {
+      return 'error';
+    }
+    if (!this.pagina || (this.cargandoLista && this.pagina.contenido.length === 0)) {
+      return 'cargando';
+    }
+    return this.pagina.contenido.length === 0 ? 'vacio' : 'listo';
+  }
+
+  /** Hay algún filtro aplicado: el vacío no significa lo mismo con o sin filtros. */
+  hayFiltros(): boolean {
+    return !!this.textoBusqueda.trim() || this.categoriaFiltro !== undefined
+      || this.proveedorFiltro !== undefined || this.soloPorReponer;
+  }
+
+  get textoVacio(): string {
+    return this.hayFiltros()
+      ? 'Ningún producto coincide con los filtros.'
+      : 'Aún no hay productos registrados.';
+  }
+
+  get detalleVacio(): string {
+    return this.hayFiltros()
+      ? 'Pruebe con otro texto o quite los filtros.'
+      : 'Registre el primero con el formulario de arriba.';
+  }
+
+  /** Las listas de categorías y proveedores traen otros objetos que los del producto. */
+  mismoId = (a?: { id?: number } | null, b?: { id?: number } | null): boolean =>
+    a === b || (!!a && !!b && a.id === b.id);
 
   irAPagina(numero: number): void {
     if (!this.pagina || numero < 0 || numero >= this.pagina.totalPaginas) {
@@ -378,8 +433,6 @@ if (this.producto.stockMinimo < 0) {
 
   if (this.editando) {
 
-  const nombreProducto = this.producto.nombre;
-
   this.productoService
     .actualizar(
       this.producto.id!,
@@ -388,10 +441,6 @@ if (this.producto.stockMinimo < 0) {
     .subscribe({
       next: () => {
 
-        this.registrarAuditoria(
-          'Editó el producto: ' +
-          nombreProducto
-        );
 
         this.listarProductos();
 
@@ -402,17 +451,11 @@ if (this.producto.stockMinimo < 0) {
 
 } else {
 
-    const nombreProducto = this.producto.nombre;
-
 this.productoService
   .crear(this.producto)
   .subscribe({
     next: () => {
 
-      this.registrarAuditoria(
-        'Creó el producto: ' +
-        nombreProducto
-      );
 
       this.listarProductos();
 
@@ -460,21 +503,12 @@ this.productoService
     return;
   }
 
-  const productoEliminar =
-    this.pagina?.contenido.find(
-      p => p.id === id
-    );
-
   if (confirm('¿Desea eliminar el producto?')) {
 
     this.productoService
       .eliminar(id)
       .subscribe(() => {
 
-        this.registrarAuditoria(
-          'Eliminó el producto: ' +
-          productoEliminar?.nombre
-        );
 
         this.listarProductos();
 
@@ -500,32 +534,8 @@ this.productoService
   this.mensajeError = '';
 }
 
-registrarAuditoria(
-  accion: string
-): void {
+// La auditoria del catalogo la registra el servidor (correccion DEF-01).
 
-  const usuarioGuardado =
-    localStorage.getItem('usuario');
-
-  if (!usuarioGuardado) return;
-
-  const usuario =
-    JSON.parse(usuarioGuardado);
-
-  const auditoria: any = {
-
-    accion: accion,
-
-    usuario: {
-      id: usuario.id
-    }
-
-  };
-
-  this.auditoriaService
-  .crear(auditoria)
-  .subscribe();
-}
   /** Muestra el mensaje de validación que devuelve el servidor (HU-10). */
   private mostrarErrorServidor(error: HttpErrorResponse): void {
 

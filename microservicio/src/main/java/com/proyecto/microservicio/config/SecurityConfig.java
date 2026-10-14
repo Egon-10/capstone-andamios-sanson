@@ -3,8 +3,12 @@ package com.proyecto.microservicio.config;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.proyecto.microservicio.model.Roles;
 import com.proyecto.microservicio.repository.TokenRevocadoRepository;
+import com.proyecto.microservicio.repository.UsuarioRepository;
+import com.proyecto.microservicio.security.ContextoSesionFilter;
 import com.proyecto.microservicio.security.JwtProperties;
+import com.proyecto.microservicio.security.LimiteSolicitudesFilter;
 import com.proyecto.microservicio.security.JwtService;
+import com.proyecto.microservicio.security.SesionVigenteValidator;
 import com.proyecto.microservicio.security.TokenNoRevocadoValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -25,7 +29,9 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -48,25 +54,60 @@ public class SecurityConfig {
     private static final String MOVIMIENTOS = "/api/movimientos/**";
 
     @Bean
-    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, JwtAuthenticationConverter convertidor) throws Exception {
+    public SecurityFilterChain cadenaDeFiltros(
+            HttpSecurity http, JwtAuthenticationConverter convertidor,
+            @Value("${app.seguridad.limite-intentos-por-minuto:10}") int limitePorMinuto) {
         http
-            .csrf(csrf -> csrf.disable())
+            // La API no usa cookies de sesión: el token viaja en la cabecera
+            // Authorization y el navegador no lo envía por su cuenta, así que un
+            // sitio ajeno no puede forjar solicitudes autenticadas (CSRF). Por eso
+            // la API y el estado del servicio quedan fuera de la verificación de
+            // tokens CSRF; cualquier otra ruta la conserva.
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/actuator/**")) // NOSONAR java:S4502 revisado: API sin cookies
+            // HU-38: cabeceras de seguridad. La API solo devuelve JSON y
+            // archivos, así que su política de contenido no permite cargar
+            // nada ni ser incrustada en otro sitio.
+            .headers(h -> h
+                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; frame-ancestors 'none'"))
+                .frameOptions(f -> f.deny())
+                .referrerPolicy(r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000)))
+            // HU-38: límite de intentos por origen en las rutas de autenticación.
+            .addFilterBefore(new LimiteSolicitudesFilter(limitePorMinuto, 60), BearerTokenAuthenticationFilter.class)
+            // HU-36 y HU-41: usuario en los registros y restricción de la
+            // sesión con contraseña temporal.
+            .addFilterAfter(new ContextoSesionFilter(), BearerTokenAuthenticationFilter.class)
             .cors(Customizer.withDefaults())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/refresh").permitAll()
                 .requestMatchers("/error").permitAll()
+                // HU-41: estado del servicio para el orquestador de contenedores.
+                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
 
                 // Perfil propio: cualquier usuario autenticado
-                .requestMatchers("/api/usuarios/me").authenticated()
+                .requestMatchers("/api/usuarios/me", "/api/usuarios/me/**").authenticated()
+
+                // Lista corta de usuarios para filtrar las bitacoras (HU-33)
+                .requestMatchers(HttpMethod.GET, "/api/usuarios/opciones").hasAnyRole(ADMIN, GERENTE)
+
+                // HU-32: la bitacora de accesos muestra IP e intentos fallidos:
+                // solo el administrador.
+                .requestMatchers("/api/accesos/**").hasRole(ADMIN)
 
                 // Administración de usuarios y roles
                 .requestMatchers("/api/usuarios/**", "/api/roles/**").hasRole(ADMIN)
 
                 // Auditoría: consulta restringida; el registro lo hace el propio servidor
                 .requestMatchers(HttpMethod.GET, "/api/auditoria/**").hasAnyRole(ADMIN, GERENTE)
-                .requestMatchers(HttpMethod.GET, "/api/reportes/usuarios", "/api/reportes/auditoria").hasAnyRole(ADMIN, GERENTE)
+                // HU-26 y HU-27: reportes. Cada uno exige el mismo rol que la
+                // consulta de la que sale, para que exportar no sea una forma de
+                // ver lo que la pantalla no muestra.
+                .requestMatchers(HttpMethod.GET, "/api/reportes/accesos").hasRole(ADMIN)
+                .requestMatchers(HttpMethod.GET, "/api/reportes/usuarios", "/api/reportes/auditoria",
+                        "/api/reportes/valorizacion").hasAnyRole(ADMIN, GERENTE)
+                .requestMatchers(HttpMethod.GET, "/api/reportes/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
 
                 // Catálogo: lectura para todos; escritura según rol
                 .requestMatchers(HttpMethod.DELETE, "/api/productos/**", "/api/proveedores/**", "/api/categorias/**").hasRole(ADMIN)
@@ -95,6 +136,10 @@ public class SecurityConfig {
                 // queda para el administrador y el gerente. El kardex y la lista
                 // de reposicion los necesita tambien el encargado para operar.
                 .requestMatchers(HttpMethod.GET, "/api/inventario/valorizacion").hasAnyRole(ADMIN, GERENTE)
+                // HU-23: el resumen incluye el valor del inventario; la tendencia
+                // y el stock critico los necesita tambien el encargado.
+                .requestMatchers(HttpMethod.GET, "/api/indicadores/resumen").hasAnyRole(ADMIN, GERENTE)
+                .requestMatchers(HttpMethod.GET, "/api/indicadores/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
                 .requestMatchers(HttpMethod.GET, "/api/inventario/**").hasAnyRole(ADMIN, GERENTE, ENCARGADO)
 
                 // HU-16: el encargado registra el conteo fisico, pero solo el
@@ -128,13 +173,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(JwtProperties propiedades, TokenRevocadoRepository revocados) {
+    public JwtDecoder jwtDecoder(JwtProperties propiedades, TokenRevocadoRepository revocados,
+                                 UsuarioRepository usuarios) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(propiedades.getClave())
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
                 JwtValidators.createDefaultWithIssuer(JwtProperties.EMISOR),
-                new TokenNoRevocadoValidator(revocados)));
+                new TokenNoRevocadoValidator(revocados),
+                new SesionVigenteValidator(usuarios)));
         return decoder;
     }
 

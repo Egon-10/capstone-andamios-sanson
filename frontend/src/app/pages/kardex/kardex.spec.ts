@@ -103,6 +103,32 @@ describe('KardexComponent', () => {
     expect(c.kardexCuadra).toBeTrue();
   });
 
+  it('HU-40: sin producto elegido invita a elegir uno y no lo trata como error', () => {
+    expect(c.estadoVista).toBe('vacio');
+    const vista: HTMLElement = fixture.nativeElement;
+    expect(vista.textContent).toContain('Seleccione un producto para ver su kardex');
+    expect(vista.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('HU-40: si la consulta falla muestra el error y reintentar vuelve a consultar', () => {
+    inventario.kardex.and.returnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+    c.productoId = 5;
+    c.consultar();
+    fixture.detectChanges();
+
+    expect(c.estadoVista).toBe('error');
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('app-estado-vista [role="alert"]');
+    expect(alerta.textContent).toContain('No se pudo cargar el kardex');
+
+    inventario.kardex.and.returnValue(of({ ...kardex, lineas: [] }));
+    alerta.querySelector('button')!.click();
+    fixture.detectChanges();
+
+    expect(inventario.kardex).toHaveBeenCalledTimes(2);
+    expect(c.estadoVista).toBe('vacio');
+    expect(fixture.nativeElement.textContent).toContain('todavía no tiene movimientos');
+  });
+
   it('distingue visualmente los asientos anulados y compensatorios', () => {
     expect(c.claseEstado('ANULADO')).toBe('fila-anulada');
     expect(c.claseEstado('COMPENSACION')).toBe('fila-compensacion');

@@ -8,6 +8,7 @@ import { MovimientoService } from '../../services/movimiento.service';
 import { MotivoService } from '../../services/motivo.service';
 import { Producto } from '../../models/producto';
 import { Motivo } from '../../models/motivo';
+import { AlertaService } from '../../services/alerta.service';
 
 /** CP-13 a CP-16: pantalla de movimientos (HU-12 a HU-15). */
 describe('MovimientosComponent', () => {
@@ -39,6 +40,7 @@ describe('MovimientosComponent', () => {
     TestBed.configureTestingModule({
       imports: [MovimientosComponent],
       providers: [
+        { provide: AlertaService, useValue: jasmine.createSpyObj('AlertaService', ['actualizar']) },
         { provide: ProductoService, useValue: productos },
         { provide: MovimientoService, useValue: movimientos },
         { provide: MotivoService, useValue: motivos }
@@ -247,6 +249,35 @@ describe('MovimientosComponent', () => {
     crear();
     c.aplicarFiltros();
     expect(c.mensajeError).toBe('Formato de fecha');
+  });
+
+  it('HU-40: si el historial no carga muestra el error y reintentar vuelve a consultar', () => {
+    movimientos.listar.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+    crear();
+
+    expect(c.estadoVista).toBe('error');
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('app-estado-vista [role="alert"]');
+    expect(alerta.textContent).toContain('No se pudo cargar el historial');
+
+    movimientos.listar.and.returnValue(of([]));
+    alerta.querySelector('button')!.click();
+    fixture.detectChanges();
+
+    expect(movimientos.listar).toHaveBeenCalledTimes(2);
+    expect(c.estadoVista).toBe('vacio');
+    expect(fixture.nativeElement.textContent).toContain('Todavía no hay movimientos registrados');
+  });
+
+  it('HU-40: distingue el historial sin registros del que no coincide con los filtros', () => {
+    movimientos.filtrar.and.returnValue(of([]));
+    crear();
+    c.tipoFiltro = 'SALIDA';
+
+    c.aplicarFiltros();
+    fixture.detectChanges();
+
+    expect(c.estadoVista).toBe('vacio');
+    expect(fixture.nativeElement.textContent).toContain('Ningún movimiento coincide con los filtros');
   });
 
   it('distingue los asientos anulados y compensatorios', () => {

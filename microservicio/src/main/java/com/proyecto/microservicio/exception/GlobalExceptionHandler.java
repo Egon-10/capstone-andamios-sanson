@@ -45,6 +45,24 @@ public class GlobalExceptionHandler {
         return respuesta(HttpStatus.UNAUTHORIZED, ex.getMessage(), Map.of());
     }
 
+    /** HU-35: cuenta bloqueada temporalmente. */
+    @ExceptionHandler(CuentaBloqueadaException.class)
+    public ResponseEntity<ErrorResponse> bloqueada(CuentaBloqueadaException ex) {
+        return ResponseEntity.status(HttpStatus.LOCKED)
+                .header("Retry-After", String.valueOf(ex.getMinutosRestantes() * 60))
+                .body(ErrorResponse.of(HttpStatus.LOCKED.value(), HttpStatus.LOCKED.getReasonPhrase(),
+                        ex.getMessage(), Map.of()));
+    }
+
+    /** HU-38: demasiadas solicitudes seguidas. */
+    @ExceptionHandler(LimiteSolicitudesException.class)
+    public ResponseEntity<ErrorResponse> limite(LimiteSolicitudesException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getSegundosDeEspera()))
+                .body(ErrorResponse.of(HttpStatus.TOO_MANY_REQUESTS.value(),
+                        HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(), ex.getMessage(), Map.of()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> validacion(MethodArgumentNotValidException ex) {
         Map<String, String> errores = new LinkedHashMap<>();
@@ -55,12 +73,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> cuerpoIlegible(HttpMessageNotReadableException ex) {
+    public ResponseEntity<ErrorResponse> cuerpoIlegible() {
         return respuesta(HttpStatus.BAD_REQUEST, "El cuerpo de la solicitud no tiene un formato válido", Map.of());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> accesoDenegado(AccessDeniedException ex) {
+    public ResponseEntity<ErrorResponse> accesoDenegado() {
         return respuesta(HttpStatus.FORBIDDEN, "No tiene permisos para realizar esta acción", Map.of());
     }
 

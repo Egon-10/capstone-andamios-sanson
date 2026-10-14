@@ -7,7 +7,9 @@ import com.proyecto.microservicio.exception.ConflictoException;
 import com.proyecto.microservicio.exception.ReglaNegocioException;
 import com.proyecto.microservicio.model.Rol;
 import com.proyecto.microservicio.model.Usuario;
+import com.proyecto.microservicio.repository.AccesoRepository;
 import com.proyecto.microservicio.repository.RolRepository;
+import com.proyecto.microservicio.security.RefreshTokenService;
 import com.proyecto.microservicio.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,12 +33,17 @@ class UsuarioServiceTest {
     private final PasswordEncoder encoder = new BCryptPasswordEncoder();
     private UsuarioService servicio;
 
+    private AccesoRepository accesos;
+    private RefreshTokenService refreshTokens;
+
     @BeforeEach
     void preparar() {
         repositorio = mock(UsuarioRepository.class);
         roles = mock(RolRepository.class);
         auditoria = mock(AuditoriaService.class);
-        servicio = new UsuarioService(repositorio, roles, encoder, auditoria);
+        accesos = mock(AccesoRepository.class);
+        refreshTokens = mock(RefreshTokenService.class);
+        servicio = new UsuarioService(repositorio, roles, encoder, auditoria, accesos, refreshTokens);
         when(repositorio.save(any(Usuario.class))).thenAnswer(inv -> {
             Usuario u = inv.getArgument(0);
             if (u.getId() == null) {
@@ -52,7 +59,7 @@ class UsuarioServiceTest {
     }
 
     private static UsuarioRegistroRequest valida() {
-        return solicitud("DNI", "45678912", "Clave2026", "Clave2026");
+        return solicitud("DNI", "45678912", "Clave#Segura2026", "Clave#Segura2026");
     }
 
     @Test
@@ -66,8 +73,8 @@ class UsuarioServiceTest {
         verify(repositorio).save(captor.capture());
         Usuario guardado = captor.getValue();
 
-        assertNotEquals("Clave2026", guardado.getPassword());
-        assertTrue(encoder.matches("Clave2026", guardado.getPassword()));
+        assertNotEquals("Clave#Segura2026", guardado.getPassword());
+        assertTrue(encoder.matches("Clave#Segura2026", guardado.getPassword()));
         assertEquals("ana@andamios.pe", guardado.getCorreo());
         assertEquals(Usuario.ESTADO_ACTIVO, r.estado());
         assertEquals("ENCARGADO", r.rol().nombre());
@@ -110,7 +117,7 @@ class UsuarioServiceTest {
     @DisplayName("CP-11: la contraseña y su confirmación deben coincidir")
     void confirmacionDistinta() {
         ReglaNegocioException ex = assertThrows(ReglaNegocioException.class,
-                () -> servicio.registrar(solicitud("DNI", "45678912", "Clave2026", "Clave2027"), 1L));
+                () -> servicio.registrar(solicitud("DNI", "45678912", "Clave#Segura2026", "Clave#Segura2027"), 1L));
 
         assertEquals("confirmarPassword", ex.getCampo());
     }
@@ -119,7 +126,7 @@ class UsuarioServiceTest {
     @DisplayName("CP-11: un DNI debe tener exactamente 8 dígitos")
     void dniInvalido() {
         ReglaNegocioException ex = assertThrows(ReglaNegocioException.class,
-                () -> servicio.registrar(solicitud("DNI", "4567891", "Clave2026", "Clave2026"), 1L));
+                () -> servicio.registrar(solicitud("DNI", "4567891", "Clave#Segura2026", "Clave#Segura2026"), 1L));
 
         assertEquals("numeroDocumento", ex.getCampo());
     }

@@ -57,4 +57,33 @@ class GlobalExceptionHandlerTest {
         assertEquals(409, r.getStatusCode().value());
         assertTrue(r.getBody().mensaje().contains("Vuelva a intentarlo"));
     }
+
+    @Test
+    @DisplayName("CP-36: una cuenta bloqueada responde 423 e indica cuándo reintentar")
+    void cuentaBloqueada() {
+        ResponseEntity<ErrorResponse> r = manejador.bloqueada(new CuentaBloqueadaException(15));
+        assertEquals(423, r.getStatusCode().value());
+        assertEquals("900", r.getHeaders().getFirst("Retry-After"));
+        assertTrue(r.getBody().mensaje().contains("15 minutos"));
+        assertTrue(new CuentaBloqueadaException(1).getMessage().contains("1 minuto "));
+    }
+
+    @Test
+    @DisplayName("CP-39: el exceso de solicitudes responde 429")
+    void limite() {
+        ResponseEntity<ErrorResponse> r = manejador.limite(new LimiteSolicitudesException(30));
+        assertEquals(429, r.getStatusCode().value());
+        assertEquals("30", r.getHeaders().getFirst("Retry-After"));
+    }
+
+    @Test
+    @DisplayName("CP-42: el error lleva el identificador de la solicitud para encontrarlo en el registro")
+    void llevaIdentificador() {
+        org.slf4j.MDC.put(com.proyecto.microservicio.config.SolicitudFilter.CLAVE_SOLICITUD, "sol-1234");
+        try {
+            assertEquals("sol-1234", manejador.generico(new IllegalStateException("x")).getBody().solicitud());
+        } finally {
+            org.slf4j.MDC.clear();
+        }
+    }
 }

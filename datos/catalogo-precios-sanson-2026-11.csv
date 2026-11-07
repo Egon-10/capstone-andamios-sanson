@@ -1,0 +1,32 @@
+sku,nombre,descripcion,precio_min,precio_max,categoria,observacion
+PLA-ACR-240,Plataforma antideslizante para andamio Acrow 0.30 x 2.40 m,"4 garras rígidas de 1/4 in, plancha rígida de 2 mm; acero galvanizado nacional; soldadura MIG/MAG con galvanizado en spray en las uniones",120,140,PLATAFORMA,
+PLA-BAN-210,Plataforma antideslizante para andamio banquetero 0.30 x 2.10 m,"4 garras rígidas de 1/4 in, plancha rígida de 2 mm; acero galvanizado nacional; soldadura MIG/MAG con galvanizado en spray en las uniones",120,140,PLATAFORMA,La lista da un solo rango para las dos plataformas
+PLA-ESC-FEN,Plataforma con escotilla y escalera de acceso,Forrada con fenólico premium de 18 mm; tubos estructurales galvanizados,440,480,PLATAFORMA,
+BAR-ACR,Juego de baranda de seguridad completo para andamio Acrow,Galvanizado,280,300,BARANDA,Un solo rango para las tres barandas
+BAR-MF48,Juego de baranda de seguridad completo para andamio MF48,Galvanizado,280,300,BARANDA,Un solo rango para las tres barandas
+BAR-BAN,Juego de baranda de seguridad completo para andamio banquetero,Galvanizado,280,300,BARANDA,Un solo rango para las tres barandas
+BRL-UNI,Barandilla lateral (unidad),,60,60,BARANDA,
+BRL-DUO,Barandilla lateral (dúo),,120,120,BARANDA,"La página 3 lista un ""juego dúo de barandilla lateral"" a S/ 230; confirmar si son productos distintos"
+BRL-JDUO,Juego dúo de barandilla lateral,,230,230,BARANDA,Ver observación de BRL-DUO
+RUE-FRE,Juego de ruedas de nylon de 8 in con frenos,"Con frenos, acoples metálicos y pernos de fijación",290,300,RUEDAS NYLON,
+RUE-NIV,Juego de ruedas de nylon de 8 in con niveladores,Con pernos de fijación y juego de niveladores,450,450,RUEDAS NYLON,
+RUE-FRE-NIV,Juego de ruedas de nylon de 8 in con frenos y niveladores,"Con frenos, acoples metálicos, pernos de fijación y juego de niveladores",450,490,RUEDAS NYLON,
+NIV-4,Juego de niveladores galvanizados (4 unidades),Galvanizado,150,190,ACCESORIOS,
+AND-ACR-PRO,Juego de andamio Acrow Pro reforzado,"Parantes de 2 in x 2.0 mm, travesaño de 1 in x 2.0 mm, crucetas rígidas de 2.0 mm; alto 2.10, ancho 1.30, largo 2.40 m; acero galvanizado nacional (Aceros Arequipa); soldadura MIG/MAG con galvanizado en spray en las uniones",290,320,ANDAMIOS,
+AND-REF-PRO,Juego de andamio Reforzado Pro,"Parantes de 2 in x 2.0 mm, travesaño de 1 in x 2.0 mm, crucetas rígidas de 2.0 mm; alto 2.10, ancho 1.30, largo 2.40 m; acero galvanizado nacional (Aceros Arequipa); soldadura MIG/MAG con galvanizado en spray en las uniones",320,320,ANDAMIOS,
+AND-BAN-PRO,Juego de andamio banquetero Pro reforzado,"Parantes de 2 in x 2.0 mm, travesaño de 1 in x 2.0 mm, crucetas rígidas de 2.0 mm; alto 2.10, ancho 0.80, largo 2.10 m; acero galvanizado nacional (Aceros Arequipa); soldadura MIG/MAG con galvanizado en spray en las uniones",280,290,ANDAMIOS,
+AND-MF48-PRO,Juego de andamio MF48 Pro reforzado,"Parantes de 1 1/2 in x 2.0 mm, travesaño de 1 in x 2.0 mm, crucetas rígidas de 2.0 mm; alto 2.10, ancho 1.30, largo 2.40 m; acero galvanizado nacional (Aceros Arequipa); soldadura MIG/MAG con galvanizado en spray en las uniones",280,290,ANDAMIOS,
+AND-LIV-FUS,Juego de andamio liviano fusionado Pro reforzado,"Parantes de 1 1/4 in x 2.0 mm, travesaño de 1 in x 2.0 mm, crucetas rígidas de 2.0 mm; alto 2.10, ancho 1.30, largo 2.40 m; acero galvanizado con travesaño de fierro negro color rojo (Aceros Arequipa); soldadura MIG/MAG",230,230,ANDAMIOS,
+AND-ACR-PIN,Juego de andamio Acrow de acero pintado Pro reforzado,"Parantes de 2 in x 2.0 mm, travesaño de 1 in x 2.0 mm, crucetas rígidas de 2.0 mm; alto 2.10, ancho 1.30, largo 2.40 m; fierro negro pintado (Aceros Arequipa) con cruceta galvanizada; soldadura MIG/MAG",260,260,ANDAMIOS,
+ADP-T-PUN,Adaptador tipo T para puntal,Galvanizado,42,42,ACCESORIOS,
+ADP-T-ESC,Adaptador tipo T para escalerilla de acceso,Galvanizado,60,60,ACCESORIOS,
+ESC-ZAN,Escalera metálica tipo zanca de acceso,Pasos antideslizantes; tubos estructurales galvanizados de 2.0 mm; pasamano galvanizado,500,530,ESCALERA,
+ROD-4,Juego de rodapié galvanizado (4 piezas),Galvanizado,180,190,ACCESORIOS,
+VIG-3,Viga de 3 m,,300,300,PUNTALES Y ENCOFRADO,"La lista dice ""Vigas de 3""; confirmar la unidad y el material"
+ESP-58-3M,Espárrago galvanizado de 5/8 in de 3 m,Galvanizado,29,29,PUNTALES Y ENCOFRADO,
+BOL-D100,Bolillo (tuerca de plato D100 de 5/8 in),Galvanizado,6,7,PUNTALES Y ENCOFRADO,
+PUN-4M,Puntal galvanizado Sansón de 4 m (2.20 a 4 m),Tubo principal de 2 in; galvanizado. Preventa S/ 62 a 64,66,67,PUNTALES Y ENCOFRADO,Se registra el precio normal; preventa S/ 62 a 64
+PUN-3M,Puntal galvanizado Sansón de 3 m (1.70 a 3 m),Tubo principal de 2 in; galvanizado,54,57,PUNTALES Y ENCOFRADO,
+ALI-1M,Alineador galvanizado de 1 m,"Galvanizado. También hay de 0.5, 1.5, 2 y 3 m (sin precio en la lista)",45,45,ACCESORIOS,Solo se lista el precio del de 1 m
+CRU-UNI,Cruceta (unidad),,45,50,ACCESORIOS,
+CRU-PAR,Par de crucetas (2.40 m armado / 2.80 m desarmado),,85,90,ACCESORIOS,

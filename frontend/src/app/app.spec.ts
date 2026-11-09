@@ -22,7 +22,7 @@ describe('App', () => {
 
   afterEach(() => {
     localStorage.removeItem('accesibilidad');
-    raiz.classList.remove('accesibilidad-alto-contraste');
+    raiz.classList.remove('accesibilidad-alto-contraste', 'tema-oscuro');
     delete raiz.dataset['filtroColor'];
     ['--escala-texto', '--espaciado-letras', '--espaciado-palabras', '--espaciado-lineas'].forEach(v => raiz.style.removeProperty(v));
   });
@@ -102,6 +102,32 @@ describe('App', () => {
     expect(c.escalaTexto).toBe(100);
     expect(c.espaciado).toBe(0);
     expect(cancelar).toHaveBeenCalled();
+  });
+
+  it('activa, guarda y recupera el modo oscuro', () => {
+    const c = crear().componentInstance;
+    expect(raiz.classList.contains('tema-oscuro')).toBeFalse();
+    c.modoOscuro = true;
+    c.guardar();
+    expect(raiz.classList.contains('tema-oscuro')).toBeTrue();
+    expect(JSON.parse(localStorage.getItem('accesibilidad')!).modoOscuro).toBeTrue();
+
+    raiz.classList.remove('tema-oscuro');
+    const otra = crear().componentInstance;
+    expect(otra.modoOscuro).toBeTrue();
+    expect(raiz.classList.contains('tema-oscuro')).toBeTrue();
+
+    otra.restablecer();
+    expect(otra.modoOscuro).toBeFalse();
+    expect(raiz.classList.contains('tema-oscuro')).toBeFalse();
+  });
+
+  it('ofrece el modo oscuro en el panel de accesibilidad', () => {
+    const f = crear();
+    const el: HTMLElement = f.nativeElement;
+    (el.querySelector('button.accesibilidad-flotante') as HTMLButtonElement).click();
+    f.detectChanges();
+    expect(el.querySelector('#panel-accesibilidad')?.textContent).toContain('Modo oscuro');
   });
 
   describe('narrador', () => {

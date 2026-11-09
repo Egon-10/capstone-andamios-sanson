@@ -86,7 +86,7 @@ tr.inactivo td {
 
 .consentimiento-privacidad { padding: var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio-chico); background: var(--superficie-alterna); }
 .consentimiento-privacidad label { display: flex; align-items: flex-start; gap: 10px; color: var(--texto); font-size: var(--texto-base); line-height: 1.5; cursor: pointer; }
-.consentimiento-privacidad input { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 2px; accent-color: var(--color-primario); }
+.consentimiento-privacidad input { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 2px; accent-color: var(--color-primario-texto); }
 .consentimiento-privacidad small { display: block; margin: 6px 0 0 28px; }
 
 .nota-edicion {

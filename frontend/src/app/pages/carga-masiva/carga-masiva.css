@@ -80,7 +80,7 @@ hr {
 
 .indicador strong {
   font-size: 1.35rem;
-  color: var(--color-primario);
+  color: var(--color-primario-texto);
   font-variant-numeric: tabular-nums;
 }
 

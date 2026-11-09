@@ -41,5 +41,25 @@
         {{ enviando ? 'Ingresando…' : 'Ingresar' }}
       </button>
     </form>
+    <nav class="enlaces-legales" aria-label="Información legal">
+      <button type="button" (click)="abrirLegal('terminos')">Términos y Condiciones</button>
+      <span aria-hidden="true">·</span>
+      <button type="button" (click)="abrirLegal('privacidad')">Política de Privacidad</button>
+    </nav>
   </section>
 </main>
+
+@if (documentoLegalAbierto) {
+  <div class="legal-velo">
+    <section class="legal-dialogo" role="dialog" aria-modal="true" aria-labelledby="legal-titulo">
+      <header><h2 id="legal-titulo">{{ seccionLegal === 'terminos' ? 'Términos y Condiciones' : 'Política de Privacidad' }}</h2>
+        <button type="button" class="legal-cerrar" aria-label="Cerrar" (click)="documentoLegalAbierto = false">×</button></header>
+      @if (seccionLegal === 'terminos') {
+        <p><strong>Términos y Condiciones.</strong> El acceso y uso del sistema web de control de inventario de Andamios Sansón está reservado a personal autorizado de la empresa y se rige por estos términos. Al ingresar, el usuario declara que usará su cuenta únicamente para registrar y consultar existencias, movimientos y reportes vinculados a sus funciones, y se compromete a mantener la confidencialidad de sus credenciales, a no compartirlas y a no intentar acceder a módulos o datos fuera de los permisos de su rol (Administrador, Encargado de almacén o Consulta). El usuario es responsable de la veracidad de la información que registre; todo movimiento queda asociado a su cuenta con fecha, hora y dirección IP, y puede ser revisado con fines de control y auditoría. Está prohibido alterar, eliminar o falsear registros, vulnerar la seguridad del sistema o usarlo para fines distintos a los autorizados. La empresa podrá bloquear o suspender cuentas ante incumplimientos o actividad sospechosa, y se esforzará por mantener la disponibilidad del servicio, sin garantizar un funcionamiento ininterrumpido. El contenido, diseño y código del sistema pertenecen a sus desarrolladores y a la empresa, y no pueden copiarse ni distribuirse sin autorización. Estos términos pueden actualizarse, y el uso continuado del sistema implica su aceptación. Se rigen por las leyes de la República del Perú.</p>
+      } @else {
+        <p><strong>Política de Privacidad.</strong> Andamios Sansón, con domicilio en Lima y contacto en n00312444@upn.pe, es titular del banco de datos personales de este sistema y trata los datos conforme a la Ley N.º 29733, su reglamento (D.S. 016-2024-JUS) y buenas prácticas del RGPD. Recopilamos únicamente los datos necesarios para la gestión del inventario: de los usuarios, nombres y apellidos, tipo y número de documento, correo, teléfono (opcional), área, turno, nombre de usuario y la dirección IP y registro de sus acciones en el sistema; de los proveedores, RUC, razón social y datos de contacto. Estos datos se usan exclusivamente para autenticar usuarios, asignar permisos, garantizar la trazabilidad de los movimientos, contactar proveedores y mantener la seguridad del sistema; no se venden ni se ceden a terceros, salvo obligación legal. Protegemos la información con contraseñas cifradas (BCrypt), acceso por roles, bloqueo tras intentos fallidos, expiración de sesiones, registros de auditoría no modificables y copias de seguridad periódicas, y el sistema opera dentro de la red local de la empresa. Conservamos los datos mientras dure la relación laboral o comercial y el plazo exigido por la ley, y luego los eliminamos o anonimizamos. Usted puede ejercer sus derechos de acceso, rectificación, cancelación y oposición escribiendo a N00312444@upn.pe, y si considera vulnerados sus derechos puede acudir a la Autoridad Nacional de Protección de Datos Personales. Al usar el sistema o registrar sus datos, usted autoriza este tratamiento. Última actualización: noviembre de 2026.</p>
+      }
+      <footer><button type="button" class="ui-boton primario" (click)="documentoLegalAbierto = false">Cerrar</button></footer>
+    </section>
+  </div>
+}

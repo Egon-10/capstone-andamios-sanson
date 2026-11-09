@@ -100,6 +100,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   mensajeExito = '';
   mostrarPassword = false;
   guardando = false;
+  declaraInformado = false;
 
   get editando(): boolean {
     return this.idEditando !== null;
@@ -309,6 +310,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.mensajeExito = '';
     this.errores = this.validar();
 
+    if (!this.editando && !this.declaraInformado) {
+      this.errores['privacidad'] = 'Debe declarar que informó a la persona antes de registrar el usuario.';
+    }
+
     if (Object.keys(this.errores).length > 0) {
       this.mensajeError = 'Revise los campos marcados.';
       return;
@@ -335,6 +340,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   editar(usuario: Usuario): void {
     this.idEditando = usuario.id ?? null;
+    this.declaraInformado = false;
     this.form = {
       nombres: usuario.nombre ?? '',
       apellidos: usuario.apellidos ?? '',
@@ -358,6 +364,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   limpiar(): void {
     this.form = this.formularioVacio();
     this.idEditando = null;
+    this.declaraInformado = false;
     this.errores = {};
     this.mensajeError = '';
   }

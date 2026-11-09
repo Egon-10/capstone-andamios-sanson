@@ -41,7 +41,7 @@
   color: var(--texto-tenue);
 }
 
-.tarjeta strong { font-size: 1.5rem; color: var(--color-primario); }
+.tarjeta strong { font-size: 1.5rem; color: var(--color-primario-texto); }
 .tarjeta small { font-size: var(--texto-chico); color: var(--texto-tenue); }
 
 .vistas { display: flex; flex-direction: column; gap: var(--espacio-4); }

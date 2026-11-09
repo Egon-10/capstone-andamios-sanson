@@ -20,6 +20,8 @@
     <option value="monocromatico">Monocromático (escala de grises)</option>
   </select>
 
+  <label class="accesibilidad-interruptor"><input type="checkbox" [(ngModel)]="modoOscuro" (ngModelChange)="guardar()"> <span><strong>Modo oscuro</strong><small>Fondo oscuro y texto claro, más cómodo con poca luz</small></span></label>
+
   <label class="accesibilidad-interruptor"><input type="checkbox" [(ngModel)]="altoContraste" (ngModelChange)="guardar()"> <span><strong>Alto contraste</strong><small>Resalta texto, bordes y controles</small></span></label>
 
   <label class="accesibilidad-campo" for="tamano-texto">Tamaño del texto <output>{{ escalaTexto }}%</output></label>

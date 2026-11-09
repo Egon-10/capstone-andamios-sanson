@@ -63,13 +63,13 @@
 }
 
 .opcion.activa {
-  border-color: var(--color-primario);
+  border-color: var(--color-primario-texto);
   background: var(--color-primario-suave);
 }
 
 .opcion.activa > i,
 .opcion.activa strong {
-  color: var(--color-primario);
+  color: var(--color-primario-texto);
 }
 
 .panel {

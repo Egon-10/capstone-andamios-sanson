@@ -29,7 +29,7 @@
   border-top: 3px solid var(--tono);
 }
 
-.indicador[data-tono="primario"] { --tono: var(--color-primario); --tono-fondo: var(--color-primario-suave); }
+.indicador[data-tono="primario"] { --tono: var(--color-primario-texto); --tono-fondo: var(--color-primario-suave); }
 .indicador[data-tono="aviso"] { --tono: var(--aviso); --tono-fondo: var(--aviso-fondo); }
 .indicador[data-tono="exito"] { --tono: var(--exito); --tono-fondo: var(--exito-fondo); }
 .indicador[data-tono="peligro"] { --tono: var(--peligro); --tono-fondo: var(--peligro-fondo); }

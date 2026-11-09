@@ -23,7 +23,7 @@
 .dato-sistema {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--color-primario);
+  color: var(--color-primario-texto);
 }
 
 /* La diferencia es el dato que la persona confirma antes de enviar, asi que

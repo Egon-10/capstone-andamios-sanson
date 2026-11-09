@@ -12,6 +12,9 @@
     --color-primario-hover: #162e59;
     --color-primario-suave: #e8eef8;
     --color-acento: #2563eb;
+    /* Primario como color de texto, iconos y bordes sobre las superficies.
+       En el modo oscuro se aclara para conservar el contraste. */
+    --color-primario-texto: #1e3c72;
 
     /* Texto y superficies */
     --texto: #0f172a;
@@ -32,6 +35,11 @@
     --aviso-fondo: #fffbeb;
     --info: #1e40af;
     --info-fondo: #eff6ff;
+    --peligro-borde: #fecaca;
+    --aviso-borde: #fde68a;
+    --nivel-agotado: #d03b3b;
+    --nivel-critico: #c2410c;
+    --nivel-bajo: #92400e;
 
     /* Medidas */
     --espacio-1: 4px;
@@ -79,6 +87,39 @@ html.accesibilidad-alto-contraste {
     --color-primario: #001a70; --color-primario-hover: #000d42;
 }
 
+/* Modo oscuro (panel de accesibilidad). Mismas variables, otros valores:
+   los componentes no necesitan cambios. Contrastes del texto de 4.5:1 o más
+   sobre --superficie y --fondo. */
+html.tema-oscuro {
+    color-scheme: dark;
+    --color-primario: #2a4f94; --color-primario-hover: #223f78;
+    --color-primario-suave: #1d2b48; --color-acento: #8ab4ff;
+    --color-primario-texto: #a9c3f5;
+    --texto: #e5e9f0; --texto-suave: #c0c9d6; --texto-tenue: #9aa6b8;
+    --borde: #2a3650; --borde-fuerte: #3b4a68;
+    --fondo: #0b1220; --superficie: #131c2e; --superficie-alterna: #1a2438;
+    --exito: #4ade80; --exito-fondo: #0f2e1d;
+    --peligro: #fca5a5; --peligro-fondo: #3a1515; --peligro-borde: #7f1d1d;
+    --aviso: #fcd34d; --aviso-fondo: #33270a; --aviso-borde: #78350f;
+    --info: #93c5fd; --info-fondo: #142540;
+    --nivel-agotado: #fca5a5; --nivel-critico: #fdba74; --nivel-bajo: #fcd34d;
+    --sombra: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5);
+    --sombra-elevada: 0 10px 30px rgba(0, 0, 0, 0.6);
+    --foco: 0 0 0 3px rgba(138, 180, 255, 0.5);
+}
+/* El botón de peligro conserva texto blanco: en oscuro usa un rojo sólido. */
+html.tema-oscuro .ui-boton.peligro { background: #b91c1c; }
+html.tema-oscuro .ui-boton.peligro:hover:not(:disabled) { background: #991b1b; }
+/* Alto contraste sobre el modo oscuro: negro puro y texto blanco. */
+html.tema-oscuro.accesibilidad-alto-contraste {
+    --texto: #ffffff; --texto-suave: #f1f1f1; --texto-tenue: #e0e0e0;
+    --borde: #cfcfcf; --borde-fuerte: #ffffff; --fondo: #000000;
+    --superficie: #000000; --superficie-alterna: #141414;
+    --color-primario: #1d4ed8; --color-primario-hover: #1e40af;
+    --color-primario-texto: #c7dbff;
+}
+
+
 /* Si algún componente externo impone otra fuente, se hereda la del cuerpo. */
 div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, textarea, button {
     font-family: inherit !important;
@@ -125,7 +166,7 @@ div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, texta
 .ui-titulo {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--color-primario);
+    color: var(--color-primario-texto);
     display: flex;
     align-items: center;
     gap: var(--espacio-2);
@@ -249,7 +290,7 @@ div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, texta
 
 .ui-boton.secundario {
     background: var(--superficie);
-    color: var(--color-primario);
+    color: var(--color-primario-texto);
     border-color: var(--borde-fuerte);
 }
 
@@ -386,8 +427,8 @@ div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, texta
 }
 
 .ui-mensaje.exito { background: var(--exito-fondo); color: var(--exito); }
-.ui-mensaje.peligro { background: var(--peligro-fondo); color: var(--peligro); border-color: #fecaca; }
-.ui-mensaje.aviso { background: var(--aviso-fondo); color: var(--aviso); border-color: #fde68a; }
+.ui-mensaje.peligro { background: var(--peligro-fondo); color: var(--peligro); border-color: var(--peligro-borde); }
+.ui-mensaje.aviso { background: var(--aviso-fondo); color: var(--aviso); border-color: var(--aviso-borde); }
 .ui-mensaje.info { background: var(--info-fondo); color: var(--info); }
 
 /* ---------------------------------------------------------------------
@@ -466,8 +507,8 @@ div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, texta
 }
 
 .ui-pestanas button[aria-selected="true"] {
-    color: var(--color-primario);
-    border-bottom-color: var(--color-primario);
+    color: var(--color-primario-texto);
+    border-bottom-color: var(--color-primario-texto);
 }
 
 .ui-pestanas button:focus-visible {

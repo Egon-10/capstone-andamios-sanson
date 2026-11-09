@@ -84,3 +84,14 @@ form .ui-boton.primario {
   margin-top: var(--espacio-2);
   min-height: 44px;
 }
+
+.enlaces-legales { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 7px; font-size: var(--texto-chico); }
+.enlaces-legales button { border: 0; padding: 4px 0; background: transparent; color: var(--color-primario); text-decoration: underline; cursor: pointer; font: inherit; }
+.legal-velo { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 20px; background: #0f172a99; }
+.legal-dialogo { width: min(760px, 100%); max-height: min(82vh, 760px); overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding: 24px; border-radius: 12px; background: #fff; color: #172033; box-shadow: 0 18px 55px #0005; }
+.legal-dialogo header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.legal-dialogo h2 { margin: 0; color: #1e3c72; font-size: 1.3rem; }
+.legal-dialogo p { font-size: 0.95rem; line-height: 1.65; }
+.legal-cerrar { border: 0; background: transparent; font-size: 28px; cursor: pointer; color: #334155; }
+.legal-dialogo footer { display: flex; justify-content: flex-end; }
+.legal-dialogo :focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }

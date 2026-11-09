@@ -1,1 +1,36 @@
 <router-outlet></router-outlet>
+
+<button class="accesibilidad-flotante" type="button" (click)="alternarPanel()"
+  [attr.aria-expanded]="panelAbierto" aria-controls="panel-accesibilidad" aria-label="Abrir opciones de accesibilidad">
+  <span aria-hidden="true">◉</span><span class="accesibilidad-flotante-texto">Accesibilidad</span>
+</button>
+
+@if (panelAbierto) {
+<section id="panel-accesibilidad" class="accesibilidad-panel" role="dialog"
+  aria-modal="false" aria-labelledby="accesibilidad-titulo">
+  <header class="accesibilidad-cabecera">
+    <div><h2 id="accesibilidad-titulo">Accesibilidad</h2><p>Personaliza cómo ves y escuchas esta página.</p></div>
+    <button type="button" class="accesibilidad-cerrar" (click)="alternarPanel()" aria-label="Cerrar accesibilidad">×</button>
+  </header>
+
+  <label class="accesibilidad-campo" for="filtro-color">Filtro de color</label>
+  <select id="filtro-color" [(ngModel)]="filtro" (ngModelChange)="guardar()">
+    <option value="ninguno">Sin filtro</option><option value="deuteranopia">Deuteranopia</option>
+    <option value="protanopia">Protanopia</option><option value="tritanopia">Tritanopia</option>
+    <option value="monocromatico">Monocromático (escala de grises)</option>
+  </select>
+
+  <label class="accesibilidad-interruptor"><input type="checkbox" [(ngModel)]="altoContraste" (ngModelChange)="guardar()"> <span><strong>Alto contraste</strong><small>Resalta texto, bordes y controles</small></span></label>
+
+  <label class="accesibilidad-campo" for="tamano-texto">Tamaño del texto <output>{{ escalaTexto }}%</output></label>
+  <input id="tamano-texto" type="range" min="85" max="150" step="5" [(ngModel)]="escalaTexto" (ngModelChange)="guardar()" aria-label="Tamaño del texto">
+
+  <label class="accesibilidad-campo" for="espaciado-texto">Espaciado de texto <output>{{ espaciado }} px</output></label>
+  <input id="espaciado-texto" type="range" min="0" max="4" step="1" [(ngModel)]="espaciado" (ngModelChange)="guardar()" aria-label="Espaciado entre letras, palabras y líneas">
+  <p class="accesibilidad-ayuda">Ajusta conjuntamente el espacio entre letras, palabras y líneas.</p>
+
+  <label class="accesibilidad-interruptor"><input type="checkbox" [(ngModel)]="narrador" (ngModelChange)="guardar()"> <span><strong>Narrador al navegar</strong><small>Lee en voz alta el control enfocado con Tab</small></span></label>
+  <p class="accesibilidad-ayuda">Usa la voz disponible en tu navegador. Puedes detenerla desactivando esta opción.</p>
+  <footer><button type="button" class="accesibilidad-restablecer" (click)="restablecer()">Restablecer valores</button></footer>
+</section>
+}

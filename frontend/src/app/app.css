@@ -1,0 +1,20 @@
+:host { position: relative; z-index: 2100; }
+.accesibilidad-flotante { position: fixed; right: 22px; bottom: 22px; z-index: 2101; display: flex; align-items: center; gap: 9px; min-height: 50px; padding: 0 18px; border: 0; border-radius: 999px; background: #173c70; color: #fff; box-shadow: 0 5px 20px #0f172a40; font: 600 15px Arial, sans-serif; cursor: pointer; }
+.accesibilidad-flotante span:first-child { font-size: 21px; }
+.accesibilidad-flotante:hover { background: #102d56; }
+.accesibilidad-panel { position: fixed; right: 22px; bottom: 84px; z-index: 2102; width: min(370px, calc(100vw - 28px)); max-height: min(78vh, 680px); overflow-y: auto; display: flex; flex-direction: column; gap: 11px; padding: 20px; border: 1px solid #cbd5e1; border-radius: 14px; background: #fff; color: #172033; box-shadow: 0 14px 42px #0f172a38; font: 14px/1.4 Arial, sans-serif; }
+.accesibilidad-cabecera { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.accesibilidad-cabecera h2 { font-size: 21px; margin: 0 0 3px; color: #173c70; }
+.accesibilidad-cabecera p,.accesibilidad-ayuda { font-size: 12px; color: #536174; }
+.accesibilidad-cerrar { border: 0; background: transparent; color: #334155; font-size: 26px; line-height: 1; cursor: pointer; }
+.accesibilidad-campo { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; color: #26364b; }
+.accesibilidad-panel select { min-height: 39px; padding: 7px 9px; border: 1px solid #aeb9c8; border-radius: 7px; background: #fff; color: #172033; }
+.accesibilidad-panel input[type="range"] { width: 100%; accent-color: #173c70; }
+.accesibilidad-interruptor { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border: 1px solid #e0e6ee; border-radius: 8px; cursor: pointer; }
+.accesibilidad-interruptor input { width: 18px; height: 18px; margin-top: 1px; accent-color: #173c70; }
+.accesibilidad-interruptor span { display: flex; flex-direction: column; gap: 2px; }
+.accesibilidad-interruptor small { color: #536174; font-size: 12px; }
+.accesibilidad-panel footer { display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+.accesibilidad-restablecer { min-height: 36px; padding: 0 12px; border: 1px solid #bdc8d6; border-radius: 7px; background: #fff; color: #173c70; font-weight: 700; cursor: pointer; }
+.accesibilidad-panel :focus-visible,.accesibilidad-flotante:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+@media (max-width: 480px) { .accesibilidad-flotante { right: 14px; bottom: 14px; } .accesibilidad-panel { right: 10px; bottom: 75px; } }

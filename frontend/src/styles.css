@@ -64,6 +64,21 @@ html, body, app-root {
     background: var(--fondo);
 }
 
+/* Preferencias globales de accesibilidad. */
+html { font-size: calc(16px * var(--escala-texto, 1)); }
+body, body * { letter-spacing: var(--espaciado-letras, 0px); word-spacing: var(--espaciado-palabras, 0px); }
+body { line-height: var(--espaciado-lineas, normal); }
+html[data-filtro-color="monocromatico"] { filter: grayscale(1); }
+html[data-filtro-color="deuteranopia"] { filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeColorMatrix type='matrix' values='.625 .375 0 0 0 .70 .30 0 0 0 0 .30 .70 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3C/svg%3E#f"); }
+html[data-filtro-color="protanopia"] { filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeColorMatrix type='matrix' values='.567 .433 0 0 0 .558 .442 0 0 0 0 .242 .758 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3C/svg%3E#f"); }
+html[data-filtro-color="tritanopia"] { filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeColorMatrix type='matrix' values='.95 .05 0 0 0 0 .433 .567 0 0 0 .475 .525 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3C/svg%3E#f"); }
+html.accesibilidad-alto-contraste {
+    --texto: #000000; --texto-suave: #111111; --texto-tenue: #222222;
+    --borde: #333333; --borde-fuerte: #111111; --fondo: #ffffff;
+    --superficie: #ffffff; --superficie-alterna: #f0f0f0;
+    --color-primario: #001a70; --color-primario-hover: #000d42;
+}
+
 /* Si algún componente externo impone otra fuente, se hereda la del cuerpo. */
 div, span, p, h1, h2, h3, h4, h5, h6, a, li, td, th, label, input, select, textarea, button {
     font-family: inherit !important;

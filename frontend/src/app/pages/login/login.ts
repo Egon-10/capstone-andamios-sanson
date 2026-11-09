@@ -28,6 +28,13 @@ export class LoginComponent implements OnInit {
   mensajeAviso = '';
   enviando = false;
   mostrarPassword = false;
+  documentoLegalAbierto = false;
+  seccionLegal: 'terminos' | 'privacidad' = 'terminos';
+
+  abrirLegal(seccion: 'terminos' | 'privacidad'): void {
+    this.seccionLegal = seccion;
+    this.documentoLegalAbierto = true;
+  }
 
   ngOnInit(): void {
     const motivo = this.ruta.snapshot.queryParamMap.get('motivo');

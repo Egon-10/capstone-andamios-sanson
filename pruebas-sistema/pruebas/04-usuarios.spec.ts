@@ -19,6 +19,11 @@ async function buscar(page: Page, texto: string): Promise<void> {
 
 /** Guarda el formulario y, si el sistema lo rechaza, muestra por qué. */
 async function guardarUsuario(page: Page): Promise<void> {
+  // En un alta, el administrador declara que informó a la persona (Ley 29733, art. 5).
+  const consentimiento = page.locator('.consentimiento-privacidad input[type="checkbox"]');
+  if (await consentimiento.isVisible()) {
+    await consentimiento.check();
+  }
   await page.getByRole('button', { name: 'Guardar', exact: true }).click();
   const exito = page.getByRole('status').filter({ hasText: 'Usuario registrado correctamente' });
   const error = page.locator('[role="alert"], .ui-error-campo');
@@ -73,6 +78,8 @@ test.describe('Usuarios y seguridad de cuentas', () => {
     await page.locator('#u-confirmarPassword').fill('andamios123');
     await page.getByRole('button', { name: 'Guardar', exact: true }).click();
     await expect(page.locator('#error-password')).toBeVisible();
+    // Sin la declaración de haber informado a la persona, el alta tampoco procede.
+    await expect(page.getByText('Debe declarar que informó a la persona')).toBeVisible();
 
     const clave = `Robusta#${id}Q7`;
     await page.locator('#u-password').fill(clave);

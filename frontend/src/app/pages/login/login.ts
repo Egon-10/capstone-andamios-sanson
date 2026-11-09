@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -28,6 +28,18 @@ export class LoginComponent implements OnInit {
   mensajeAviso = '';
   enviando = false;
   mostrarPassword = false;
+  documentoLegalAbierto = false;
+  seccionLegal: 'terminos' | 'privacidad' = 'terminos';
+
+  abrirLegal(seccion: 'terminos' | 'privacidad'): void {
+    this.seccionLegal = seccion;
+    this.documentoLegalAbierto = true;
+  }
+
+  @HostListener('document:keydown.escape')
+  cerrarLegal(): void {
+    this.documentoLegalAbierto = false;
+  }
 
   ngOnInit(): void {
     const motivo = this.ruta.snapshot.queryParamMap.get('motivo');

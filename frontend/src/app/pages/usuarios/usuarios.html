@@ -78,6 +78,13 @@
         <app-politica-contrasena [clave]="form.password" [usuario]="form.nombreUsuario" [documento]="form.numeroDocumento"></app-politica-contrasena>
       </div>
 
+      <div class="consentimiento-privacidad" *ngIf="!editando">
+        <label><input type="checkbox" [(ngModel)]="declaraInformado" (ngModelChange)="limpiarError('privacidad')">
+          Declaro que he informado a esta persona sobre el tratamiento de sus datos personales y que puede consultar la Política de Privacidad (Ley 29733, art. 5)
+        </label>
+        <small class="ui-error-campo" *ngIf="errores['privacidad']">{{ errores['privacidad'] }}</small>
+      </div>
+
       <p class="nota-edicion" *ngIf="editando">
         La contraseña no se cambia aquí: use <strong>Restablecer contraseña</strong> en la lista, que genera una temporal
         y obliga a la persona a cambiarla al ingresar.

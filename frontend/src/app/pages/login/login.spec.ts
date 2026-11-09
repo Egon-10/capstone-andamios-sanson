@@ -73,4 +73,26 @@ describe('LoginComponent', () => {
     const el: HTMLElement = crear().nativeElement;
     expect(el.querySelector('.ui-mensaje.aviso[role="alert"]')?.textContent).toContain('inactividad');
   });
+  it('abre los Términos y la Política de Privacidad y los cierra con el botón o con Escape', () => {
+    const f = crear();
+    const el: HTMLElement = f.nativeElement;
+    const enlaces = el.querySelectorAll('.enlaces-legales button');
+    expect(enlaces.length).toBe(2);
+
+    (enlaces[1] as HTMLButtonElement).click();
+    f.detectChanges();
+    expect(el.querySelector('#legal-titulo')?.textContent).toContain('Política de Privacidad');
+    expect(el.querySelector('.legal-dialogo')?.textContent).toContain('29733');
+
+    (el.querySelector('.legal-cerrar') as HTMLButtonElement).click();
+    f.detectChanges();
+    expect(el.querySelector('.legal-dialogo')).toBeNull();
+
+    (enlaces[0] as HTMLButtonElement).click();
+    f.detectChanges();
+    expect(el.querySelector('#legal-titulo')?.textContent).toContain('Términos y Condiciones');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    f.detectChanges();
+    expect(el.querySelector('.legal-dialogo')).toBeNull();
+  });
 });

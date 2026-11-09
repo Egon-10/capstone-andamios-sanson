@@ -152,6 +152,12 @@ jobs:
       - name: Repetir la migracion del Sprint 4 (debe ser idempotente)
         run: $MYSQL < database/05-sprint4-seguridad.sql
 
+      - name: Agregar las categorias del catalogo de precios
+        run: $MYSQL < database/06-catalogo-categorias.sql
+
+      - name: Repetir las categorias del catalogo (debe ser idempotente)
+        run: $MYSQL < database/06-catalogo-categorias.sql
+
       - name: Verificar el esquema y los datos resultantes
         run: |
           set -euo pipefail

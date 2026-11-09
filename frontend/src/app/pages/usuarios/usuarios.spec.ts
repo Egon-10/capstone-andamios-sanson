@@ -180,4 +180,37 @@ describe('UsuariosComponent', () => {
     expect(texto).toContain('Clave temporal');
     expect(texto).toContain('Desbloquear');
   });
+  it('Ley 29733: el alta exige declarar que se informó a la persona', () => {
+    servicio.registrar.and.returnValue(of({ ...ana, id: 9 }));
+    const c = crear().componentInstance;
+    c.form = { ...c.form, nombres: 'Ana', apellidos: 'Pérez', correo: 'ana@a.pe', rolId: 1, area: 'LOGISTICA',
+      numeroDocumento: '45678912', nombreUsuario: 'ana.perez', password: 'Clave#2026Ok', confirmarPassword: 'Clave#2026Ok' };
+
+    c.guardar();
+    expect(c.errores['privacidad']).toContain('informó');
+    expect(servicio.registrar).not.toHaveBeenCalled();
+
+    c.declaraInformado = true;
+    c.limpiarError('privacidad');
+    c.guardar();
+    expect(c.errores['privacidad']).toBeUndefined();
+    expect(servicio.registrar).toHaveBeenCalled();
+  });
+
+  it('Ley 29733: la declaración solo se pide en el alta y se reinicia al limpiar o editar', () => {
+    const f = crear();
+    const c = f.componentInstance;
+    const el: HTMLElement = f.nativeElement;
+    expect(el.querySelector('.consentimiento-privacidad')).not.toBeNull();
+
+    c.declaraInformado = true;
+    c.limpiar();
+    expect(c.declaraInformado).toBeFalse();
+
+    c.declaraInformado = true;
+    c.editar(ana);
+    f.detectChanges();
+    expect(c.declaraInformado).toBeFalse();
+    expect(el.querySelector('.consentimiento-privacidad')).toBeNull();
+  });
 });

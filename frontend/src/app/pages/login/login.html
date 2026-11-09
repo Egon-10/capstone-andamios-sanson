@@ -50,8 +50,8 @@
 </main>
 
 @if (documentoLegalAbierto) {
-  <div class="legal-velo" (click)="documentoLegalAbierto = false">
-    <section class="legal-dialogo" role="dialog" aria-modal="true" aria-labelledby="legal-titulo" (click)="$event.stopPropagation()">
+  <div class="legal-velo">
+    <section class="legal-dialogo" role="dialog" aria-modal="true" aria-labelledby="legal-titulo">
       <header><h2 id="legal-titulo">{{ seccionLegal === 'terminos' ? 'Términos y Condiciones' : 'Política de Privacidad' }}</h2>
         <button type="button" class="legal-cerrar" aria-label="Cerrar" (click)="documentoLegalAbierto = false">×</button></header>
       @if (seccionLegal === 'terminos') {

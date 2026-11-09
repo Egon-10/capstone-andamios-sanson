@@ -10,6 +10,10 @@
 -- Idempotente: puede ejecutarse varias veces sin duplicar filas.
 -- =============================================================================
 
+-- Sin esta línea, el cliente de MySQL del contenedor lee el archivo como
+-- latin1 y las tildes quedan dañadas ("rodapiÃ©s" en lugar de "rodapiés").
+SET NAMES utf8mb4;
+
 INSERT INTO `categorias` (`nombre`, `descripcion`, `activo`, `fecha_creacion`)
 SELECT n.nombre, n.descripcion, 1, NOW()
   FROM (
@@ -25,3 +29,12 @@ SELECT n.nombre, n.descripcion, 1, NOW()
  WHERE NOT EXISTS (
         SELECT 1 FROM `categorias` c WHERE UPPER(c.`nombre`) = UPPER(n.nombre)
        );
+
+-- Repara las descripciones si una ejecución anterior las guardó sin UTF-8.
+UPDATE `categorias`
+   SET `descripcion` = 'Crucetas, niveladores, adaptadores, rodapiés y alineadores'
+ WHERE `nombre` = 'ACCESORIOS' AND `descripcion` LIKE 'Crucetas,%';
+
+UPDATE `categorias`
+   SET `descripcion` = 'Puntales, vigas, espárragos y bolillos'
+ WHERE `nombre` = 'PUNTALES Y ENCOFRADO' AND `descripcion` LIKE 'Puntales,%';

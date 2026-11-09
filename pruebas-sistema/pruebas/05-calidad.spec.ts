@@ -52,6 +52,35 @@ test.describe('Calidad del producto', () => {
     expect(conCriticas, JSON.stringify(conCriticas, null, 2)).toEqual([]);
   });
 
+  test('PS-11 accesibilidad en modo oscuro: sin infracciones críticas ni serias, incluido el contraste (HU-39)', async ({ page }) => {
+    const resultado: Record<string, { criticas: number; serias: number; reglas: string[] }> = {};
+    await page.addInitScript(() => localStorage.setItem('accesibilidad', JSON.stringify({ modoOscuro: true })));
+
+    async function revisar(nombre: string): Promise<void> {
+      await expect(page.locator('html')).toHaveClass(/tema-oscuro/);
+      const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+      const graves = r.violations.filter(v => v.impact === 'critical' || v.impact === 'serious');
+      resultado[nombre] = {
+        criticas: graves.filter(v => v.impact === 'critical').length,
+        serias: graves.filter(v => v.impact === 'serious').length,
+        reglas: graves.map(v => `${v.impact}: ${v.id} (${v.nodes.length})`)
+      };
+    }
+
+    await page.goto('/login');
+    await revisar('login');
+    await entrar(page, cuentas.administrador);
+    for (const ruta of ['dashboard', 'productos', 'movimientos', 'kardex', 'reportes', 'usuarios', 'auditoria', 'valorizacion']) {
+      await page.goto(`/${ruta}`);
+      await page.waitForLoadState('networkidle');
+      await revisar(ruta);
+    }
+    mediciones['accesibilidadModoOscuro'] = resultado;
+
+    const conFallas = Object.entries(resultado).filter(([, r]) => r.criticas + r.serias > 0);
+    expect(conFallas, JSON.stringify(conFallas, null, 2)).toEqual([]);
+  });
+
   test('PS-12 cabeceras de seguridad del sitio y estado interno no publicado (HU-38, HU-42)', async ({ request }) => {
     const r = await request.get('/');
     expect(r.status()).toBe(200);

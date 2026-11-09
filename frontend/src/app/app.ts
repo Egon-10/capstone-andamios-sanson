@@ -15,6 +15,7 @@ export class App {
   panelAbierto = false;
   filtro: 'ninguno' | 'deuteranopia' | 'protanopia' | 'tritanopia' | 'monocromatico' = 'ninguno';
   altoContraste = false;
+  modoOscuro = false;
   narrador = false;
   escalaTexto = 100;
   espaciado = 0;
@@ -24,6 +25,7 @@ export class App {
       const p = JSON.parse(localStorage.getItem('accesibilidad') || '{}');
       this.filtro = p.filtro || 'ninguno';
       this.altoContraste = !!p.altoContraste;
+      this.modoOscuro = !!p.modoOscuro;
       this.narrador = !!p.narrador;
       this.escalaTexto = Number(p.escalaTexto) || 100;
       this.espaciado = Number(p.espaciado) || 0;
@@ -34,12 +36,12 @@ export class App {
   alternarPanel(): void { this.panelAbierto = !this.panelAbierto; }
 
   guardar(): void {
-    localStorage.setItem('accesibilidad', JSON.stringify({ filtro: this.filtro, altoContraste: this.altoContraste, narrador: this.narrador, escalaTexto: this.escalaTexto, espaciado: this.espaciado }));
+    localStorage.setItem('accesibilidad', JSON.stringify({ filtro: this.filtro, altoContraste: this.altoContraste, modoOscuro: this.modoOscuro, narrador: this.narrador, escalaTexto: this.escalaTexto, espaciado: this.espaciado }));
     this.aplicarPreferencias();
   }
 
   restablecer(): void {
-    this.filtro = 'ninguno'; this.altoContraste = false; this.escalaTexto = 100; this.espaciado = 0; this.narrador = false;
+    this.filtro = 'ninguno'; this.altoContraste = false; this.modoOscuro = false; this.escalaTexto = 100; this.espaciado = 0; this.narrador = false;
     this.guardar();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }
@@ -48,6 +50,7 @@ export class App {
     const root = document.documentElement;
     root.dataset['filtroColor'] = this.filtro;
     root.classList.toggle('accesibilidad-alto-contraste', this.altoContraste);
+    root.classList.toggle('tema-oscuro', this.modoOscuro);
     root.style.setProperty('--escala-texto', `${this.escalaTexto / 100}`);
     root.style.setProperty('--espaciado-letras', `${this.espaciado}px`);
     root.style.setProperty('--espaciado-palabras', `${this.espaciado * 1.5}px`);

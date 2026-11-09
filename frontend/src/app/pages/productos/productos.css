@@ -24,7 +24,7 @@ form.ui-tarjeta,
   cursor: pointer;
 }
 
-.casilla input { width: 18px; height: 18px; accent-color: var(--color-primario); }
+.casilla input { width: 18px; height: 18px; accent-color: var(--color-primario-texto); }
 
 .resumen,
 .tenue {
@@ -63,7 +63,7 @@ code {
   border-bottom: 1px solid var(--borde);
 }
 
-.cabecera-ficha h2 { color: var(--color-primario); }
+.cabecera-ficha h2 { color: var(--color-primario-texto); }
 
 .descripcion {
   color: var(--texto-suave);
@@ -104,7 +104,7 @@ code {
 .dato dd {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--color-primario);
+  color: var(--color-primario-texto);
 }
 
 .dato small {

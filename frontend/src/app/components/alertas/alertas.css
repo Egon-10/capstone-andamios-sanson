@@ -15,7 +15,7 @@
 }
 
 .campana.activa {
-  color: var(--color-primario);
+  color: var(--color-primario-texto);
 }
 
 .contador {
@@ -113,9 +113,9 @@ li.nueva {
   font-weight: 700;
 }
 
-.nivel.agotado { color: #d03b3b; }
-.nivel.critico { color: #c2410c; }
-.nivel.bajo { color: #92400e; }
+.nivel.agotado { color: var(--nivel-agotado); }
+.nivel.critico { color: var(--nivel-critico); }
+.nivel.bajo { color: var(--nivel-bajo); }
 
 .vacio {
   display: flex;
